@@ -1,0 +1,9 @@
+.git/
+.github/
+**/bin/
+**/obj/
+**/coverage/
+**/dist/
+**/node_modules/
+*.lock
+LICENSE

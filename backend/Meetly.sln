@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{4F138706-5BB6-4227-8E36-6587DB62F34C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meetly.Api", "src\Meetly.Api\Meetly.Api.csproj", "{36A9C2D6-8C86-4EF0-B81C-0A529AD8A0BA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{910EB046-9CF4-45E2-91E3-B509CB62D282}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meetly.Api.Tests", "tests\Meetly.Api.Tests\Meetly.Api.Tests.csproj", "{1FE92810-99AC-416C-8F7C-FCA4221E6B4D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{36A9C2D6-8C86-4EF0-B81C-0A529AD8A0BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36A9C2D6-8C86-4EF0-B81C-0A529AD8A0BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36A9C2D6-8C86-4EF0-B81C-0A529AD8A0BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36A9C2D6-8C86-4EF0-B81C-0A529AD8A0BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1FE92810-99AC-416C-8F7C-FCA4221E6B4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1FE92810-99AC-416C-8F7C-FCA4221E6B4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1FE92810-99AC-416C-8F7C-FCA4221E6B4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1FE92810-99AC-416C-8F7C-FCA4221E6B4D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{36A9C2D6-8C86-4EF0-B81C-0A529AD8A0BA} = {4F138706-5BB6-4227-8E36-6587DB62F34C}
+		{1FE92810-99AC-416C-8F7C-FCA4221E6B4D} = {910EB046-9CF4-45E2-91E3-B509CB62D282}
+	EndGlobalSection
+EndGlobal
