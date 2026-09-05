@@ -23,24 +23,45 @@ Meetly/
 │   ├── workflows/
 │   │   └── quality.yml          # CI pipeline running on 'main' and 'dev'
 │   └── pull_request_template.md # PR description standard
-├── backend/                     # .NET 8 Web API (3-Tier Architecture)
+├── backend/                     # .NET 8 Multi-Project Solution (Clean / 3-Tier)
 │   ├── Meetly.sln
 │   ├── src/
-│   │   └── Meetly.Api/
-│   │       ├── Controllers/     # Tầng 1: Presentation (API Endpoints)
-│   │       ├── Services/        # Tầng 2: Business Logic & SignalR dispatch
-│   │       ├── Repositories/    # Tầng 3: Data Access (EF Core queries)
-│   │       ├── Data/            # DbContext & migrations
-│   │       ├── Hubs/            # SignalR Hubs (MeetingHub)
-│   │       ├── Models/          # Entity models (Event, Participant, Slot)
-│   │       └── DTOs/            # Data transfer objects
+│   │   ├── Meetly.API/          # Presentation Layer (Web API, Controllers, Middleware)
+│   │   │   ├── Constants/
+│   │   │   ├── Controllers/
+│   │   │   ├── Extensions/
+│   │   │   ├── Filters/
+│   │   │   ├── Middleware/
+│   │   │   ├── Hubs/            # SignalR Realtime Hubs
+│   │   │   ├── Dockerfile
+│   │   │   └── Program.cs
+│   │   ├── Meetly.Repository/   # Data Access Layer (EF Core, DbContext, Entities)
+│   │   │   ├── Abstraction/     # Repository interfaces
+│   │   │   ├── Configurations/  # EF Core Fluent API configs
+│   │   │   ├── Entity/          # Database entities
+│   │   │   ├── Enum/            # Enums
+│   │   │   ├── Migrations/      # EF Core database migrations
+│   │   │   ├── AppDbContext.cs  # EF Core DbContext
+│   │   │   └── AssemblyReference.cs
+│   │   ├── Meetly.Service/      # Business Logic Layer
+│   │   │   ├── Abstraction/     # Service interfaces
+│   │   │   ├── Implementations/ # Service implementations
+│   │   │   └── AssemblyReference.cs
+│   │   └── Meetly.Contract/     # Shared DTOs & Contracts
+│   │       ├── Abstraction/     # Base contracts
+│   │       ├── DTOs/            # Request / Response DTOs
+│   │       └── AssemblyReference.cs
 │   └── tests/
-│       └── Meetly.Api.Tests/    # Unit tests
+│       └── Meetly.Api.Tests/    # Unit & Integration Tests
 ├── frontend/                    # React + Vite + Tailwind CSS
 │   ├── src/
-│   │   ├── components/          # UI components (Grid, Heatmap, Modals)
-│   │   ├── services/            # API client & SignalR connection
+│   │   ├── assets/              # Static assets & images
+│   │   ├── components/          # Reusable UI components
+│   │   ├── contexts/            # React Context providers
 │   │   ├── hooks/               # Custom hooks
+│   │   ├── layouts/             # Page layouts
+│   │   ├── pages/               # Route views / Pages
+│   │   ├── services/            # API clients & SignalR connection
 │   │   ├── types/               # TypeScript models & types
 │   │   └── utils/               # Helper utilities
 │   ├── vite.config.ts
@@ -73,7 +94,7 @@ docker compose up -d
 ### 2. Run Backend (.NET 8 + SignalR)
 
 ```bash
-cd backend/src/Meetly.Api
+cd backend/src/Meetly.API
 dotnet run
 ```
 
