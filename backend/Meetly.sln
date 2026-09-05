@@ -1,0 +1,57 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{910EB046-9CF4-45E2-91E3-B509CB62D282}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meetly.Api.Tests", "tests\Meetly.Api.Tests\Meetly.Api.Tests.csproj", "{1FE92810-99AC-416C-8F7C-FCA4221E6B4D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{0614784C-D1B5-44B4-BFC1-C5AE87BE258A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meetly.API", "src\Meetly.API\Meetly.API.csproj", "{0663D6A0-774D-4400-900B-11F5FBCEA58D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meetly.Repository", "src\Meetly.Repository\Meetly.Repository.csproj", "{B52BDDC9-19BA-413F-A6FE-EE8072245FF5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meetly.Service", "src\Meetly.Service\Meetly.Service.csproj", "{307A120F-2CD9-499B-A7DA-C4A536137B1D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meetly.Contract", "src\Meetly.Contract\Meetly.Contract.csproj", "{C39ACA64-342E-4D64-BBF5-3DEFB100DB48}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1FE92810-99AC-416C-8F7C-FCA4221E6B4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1FE92810-99AC-416C-8F7C-FCA4221E6B4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1FE92810-99AC-416C-8F7C-FCA4221E6B4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1FE92810-99AC-416C-8F7C-FCA4221E6B4D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0663D6A0-774D-4400-900B-11F5FBCEA58D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0663D6A0-774D-4400-900B-11F5FBCEA58D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0663D6A0-774D-4400-900B-11F5FBCEA58D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0663D6A0-774D-4400-900B-11F5FBCEA58D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B52BDDC9-19BA-413F-A6FE-EE8072245FF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B52BDDC9-19BA-413F-A6FE-EE8072245FF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B52BDDC9-19BA-413F-A6FE-EE8072245FF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B52BDDC9-19BA-413F-A6FE-EE8072245FF5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{307A120F-2CD9-499B-A7DA-C4A536137B1D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{307A120F-2CD9-499B-A7DA-C4A536137B1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{307A120F-2CD9-499B-A7DA-C4A536137B1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{307A120F-2CD9-499B-A7DA-C4A536137B1D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C39ACA64-342E-4D64-BBF5-3DEFB100DB48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C39ACA64-342E-4D64-BBF5-3DEFB100DB48}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C39ACA64-342E-4D64-BBF5-3DEFB100DB48}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C39ACA64-342E-4D64-BBF5-3DEFB100DB48}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1FE92810-99AC-416C-8F7C-FCA4221E6B4D} = {910EB046-9CF4-45E2-91E3-B509CB62D282}
+		{0663D6A0-774D-4400-900B-11F5FBCEA58D} = {0614784C-D1B5-44B4-BFC1-C5AE87BE258A}
+		{B52BDDC9-19BA-413F-A6FE-EE8072245FF5} = {0614784C-D1B5-44B4-BFC1-C5AE87BE258A}
+		{307A120F-2CD9-499B-A7DA-C4A536137B1D} = {0614784C-D1B5-44B4-BFC1-C5AE87BE258A}
+		{C39ACA64-342E-4D64-BBF5-3DEFB100DB48} = {0614784C-D1B5-44B4-BFC1-C5AE87BE258A}
+	EndGlobalSection
+EndGlobal
