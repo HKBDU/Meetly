@@ -36,7 +36,6 @@ jobs:
 
   frontend:
     name: Frontend lint & build
-    if: hashFiles('frontend/package-lock.json') != ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -54,7 +53,6 @@ jobs:
 
   backend:
     name: Backend format and test
-    if: hashFiles('backend/**/*.csproj') != ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
