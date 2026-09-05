@@ -1,4 +1,4 @@
-# Meetly (When2meet Clone)
+# Meetly 
 
 Meetly is a modern, real-time group scheduling application inspired by When2meet. It allows organizers to create meeting polls, collect participant availability via an intuitive drag-and-paint time grid, and visualize overlapping free times with a live heatmap powered by WebSockets.
 
