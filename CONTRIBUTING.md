@@ -8,13 +8,14 @@ Welcome to **Meetly**! This document defines our engineering standards, branchin
 
 Meetly is an open-source, real-time clone of When2meet:
 
-- **Frontend**: React 18+, Vite, Tailwind CSS, TypeScript
-  - Folders: `components/`, `services/`, `hooks/`, `types/`, `utils/`
-- **Backend (Kiến trúc 3 tầng - 3-Tier Architecture)**:
-  - **Tầng 1 - Controller (Presentation Layer)**: `backend/src/Meetly.Api/Controllers/` & `Hubs/` (SignalR)
-  - **Tầng 2 - Service (Business Logic Layer)**: `backend/src/Meetly.Api/Services/` (Xử lý nghiệp vụ)
-  - **Tầng 3 - Repository (Data Access Layer)**: `backend/src/Meetly.Api/Repositories/` & `Data/` (Truy vấn EF Core)
-  - Shared models: `Models/` (Entities) & `DTOs/` (Data Transfer Objects)
+- **Frontend**: React 19, Vite, Tailwind CSS, TypeScript
+  - Thư mục: `components/`, `pages/`, `layouts/`, `contexts/`, `hooks/`, `services/`, `types/`, `utils/`, `assets/`
+  - Path alias: `@/` trỏ trực tiếp đến `frontend/src/`
+- **Backend (Kiến trúc 3 tầng - Solution 4 Projects)**:
+  - **Tầng 1 - API (Presentation)**: `backend/src/Meetly.API/` (Controllers, Middleware, SignalR Hubs)
+  - **Tầng 2 - Service (Business Logic)**: `backend/src/Meetly.Service/` (Xử lý nghiệp vụ, Abstraction)
+  - **Tầng 3 - Repository (Data Access)**: `backend/src/Meetly.Repository/` (EF Core, DbContext, Entities, Migrations)
+  - **Contracts (DTOs & Chia sẻ)**: `backend/src/Meetly.Contract/` (Request / Response DTOs, Abstraction)
 - **Database**: PostgreSQL 16 (via `Npgsql.EntityFrameworkCore.PostgreSQL`)
 - **Containerization**: Docker Compose (`docker-compose.yml`)
 
