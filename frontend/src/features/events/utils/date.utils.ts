@@ -1,35 +1,55 @@
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}/
 
-export function formatDateForApi(date: Date | string): string {
-  if (typeof date === 'string' && DATE_PATTERN.test(date)) return date
-  const value = typeof date === 'string' ? new Date(date) : date
-  const year = value.getFullYear()
-  const month = String(value.getMonth() + 1).padStart(2, '0')
-  const day = String(value.getDate()).padStart(2, '0')
-  return year + '-' + month + '-' + day
+export function formatDateforApi(date: Date | string) : string {
+  // case YYYY-MM-DD
+  if (typeof date === 'string' && DATE_PATTERN.test(date)){
+    return date;
+  }
+
+  /*
+  * YYYY-MM-DD, YYYY/MM/DD 
+  * YYYY-MM-THH:mm:ss.sssZ
+  * YYYY-MM-THH:mm:ss+HH:MM 
+  * YYYY-MM, YYYY 
+  * "Sep 10, 2026", "September 10 2026", "10 Sep 2026"
+  * "Thu Sep 10 2026 15:30:00 GMT+0700"
+  */
+  const value = (typeof date === 'string') ? new Date(date) : date
+  const day = value.getDay();
+  const month = value.getMonth();
+  const year = value.getFullYear();
+  return year + "-" + month + "-" + day;
 }
 
-export function generateDateRange(start: Date, numberOfDays: number): string[] {
-  return Array.from({ length: numberOfDays }, (_, index) => {
-    const date = new Date(start)
-    date.setHours(0, 0, 0, 0)
-    date.setDate(date.getDate() + index)
-    return formatDateForApi(date)
-  })
+export function generateDateRange(start: Date, numberOfDays: number) : string[]{
+  const result: string[] = [];
+  const current = new Date(start); // avoid mutating
+  for (let i = 0; i < numberOfDays; i++){
+    result.push(formatDateforApi(current))
+    current.setDate(current.getDate() + 1)
+  }
+
+  return result;
 }
 
-export function isPastDate(date: Date | string): boolean {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const candidate = typeof date === 'string' ? new Date(date + 'T00:00:00') : new Date(date)
-  candidate.setHours(0, 0, 0, 0)
-  return candidate < today
+export function isFutureDate(candidateDate: Date | string) : boolean {
+  const candidate = (typeof candidateDate === 'string'
+                                               ? new Date(candidateDate + 'T00:00:00') 
+                                               : new Date(candidateDate) )
+  // T00:00:00 avoid ISO 8601 Date Parsing Ambiguity
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  candidate.setHours(0, 0, 0, 0);
+  return today < candidate;
 }
 
-export function isFutureDate(date: Date | string): boolean {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const candidate = typeof date === 'string' ? new Date(date + 'T00:00:00') : new Date(date)
-  candidate.setHours(0, 0, 0, 0)
-  return candidate > today
+export function isPastDate(candidateDate: Date | string) : boolean {
+  const candidate = (typeof candidateDate === 'string'
+                                               ? new Date(candidateDate + 'T00:00:00') 
+                                               : new Date(candidateDate) )
+  // T00:00:00 avoid ISO 8601 Date Parsing Ambiguity
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  candidate.setHours(0, 0, 0, 0);
+  return today > candidate;
 }

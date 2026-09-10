@@ -1,4 +1,4 @@
-export function generateTimeSlots(start = '09:00', end = '17:00', intervalMinutes = 60): string[] {
+export function generateTimeSlots(start = '00:00', end = '23:00', intervalMinutes = 60): string[] {
   const [startHour, startMinute] = start.split(':').map(Number)
   const [endHour, endMinute] = end.split(':').map(Number)
   const startTotal = startHour * 60 + startMinute
