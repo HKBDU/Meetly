@@ -2,7 +2,7 @@ using Meetly.Repository.Abstraction;
 
 namespace Meetly.Repository.Entity;
 
-public class EventAvailableDates : BaseEntity, IAuditableEntity
+public class EventAvailableDates : BaseEntity
 {
     public Guid EventId { get; set; }
     public DateOnly? SpecificDate { get; set; }
