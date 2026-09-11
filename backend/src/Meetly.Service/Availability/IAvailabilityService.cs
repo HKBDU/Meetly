@@ -1,5 +1,5 @@
-using Meetly.Contract.DTOs.Participants;
 using System.Security.Claims;
+using Meetly.Contract.DTOs.Participants;
 
 namespace Meetly.Service.Availability;
 

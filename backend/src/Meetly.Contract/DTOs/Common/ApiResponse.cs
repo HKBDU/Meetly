@@ -1,4 +1,4 @@
-﻿namespace Meetly.Contract.DTOs.Common;
+namespace Meetly.Contract.DTOs.Common;
 
 public sealed record ApiResponse<T>(
     bool IsSuccess,

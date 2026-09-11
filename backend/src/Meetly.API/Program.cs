@@ -1,11 +1,11 @@
+using System.Text;
+using Meetly.API.Middleware;
 using Meetly.Repository;
 using Meetly.Repository.Availability;
-using Meetly.API.Middleware;
+using Meetly.Service.Availability;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Meetly.Service.Availability;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 

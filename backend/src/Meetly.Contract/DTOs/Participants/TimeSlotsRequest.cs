@@ -1,4 +1,4 @@
-﻿namespace Meetly.Contract.DTOs.Participants;
+namespace Meetly.Contract.DTOs.Participants;
 
 public sealed record TimeSlotsRequest
 {
