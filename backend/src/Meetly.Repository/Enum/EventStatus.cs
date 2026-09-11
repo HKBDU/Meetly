@@ -1,4 +1,4 @@
-﻿namespace Meetly.Repository.Enum;
+namespace Meetly.Repository.Enum;
 
 public enum EventStatus
 {
