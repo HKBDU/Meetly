@@ -1,4 +1,5 @@
 using Meetly.Repository;
+using Meetly.Repository.Abstraction;
 using Meetly.Repository.Entity;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,7 +35,9 @@ public class AssemblyReferenceTests
 
         Assert.Equal(expectedTypes.OrderBy(x => x.Name), entityTypes.Select(x => x.ClrType).OrderBy(x => x.Name));
         Assert.All(entityTypes, entity => Assert.NotNull(entity.FindPrimaryKey()));
+        Assert.All(entityTypes, entity => Assert.True(typeof(IAuditableEntity).IsAssignableFrom(entity.ClrType)));
         Assert.Equal(5, entityTypes.Sum(entity => entity.GetForeignKeys().Count()));
+        Assert.Contains("CreatedAt", context.Database.GenerateCreateScript());
         Assert.Contains("CK_TimeSlots_Time", context.Database.GenerateCreateScript());
     }
 }

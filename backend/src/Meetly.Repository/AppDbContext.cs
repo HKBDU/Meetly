@@ -25,8 +25,9 @@ public class AppDbContext : DbContext
         events.Property(x => x.ShortCode).HasMaxLength(6);
         events.Property(x => x.EventType).HasConversion<short>();
         events.Property(x => x.TimeZone).HasMaxLength(50);
-        events.Property(x => x.Status).HasConversion<short>().HasDefaultValue(Enum.EventStatus.Open);
+        events.Property(x => x.Status).HasConversion<short>();
         events.Property(x => x.Revision).HasDefaultValue(0L);
+        events.Property(x => x.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         events.HasIndex(x => x.ShortCode).IsUnique();
         events.ToTable(t =>
         {
@@ -40,6 +41,7 @@ public class AppDbContext : DbContext
 
         var dates = modelBuilder.Entity<EventAvailableDates>();
         dates.Property(x => x.DayOfWeek).HasConversion<short?>();
+        dates.Property(x => x.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         dates.HasIndex(x => new { x.EventId, x.SpecificDate }).IsUnique().HasFilter("\"SpecificDate\" IS NOT NULL");
         dates.HasIndex(x => new { x.EventId, x.DayOfWeek }).IsUnique().HasFilter("\"DayOfWeek\" IS NOT NULL");
         dates.ToTable(t =>
@@ -54,16 +56,19 @@ public class AppDbContext : DbContext
 
         var emails = modelBuilder.Entity<EventEmails>();
         emails.Property(x => x.Email).HasMaxLength(100);
+        emails.Property(x => x.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         emails.HasIndex(x => new { x.EventId, x.Email }).IsUnique();
 
         var participants = modelBuilder.Entity<EventParticipants>();
         participants.Property(x => x.Username).HasMaxLength(100);
         participants.Property(x => x.PasswordHash).HasMaxLength(255);
+        participants.Property(x => x.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         participants.HasAlternateKey(x => new { x.Id, x.EventId });
         participants.HasIndex(x => new { x.EventId, x.Username }).IsUnique();
 
         var slots = modelBuilder.Entity<TimeSlots>();
         slots.Property(x => x.DayOfWeek).HasConversion<short?>();
+        slots.Property(x => x.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         slots.HasIndex(x => new { x.EventId, x.SpecificDate });
         slots.HasIndex(x => new { x.EventId, x.DayOfWeek });
         slots.ToTable(t =>
