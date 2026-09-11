@@ -2,7 +2,7 @@ using Meetly.Repository.Abstraction;
 
 namespace Meetly.Repository.Entity;
 
-public class TimeSlots : BaseEntity
+public class TimeSlots : BaseEntity, IAuditableEntity
 {
     public Guid ParticipantId { get; set; }
     public Guid EventId { get; set; }
@@ -13,4 +13,6 @@ public class TimeSlots : BaseEntity
 
     public EventParticipants Participant { get; set; } = null!;
     public Events Event { get; set; } = null!;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
 }

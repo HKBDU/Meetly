@@ -3,7 +3,7 @@ using Meetly.Repository.Enum;
 
 namespace Meetly.Repository.Entity;
 
-public class Events : BaseEntity
+public class Events : BaseEntity, IAuditableEntity
 {
     public string Title { get; set; } = null!;
     public string URL { get; set; } = null!;
@@ -23,4 +23,6 @@ public class Events : BaseEntity
     public ICollection<EventEmails> Emails { get; set; } = [];
     public ICollection<EventParticipants> Participants { get; set; } = [];
     public ICollection<TimeSlots> TimeSlots { get; set; } = [];
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
 }
