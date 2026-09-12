@@ -1,4 +1,5 @@
 using System.Text;
+using Meetly.API.Extensions;
 using Meetly.API.Middleware;
 using Meetly.Repository;
 using Meetly.Repository.Availability;
@@ -12,11 +13,26 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")
         ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is missing.")));
+
+
+//ết nối database(PostGreSQL)
+builder.Services.AddJwtService(builder.Configuration);
+builder.Services.AddSwaggerServices();
+
+
+//Đăng kí Service (DI)
 builder.Services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
 builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
+
+
 
 var jwtOptions = builder.Configuration.GetSection("JwtOptions");
 var secretKey = jwtOptions["SecretKey"]
