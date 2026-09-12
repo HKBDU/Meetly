@@ -1,6 +1,5 @@
-﻿using Meetly.Contract.DTOs.Events;
-
 using System.Security.Claims;
+using Meetly.Contract.DTOs.Events;
 
 namespace Meetly.Service.SuggestionSlots;
 

@@ -1,4 +1,4 @@
-﻿namespace Meetly.Contract.DTOs.Events;
+namespace Meetly.Contract.DTOs.Events;
 
 public class TimeSlotsSuggestionRequest
 {

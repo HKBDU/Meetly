@@ -1,10 +1,11 @@
-﻿using Meetly.Contract.DTOs.Common;
+using Meetly.Contract.DTOs.Common;
 using Meetly.Contract.DTOs.Events;
 using Meetly.Service.SuggestionSlots;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Meetly.API.Controllers;
+
 [ApiController]
 [Authorize]
 [Route("api/v1/events/{shortCode}/suggestions")]
