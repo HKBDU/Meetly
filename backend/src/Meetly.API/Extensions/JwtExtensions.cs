@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Text;
 using Meetly.Service.JwtService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
