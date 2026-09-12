@@ -1,13 +1,43 @@
+using Meetly.API.Extensions;
+using Meetly.API.Middleware;
+using Meetly.Repository;
+using Meetly.Repository.Availability;
+using Meetly.Repository.SuggestionSlots;
+using Meetly.Service.Availability;
+using Meetly.Service.SuggestionSlots;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is missing.")));
+
+
+//ết nối database(PostGreSQL)
+builder.Services.AddJwtService(builder.Configuration);
+builder.Services.AddSwaggerServices();
+
+
+//Đăng kí Service (DI)
+builder.Services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
+builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
+builder.Services.AddScoped<ISuggestionRepository, SuggestionRepository>();
+builder.Services.AddScoped<ISuggestionService, SuggestionService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -18,6 +48,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
