@@ -5,7 +5,6 @@ import { AvailabilitySelector } from './AvailabilitySelector'
 import { EventTitleField } from './EventTitleField'
 import { EventTypeSelect } from './EventTypeSelect'
 import { TimeRangeFields } from './TimeRangeFields'
-import { TimezoneSelect } from './TimezoneSelect'
 import type { EventFormValues, FieldErrors } from '../types'
 import { validateEventForm } from '../schema'
 
@@ -15,7 +14,7 @@ const INITIAL_VALUES: EventFormValues = {
   title: '',
   timezone: 'Asia/Ho_Chi_Minh',
   eventType: 2,
-  availableDates: ['Monday'],
+  availableDates: ['Mon'],
   dailyStartTime: '09:00',
   dailyEndTime: '17:00',
   adminUsername: '',
@@ -31,6 +30,13 @@ export function EventForm({ compact = false, onCancel, onSubmit }: EventFormProp
     setErrors((current) => ({ ...current, [field]: undefined }))
   }
 
+
+  function changeEventType(eventType: EventFormValues['eventType']) {
+    // Dates and weekdays are different value domains. Do not carry a value
+    // from one mode into the other.
+    setValues((current) => ({ ...current, eventType, availableDates: [] }))
+    setErrors((current) => ({ ...current, eventType: undefined, availableDates: undefined }))
+  }
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const nextErrors = validateEventForm(values)
@@ -43,8 +49,8 @@ export function EventForm({ compact = false, onCancel, onSubmit }: EventFormProp
   return <form className={'event-form' + (compact ? ' event-form--mobile' : '')} onSubmit={submit}>
     <section className="event-form__content">
       <EventTitleField error={errors.title} onChange={(value) => update('title', value)} value={values.title} />
-      <TimezoneSelect onChange={(value) => update('timezone', value)} value={values.timezone} />
-      <EventTypeSelect onChange={(value) => update('eventType', value)} value={values.eventType} />
+
+      <EventTypeSelect onChange={changeEventType} value={values.eventType} />
       <AvailabilitySelector error={errors.availableDates} eventType={values.eventType} onChange={(value) => update('availableDates', value)} value={values.availableDates} />
       <TimeRangeFields end={values.dailyEndTime} error={errors.dailyEndTime} onEndChange={(value) => update('dailyEndTime', value)} onStartChange={(value) => update('dailyStartTime', value)} start={values.dailyStartTime} />
       <AdminCredentialsFields onPasswordChange={(value) => update('adminPassword', value)} onUsernameChange={(value) => update('adminUsername', value)} password={values.adminPassword ?? ''} username={values.adminUsername ?? ''} />
