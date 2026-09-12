@@ -2,7 +2,9 @@ using Meetly.API.Extensions;
 using Meetly.API.Middleware;
 using Meetly.Repository;
 using Meetly.Repository.Availability;
+using Meetly.Repository.SuggestionSlots;
 using Meetly.Service.Availability;
+using Meetly.Service.SuggestionSlots;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +29,8 @@ builder.Services.AddSwaggerServices();
 //Đăng kí Service (DI)
 builder.Services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
 builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
+builder.Services.AddScoped<ISuggestionRepository, SuggestionRepository>();
+builder.Services.AddScoped<ISuggestionService, SuggestionService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
