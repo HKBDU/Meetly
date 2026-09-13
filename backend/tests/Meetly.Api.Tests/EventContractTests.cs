@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Meetly.Contract.DTOs.Events;
+using Meetly.Service.EventScheduling;
 
 namespace Meetly.Api.Tests;
 

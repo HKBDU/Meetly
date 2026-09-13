@@ -1,6 +1,4 @@
 using System.Security.Claims;
-using Meetly.Contract.DTOs.Events;
-using Meetly.Contract.DTOs.Participants;
 
 namespace Meetly.Service.EventScheduling;
 

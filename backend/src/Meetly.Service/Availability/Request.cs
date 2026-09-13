@@ -1,4 +1,10 @@
-namespace Meetly.Contract.DTOs.Participants;
+namespace Meetly.Service.Availability;
+
+public sealed record SetAvailabilityRequest
+{
+    public string? Email { get; init; }
+    public List<TimeSlotsRequest> TimeSlots { get; init; } = [];
+}
 
 public sealed record TimeSlotsRequest
 {

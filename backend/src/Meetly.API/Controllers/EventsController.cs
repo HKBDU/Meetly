@@ -1,6 +1,4 @@
 using Meetly.Contract.DTOs.Common;
-using Meetly.Contract.DTOs.Events;
-using Meetly.Contract.DTOs.Participants;
 using Meetly.Service.EventScheduling;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

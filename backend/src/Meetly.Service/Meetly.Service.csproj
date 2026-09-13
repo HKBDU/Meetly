@@ -3,7 +3,6 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="..\Meetly.Repository\Meetly.Repository.csproj" />
-    <ProjectReference Include="..\Meetly.Contract\Meetly.Contract.csproj" />
   </ItemGroup>
 
   <ItemGroup>
