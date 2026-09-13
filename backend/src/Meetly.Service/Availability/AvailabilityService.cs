@@ -3,16 +3,19 @@ using System.Security.Claims;
 using Meetly.Repository.Availability;
 using Meetly.Repository.Entity;
 using Meetly.Repository.Enum;
+using Meetly.Service.Realtime;
 
 namespace Meetly.Service.Availability;
 
 public sealed class AvailabilityService : IAvailabilityService
 {
     private readonly IAvailabilityRepository _repository;
+    private readonly IEventRealtimeNotifier _notifier;
 
-    public AvailabilityService(IAvailabilityRepository repository)
+    public AvailabilityService(IAvailabilityRepository repository, IEventRealtimeNotifier notifier)
     {
         _repository = repository;
+        _notifier = notifier;
     }
 
     public async Task<long> UpdateAsync(
@@ -58,8 +61,10 @@ public sealed class AvailabilityService : IAvailabilityService
             };
         }).ToArray();
 
-        return await _repository.ReplaceAsync(
+        var revision = await _repository.ReplaceAsync(
             eventEntity, participant, slots, request.Email, cancellationToken);
+        await _notifier.NotifyHeatmapUpdatedAsync(shortCode, revision, cancellationToken);
+        return revision;
     }
 
     private static void ValidateSlot(Events eventEntity, TimeSlotsRequest slot)
