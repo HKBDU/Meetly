@@ -1,5 +1,4 @@
 using Meetly.Contract.DTOs.Common;
-using Meetly.Contract.DTOs.Participants;
 using Meetly.Service.Availability;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

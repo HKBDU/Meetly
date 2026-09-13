@@ -1,6 +1,4 @@
 using Meetly.Contract.DTOs.Common;
-using Meetly.Contract.DTOs.Events;
-using Meetly.Contract.DTOs.Participants;
 using Meetly.Service.EventScheduling;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +11,7 @@ public sealed class EventsController(IEventService service) : ControllerBase
 {
     [HttpPost]
     public async Task<ActionResult<ApiResponse<CreateEventResponse>>> Create(CreateEventRequest request, CancellationToken ct) =>
-        Ok(ApiResponse<CreateEventResponse>.Success(200, "Event created successfully", await service.CreateAsync(request, ct)));
+        StatusCode(StatusCodes.Status201Created, ApiResponse<CreateEventResponse>.Success(201, "Event created successfully", await service.CreateAsync(request, ct)));
 
     [HttpGet("{shortCode}")]
     public async Task<ActionResult<ApiResponse<EventResponse>>> Get(string shortCode, CancellationToken ct) =>
@@ -23,12 +21,10 @@ public sealed class EventsController(IEventService service) : ControllerBase
     public async Task<ActionResult<ApiResponse<ParticipantAccessResponse>>> Access(string shortCode, ParticipantAccessRequest request, CancellationToken ct) =>
         Ok(ApiResponse<ParticipantAccessResponse>.Success(200, "Participant loaded successfully", await service.AccessAsync(shortCode, request, ct)));
 
-    [HttpPost("{shortCode}/participants")]
-    public async Task<ActionResult<ApiResponse<object?>>> Save(string shortCode, SaveParticipantRequest request, CancellationToken ct)
-    {
-        await service.SaveParticipantAsync(shortCode, request, ct);
-        return Ok(ApiResponse<object?>.Success(200, "Availability saved successfully", null));
-    }
+    [Authorize]
+    [HttpGet("{shortCode}/participants/me")]
+    public async Task<ActionResult<ApiResponse<ParticipantMeResponse>>> GetCurrentParticipant(string shortCode, CancellationToken ct) =>
+        Ok(ApiResponse<ParticipantMeResponse>.Success(200, "Participant loaded successfully", await service.GetCurrentParticipantAsync(shortCode, User, ct)));
 
     [Authorize]
     [HttpPost("{shortCode}/finalize")]

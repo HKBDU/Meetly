@@ -1,6 +1,11 @@
-namespace Meetly.Contract.DTOs.Events;
+namespace Meetly.Service.SuggestionSlots;
 
-public class TimeSlotsSuggestionRequest
+public sealed record SuggestionEventResponse
+{
+    public List<TimeSlotsSuggestionRequest>? SuggestedSlots { get; init; } = [];
+}
+
+public sealed record TimeSlotsSuggestionRequest
 {
     public DateOnly? SpecificDate { get; init; }
     public DayOfWeek? DayOfWeek { get; init; }

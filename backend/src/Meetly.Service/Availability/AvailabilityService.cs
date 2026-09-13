@@ -1,6 +1,5 @@
 using System.Net.Mail;
 using System.Security.Claims;
-using Meetly.Contract.DTOs.Participants;
 using Meetly.Repository.Availability;
 using Meetly.Repository.Entity;
 using Meetly.Repository.Enum;

@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using Meetly.Contract.DTOs.Events;
 using Meetly.Repository.Entity;
 using Meetly.Repository.Enum;
 using Meetly.Repository.SuggestionSlots;
