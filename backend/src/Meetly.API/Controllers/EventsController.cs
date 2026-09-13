@@ -30,10 +30,16 @@ public sealed class EventsController(AppDbContext db, IJwtService jwt) : Control
         var code = await NewCode(ct);
         var entity = new Events
         {
-            Id = Guid.NewGuid(), Title = Required(request.Title, "title"), EventType = (EventType)request.EventType,
-            ShortCode = code, URL = $"https://meetly.com/{code}", TimeZone = "Asia/Ho_Chi_Minh",
-            DailyStartTime = request.DailyStartTime, DailyEndTime = request.DailyEndTime,
-            AvailableDates = dates, CreatedAt = DateTimeOffset.UtcNow
+            Id = Guid.NewGuid(),
+            Title = Required(request.Title, "title"),
+            EventType = (EventType)request.EventType,
+            ShortCode = code,
+            URL = $"https://meetly.com/{code}",
+            TimeZone = "Asia/Ho_Chi_Minh",
+            DailyStartTime = request.DailyStartTime,
+            DailyEndTime = request.DailyEndTime,
+            AvailableDates = dates,
+            CreatedAt = DateTimeOffset.UtcNow
         };
         ValidateHours(entity);
         db.Events.Add(entity);
@@ -78,7 +84,10 @@ public sealed class EventsController(AppDbContext db, IJwtService jwt) : Control
         {
             participant = new EventParticipants
             {
-                Id = Guid.NewGuid(), EventId = entity.Id, Username = name, IsAdmin = !entity.Participants.Any(),
+                Id = Guid.NewGuid(),
+                EventId = entity.Id,
+                Username = name,
+                IsAdmin = !entity.Participants.Any(),
                 PasswordHash = string.IsNullOrWhiteSpace(request.Password) ? null : PasswordHasher.HashPassword(null!, request.Password),
                 CreatedAt = DateTimeOffset.UtcNow
             };
@@ -168,15 +177,26 @@ public sealed class EventsController(AppDbContext db, IJwtService jwt) : Control
 
     private static TimeSlots NewSlot(Events entity, EventParticipants participant, DateOnly? date, Meetly.Repository.Enum.DayOfWeek? day, ParticipantTimeSlotRequest request) => new()
     {
-        Id = Guid.NewGuid(), EventId = entity.Id, ParticipantId = participant.Id, SpecificDate = date, DayOfWeek = day,
-        StartTime = request.StartTime, EndTime = request.EndTime, CreatedAt = DateTimeOffset.UtcNow
+        Id = Guid.NewGuid(),
+        EventId = entity.Id,
+        ParticipantId = participant.Id,
+        SpecificDate = date,
+        DayOfWeek = day,
+        StartTime = request.StartTime,
+        EndTime = request.EndTime,
+        CreatedAt = DateTimeOffset.UtcNow
     };
 
     private static EventResponse ToResponse(Events entity) => new()
     {
-        Title = entity.Title, ShortCode = entity.ShortCode, Url = entity.URL, EventType = (int)entity.EventType,
+        Title = entity.Title,
+        ShortCode = entity.ShortCode,
+        Url = entity.URL,
+        EventType = (int)entity.EventType,
         AvailableDates = entity.AvailableDates.Select(x => x.SpecificDate?.ToString("yyyy-MM-dd") ?? x.DayOfWeek!.Value.ToString()).ToList(),
-        DailyStartTime = Format(entity.DailyStartTime), DailyEndTime = Format(entity.DailyEndTime), IsFinalized = entity.Status == EventStatus.Finalized,
+        DailyStartTime = Format(entity.DailyStartTime),
+        DailyEndTime = Format(entity.DailyEndTime),
+        IsFinalized = entity.Status == EventStatus.Finalized,
         FinalStartTime = entity.FinalStartTime is null || entity.FinalDate is null ? null : At(entity.FinalDate.Value, entity.FinalStartTime.Value),
         FinalEndTime = entity.FinalEndTime is null || entity.FinalDate is null ? null : At(entity.FinalDate.Value, entity.FinalEndTime.Value),
         Participants = entity.Participants.Select(x => new EventParticipantResponse(x.Username, x.TimeSlots.Select(y => new EventTimeSlotResponse(
@@ -189,12 +209,12 @@ public sealed class EventsController(AppDbContext db, IJwtService jwt) : Control
     {
         var result = new Dictionary<string, List<string>>();
         foreach (var available in entity.AvailableDates)
-        for (var start = entity.DailyStartTime; start < entity.DailyEndTime; start = start.AddMinutes(30))
-        {
-            var end = start.AddMinutes(30) > entity.DailyEndTime ? entity.DailyEndTime : start.AddMinutes(30);
-            var key = available.SpecificDate is { } date ? At(date, start).ToString("yyyy-MM-ddTHH:mm:sszzz") : $"{available.DayOfWeek}T{start:HH:mm:ss}+07:00";
-            result[key] = entity.Participants.Where(p => p.TimeSlots.Any(s => s.SpecificDate == available.SpecificDate && s.DayOfWeek == available.DayOfWeek && s.StartTime <= start && s.EndTime >= end)).Select(p => p.Username).Order().ToList();
-        }
+            for (var start = entity.DailyStartTime; start < entity.DailyEndTime; start = start.AddMinutes(30))
+            {
+                var end = start.AddMinutes(30) > entity.DailyEndTime ? entity.DailyEndTime : start.AddMinutes(30);
+                var key = available.SpecificDate is { } date ? At(date, start).ToString("yyyy-MM-ddTHH:mm:sszzz") : $"{available.DayOfWeek}T{start:HH:mm:ss}+07:00";
+                result[key] = entity.Participants.Where(p => p.TimeSlots.Any(s => s.SpecificDate == available.SpecificDate && s.DayOfWeek == available.DayOfWeek && s.StartTime <= start && s.EndTime >= end)).Select(p => p.Username).Order().ToList();
+            }
         return result;
     }
 
