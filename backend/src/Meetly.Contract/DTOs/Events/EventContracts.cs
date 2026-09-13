@@ -17,7 +17,24 @@ public sealed record UpdateEventRequest : CreateEventRequest
 
 public sealed record CreateEventResponse(string ShortCode, string Url);
 
-public sealed record FinalizeEventRequest(DateTimeOffset FinalStartTime, DateTimeOffset FinalEndTime);
+public sealed record FinalizeEventRequest
+{
+    public DateOnly? SpecificDate { get; init; }
+    public int? DayOfWeek { get; init; }
+    public TimeOnly StartTime { get; init; }
+    public TimeOnly EndTime { get; init; }
+}
+
+public sealed record FinalizeEventResponse(
+    int Status,
+    FinalScheduleResponse FinalSchedule,
+    long Revision);
+
+public sealed record FinalScheduleResponse(
+    string? SpecificDate,
+    int? DayOfWeek,
+    string StartTime,
+    string EndTime);
 
 public sealed record EventResponse
 {
