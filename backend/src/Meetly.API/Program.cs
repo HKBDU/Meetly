@@ -1,5 +1,6 @@
 using Meetly.API.Extensions;
 using Meetly.API.Middleware;
+using Meetly.API.Serialization;
 using Meetly.Repository;
 using Meetly.Repository.Availability;
 using Meetly.Repository.EventScheduling;
@@ -14,7 +15,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new TimeOnlyJsonConverter()));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
