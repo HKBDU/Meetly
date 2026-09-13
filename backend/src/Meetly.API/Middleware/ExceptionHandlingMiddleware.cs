@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Meetly.API.Controllers;
 using Meetly.Contract.DTOs.Common;
 using Meetly.Service.Availability;
 using Meetly.Service.SuggestionSlots;
@@ -25,6 +26,10 @@ public sealed class ExceptionHandlingMiddleware
             await WriteErrorAsync(context, exception.StatusCode, exception.Message);
         }
         catch (SuggestionException exception)
+        {
+            await WriteErrorAsync(context, exception.StatusCode, exception.Message);
+        }
+        catch (EventException exception)
         {
             await WriteErrorAsync(context, exception.StatusCode, exception.Message);
         }
