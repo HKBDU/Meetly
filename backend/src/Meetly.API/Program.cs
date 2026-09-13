@@ -6,6 +6,7 @@ using Meetly.Repository.EventScheduling;
 using Meetly.Repository.SuggestionSlots;
 using Meetly.Service.Availability;
 using Meetly.Service.EventScheduling;
+using Meetly.Service.JwtService;
 using Meetly.Service.SuggestionSlots;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,6 +34,7 @@ builder.Services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
 builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
 builder.Services.AddScoped<IEventRepository, EventRepository>();
 builder.Services.AddScoped<IEventService, EventService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<ISuggestionRepository, SuggestionRepository>();
 builder.Services.AddScoped<ISuggestionService, SuggestionService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
