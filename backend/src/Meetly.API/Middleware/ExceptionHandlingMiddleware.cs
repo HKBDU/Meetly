@@ -1,7 +1,7 @@
 using System.Text.Json;
-using Meetly.API.Controllers;
 using Meetly.Contract.DTOs.Common;
 using Meetly.Service.Availability;
+using Meetly.Service.EventScheduling;
 using Meetly.Service.SuggestionSlots;
 
 namespace Meetly.API.Middleware;
