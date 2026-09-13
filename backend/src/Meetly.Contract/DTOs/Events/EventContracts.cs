@@ -25,7 +25,8 @@ public sealed record UpdateEventRequest
     public string? AdminPassword { get; init; }
     public string Title { get; init; } = string.Empty;
     public int EventType { get; init; }
-    public List<string> AvailableDates { get; init; } = [];
+    public List<DateOnly> AvailableDates { get; init; } = [];
+    public List<DayOfWeek> AvailableWeekdays { get; init; } = [];
     public TimeOnly DailyStartTime { get; init; }
     public TimeOnly DailyEndTime { get; init; }
 }
@@ -42,7 +43,15 @@ public sealed record CreateEventResponse
     public long Revision { get; init; }
 }
 
-public sealed record FinalizeEventRequest(DateTimeOffset FinalStartTime, DateTimeOffset FinalEndTime);
+public sealed record FinalizeEventRequest
+{
+    public DateOnly? SpecificDate { get; init; }
+    public int? DayOfWeek { get; init; }
+    public TimeOnly StartTime { get; init; }
+    public TimeOnly EndTime { get; init; }
+}
+
+public sealed record FinalizeEventResponse(int Status, FinalScheduleResponse FinalSchedule, long Revision);
 
 public sealed record EventResponse
 {
@@ -65,4 +74,4 @@ public sealed record EventResponse
 
 public sealed record EventParticipantResponse(string Username);
 public sealed record HeatmapCellResponse(DateOnly? SpecificDate, DayOfWeek? DayOfWeek, string StartTime, List<string> Participants, int Count);
-public sealed record FinalScheduleResponse(DateOnly? SpecificDate, DayOfWeek? DayOfWeek, string StartTime, string EndTime);
+public sealed record FinalScheduleResponse(string? SpecificDate, int? DayOfWeek, string StartTime, string EndTime);
