@@ -11,5 +11,5 @@ public class JwtOptions
     [Required]
     public string SecretKey { get; set; } = string.Empty;
     [Required]
-    public int ExpiresMinutes { get; set; }
+    public int ExpirationMinutes { get; set; }
 }

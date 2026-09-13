@@ -28,7 +28,7 @@ public class JwtService : IJwtService
             issuer: _jwtOptions.Issuer, // token này được kí/ tạo ra bởi ai, tổ chức nào
             audience: _jwtOptions.Audience, // token này dành cho ai, tổ chức nào
             claims: claims,                 //những thông tin muốn lưu trữ trong token
-            expires: DateTime.Now.AddMinutes(_jwtOptions.ExpiresMinutes), //token sẽ het han sau bao phut
+            expires: DateTime.UtcNow.AddMinutes(_jwtOptions.ExpirationMinutes), //token sẽ het han sau bao phut
             signingCredentials: signingCredentials
         );
 
