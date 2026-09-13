@@ -5,11 +5,12 @@ using Meetly.Repository.Entity;
 using Meetly.Repository.Enum;
 using Meetly.Repository.EventScheduling;
 using Meetly.Service.JwtService;
+using Meetly.Service.Realtime;
 using Microsoft.AspNetCore.Identity;
 
 namespace Meetly.Service.EventScheduling;
 
-public sealed class EventService(IEventRepository repository, IJwtService jwt) : IEventService
+public sealed class EventService(IEventRepository repository, IJwtService jwt, IEventRealtimeNotifier notifier) : IEventService
 {
     private const string Alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static readonly TimeSpan VietnamOffset = TimeSpan.FromHours(7);
@@ -127,7 +128,7 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt) :
         entity.Revision++;
         entity.UpdatedAt = DateTimeOffset.UtcNow;
         await repository.SaveChangesAsync(cancellationToken);
-        return new FinalizeEventResponse(
+        var response = new FinalizeEventResponse(
             (int)entity.Status,
             new FinalScheduleResponse(
                 entity.FinalDate?.ToString("yyyy-MM-dd"),
@@ -135,6 +136,8 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt) :
                 Format(entity.FinalStartTime!.Value),
                 Format(entity.FinalEndTime!.Value)),
             entity.Revision);
+        await notifier.NotifyEventFinalizedAsync(shortCode, response, cancellationToken);
+        return response;
     }
 
     public async Task UpdateAsync(string shortCode, UpdateEventRequest request, CancellationToken cancellationToken)
@@ -155,6 +158,7 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt) :
         entity.Revision++;
         entity.UpdatedAt = DateTimeOffset.UtcNow;
         await repository.SaveChangesAsync(cancellationToken);
+        await notifier.NotifyEventUpdatedAsync(shortCode, entity.Revision, cancellationToken);
     }
 
     private async Task<Events> GetEventAsync(string shortCode, CancellationToken cancellationToken) =>
