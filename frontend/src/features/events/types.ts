@@ -28,4 +28,13 @@ export type CreateEventRequest = {
   admin: { username: string; password: string | null }
 }
 
+export type UpdateEventRequest = Omit<CreateEventRequest, 'admin'>
+
+export type UpdateEventResponse = {
+  isSuccess: boolean
+  code: number
+  message: string
+  value: { revision: number }
+}
+
 export type FieldErrors = Partial<Record<keyof EventFormValues, string>>

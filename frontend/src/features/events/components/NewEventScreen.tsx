@@ -2,8 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { CalendarDays, X } from 'lucide-react'
 import { AdminCredentialsFields } from './AdminCredentialsFields'
 import { EventForm } from './EventForm'
-import { createEvent } from '../services'
-import type { CreateEventResponse } from '../types'
+import { createEvent, updateEvent } from '../services'
+import type { CreateEventResponse, EventFormValues } from '../types'
 
 type EventStep = 'credentials' | 'event'
 
@@ -15,7 +15,8 @@ export function NewEventScreen() {
   const [credentialsError, setCredentialsError] = useState<string>()
   const [createError, setCreateError] = useState<string>()
   const [isCreating, setIsCreating] = useState(false)
-  const [createdEvent, setCreatedEvent] = useState<CreateEventResponse['value']>()
+  const [createdEvent, setCreatedEvent] = useState<CreateEventResponse['value']>(null)
+  const [createdValues, setCreatedValues] = useState<EventFormValues>()
 
   function continueToEvent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -33,6 +34,7 @@ export function NewEventScreen() {
     try {
       const response = await createEvent(values)
       setCreatedEvent(response.value)
+      setCreatedValues(values)
     } catch (error) {
       setCreateError(error instanceof Error ? error.message : 'Unable to create event.')
     } finally {
@@ -40,7 +42,7 @@ export function NewEventScreen() {
     }
   }
 
-  if (createdEvent) return <EventManagementScreen event={createdEvent} />
+  if (createdEvent && createdValues) return <EventManagementScreen event={createdEvent} values={createdValues} />
   if (!isOpen) return <button className="reopen-button" onClick={() => setIsOpen(true)} type="button">Open new event</button>
 
   return <div className="app-shell">
@@ -65,9 +67,44 @@ function CredentialsStep({ compact = false, username, password, error, onUsernam
   </form>
 }
 
-function EventManagementScreen({ event }: { event: NonNullable<CreateEventResponse['value']> }) {
+function EventManagementScreen({ event, values }: { event: NonNullable<CreateEventResponse['value']>; values: EventFormValues }) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [pendingValues, setPendingValues] = useState<EventFormValues>()
+  const [showWarning, setShowWarning] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [currentValues, setCurrentValues] = useState(values)
+  const [currentRevision, setCurrentRevision] = useState(event.revision)
+  const [updateError, setUpdateError] = useState<string>()
+
+  async function confirmUpdate() {
+    if (!pendingValues || !event.isAdmin || !event.accessToken) return
+    setIsUpdating(true)
+    setUpdateError(undefined)
+    try {
+      const response = await updateEvent(event.shortCode, pendingValues, event.accessToken)
+      setCurrentValues(pendingValues)
+      setCurrentRevision(response.revision)
+      setShowWarning(false)
+      setIsEditing(false)
+    } catch (error) {
+      setUpdateError(error instanceof Error ? error.message : 'Unable to update event.')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  if (isEditing) return <div className="app-shell">
+    <div className="mobile-screen"><header className="screen-header"><div className="brand"><span className="brand__icon"><CalendarDays size={18} /></span><span>Meetly</span></div></header><h1 className="mobile-title">Edit Event</h1><EventForm adminPassword={currentValues.adminPassword ?? ''} adminUsername={currentValues.adminUsername ?? ''} compact error={updateError} initialValues={currentValues} onCancel={() => setIsEditing(false)} onSubmit={(nextValues) => { setPendingValues(nextValues); setShowWarning(true) }} submitLabel="Save Changes" submitting={isUpdating} /></div>
+    <div className="desktop-screen"><header className="site-header"><div className="brand"><span className="brand__icon"><CalendarDays size={18} /></span><span>Meetly</span></div></header><main className="event-page"><h1>Edit Event</h1><div className="desktop-dialog"><EventForm adminPassword={currentValues.adminPassword ?? ''} adminUsername={currentValues.adminUsername ?? ''} error={updateError} initialValues={currentValues} onCancel={() => setIsEditing(false)} onSubmit={(nextValues) => { setPendingValues(nextValues); setShowWarning(true) }} submitLabel="Save Changes" submitting={isUpdating} /></div></main></div>
+    {showWarning && <UpdateWarning isUpdating={isUpdating} onCancel={() => setShowWarning(false)} onConfirm={confirmUpdate} />}
+  </div>
+
   return <div className="management-screen">
     <header className="site-header"><div className="brand"><span className="brand__icon"><CalendarDays size={18} /></span><span>Meetly</span></div></header>
-    <main className="event-page"><h1>Manage Event</h1><section className="management-card"><p className="management-card__success">Event created successfully.</p><dl><div><dt>Event ID</dt><dd>{event.shortCode}</dd></div><div><dt>Revision</dt><dd>{event.revision}</dd></div></dl><a className="button button--primary management-card__link" href={event.url}>Open event</a></section></main>
+    <main className="event-page"><h1>Manage Event</h1><section className="management-card"><p className="management-card__success">Event created successfully.</p><dl><div><dt>Event name</dt><dd>{currentValues.title}</dd></div><div><dt>Event ID</dt><dd>{event.shortCode}</dd></div><div><dt>Revision</dt><dd>{currentRevision}</dd></div></dl>{event.isAdmin && <button className="button button--primary management-card__edit" onClick={() => { setUpdateError(undefined); setIsEditing(true) }} type="button">Edit Event</button>}<a className="button button--primary management-card__link" href={event.url}>Open event</a></section></main>
   </div>
+}
+
+function UpdateWarning({ isUpdating, onCancel, onConfirm }: { isUpdating: boolean; onCancel: () => void; onConfirm: () => void }) {
+  return <div className="update-warning__backdrop" role="presentation"><section aria-labelledby="update-warning-title" aria-modal="true" className="update-warning" role="dialog"><h2 id="update-warning-title">Save event changes?</h2><p>Changing the event configuration may affect the availability data already entered by participants.</p><div className="update-warning__actions"><button className="button button--secondary" onClick={onCancel} type="button">Cancel</button><button className="button button--primary" disabled={isUpdating} onClick={onConfirm} type="button">{isUpdating ? 'Saving...' : 'Confirm changes'}</button></div></section></div>
 }

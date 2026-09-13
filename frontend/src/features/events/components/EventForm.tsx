@@ -7,7 +7,7 @@ import { TimeRangeFields } from './TimeRangeFields'
 import type { EventFormValues, FieldErrors } from '../types'
 import { validateEventForm } from '../schema'
 
-type EventFormProps = { compact?: boolean; onCancel?: () => void; onSubmit?: (values: EventFormValues) => void | Promise<void>; adminUsername: string; adminPassword: string; submitting?: boolean; error?: string }
+type EventFormProps = { compact?: boolean; onCancel?: () => void; onSubmit?: (values: EventFormValues) => void | Promise<void>; adminUsername: string; adminPassword: string; submitting?: boolean; error?: string; initialValues?: Partial<EventFormValues>; submitLabel?: string }
 
 const INITIAL_VALUES: EventFormValues = {
   title: '',
@@ -18,8 +18,8 @@ const INITIAL_VALUES: EventFormValues = {
   dailyEndTime: '17:00',
 }
 
-export function EventForm({ compact = false, onCancel, onSubmit, adminUsername, adminPassword, submitting = false, error }: EventFormProps) {
-  const [values, setValues] = useState<EventFormValues>({ ...INITIAL_VALUES, adminUsername, adminPassword })
+export function EventForm({ compact = false, onCancel, onSubmit, adminUsername, adminPassword, submitting = false, error, initialValues, submitLabel }: EventFormProps) {
+  const [values, setValues] = useState<EventFormValues>({ ...INITIAL_VALUES, ...initialValues, adminUsername, adminPassword })
   const [errors, setErrors] = useState<FieldErrors>({})
 
   function update<K extends keyof EventFormValues>(field: K, value: EventFormValues[K]) {
@@ -52,6 +52,6 @@ export function EventForm({ compact = false, onCancel, onSubmit, adminUsername, 
       <TimeRangeFields end={values.dailyEndTime} error={errors.dailyEndTime} onEndChange={(value) => update('dailyEndTime', value)} onStartChange={(value) => update('dailyStartTime', value)} start={values.dailyStartTime} />
     </section>
     {error && <div className="form-submit-error" role="alert">{error}</div>}
-    <EventFormActions onCancel={onCancel ?? (() => undefined)} submitting={submitting} />
+    <EventFormActions onCancel={onCancel ?? (() => undefined)} submitLabel={submitLabel} submitting={submitting} />
   </form>
 }
