@@ -116,7 +116,7 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt) :
             ?? throw new EventException(403, "Admin credentials are invalid.");
         Verify(admin, request.AdminPassword);
         if (entity.Status != EventStatus.Open) throw new EventException(409, "Event is finalized.");
-        
+
         entity.Title = Required(request.Title, "title");
         entity.EventType = (EventType)request.EventType;
         entity.DailyStartTime = request.DailyStartTime;
