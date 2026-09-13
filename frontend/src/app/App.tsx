@@ -1,4 +1,18 @@
+import { lazy, Suspense } from 'react'
+
+const HeatmapDemoPage = import.meta.env.DEV
+  ? lazy(() => import('@/features/heatmap/pages/HeatmapDemoPage'))
+  : null
+
 export default function App() {
+  if (HeatmapDemoPage) {
+    return (
+      <Suspense fallback={<p role="status" className="p-8 text-center">Loading heatmap…</p>}>
+        <HeatmapDemoPage />
+      </Suspense>
+    )
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-6 text-slate-800">
       <div className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-8 shadow-sm text-center">
