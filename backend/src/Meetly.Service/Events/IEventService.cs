@@ -10,6 +10,6 @@ public interface IEventService
     Task<EventResponse> GetAsync(string shortCode, CancellationToken cancellationToken);
     Task<ParticipantAccessResponse> AccessAsync(string shortCode, ParticipantAccessRequest request, CancellationToken cancellationToken);
     Task SaveParticipantAsync(string shortCode, SaveParticipantRequest request, CancellationToken cancellationToken);
-    Task FinalizeAsync(string shortCode, ClaimsPrincipal user, FinalizeEventRequest request, CancellationToken cancellationToken);
+    Task<FinalizeEventResponse> FinalizeAsync(string shortCode, ClaimsPrincipal user, FinalizeEventRequest request, CancellationToken cancellationToken);
     Task UpdateAsync(string shortCode, UpdateEventRequest request, CancellationToken cancellationToken);
 }

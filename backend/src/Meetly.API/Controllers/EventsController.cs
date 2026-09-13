@@ -32,11 +32,8 @@ public sealed class EventsController(IEventService service) : ControllerBase
 
     [Authorize]
     [HttpPost("{shortCode}/finalize")]
-    public async Task<ActionResult<ApiResponse<object?>>> Finalize(string shortCode, FinalizeEventRequest request, CancellationToken ct)
-    {
-        await service.FinalizeAsync(shortCode, User, request, ct);
-        return Ok(ApiResponse<object?>.Success(200, "Event finalized successfully", null));
-    }
+    public async Task<ActionResult<ApiResponse<FinalizeEventResponse>>> Finalize(string shortCode, FinalizeEventRequest request, CancellationToken ct) =>
+        Ok(ApiResponse<FinalizeEventResponse>.Success(200, "Event finalized successfully", await service.FinalizeAsync(shortCode, User, request, ct)));
 
     [HttpPut("{shortCode}")]
     public async Task<ActionResult<ApiResponse<object?>>> Update(string shortCode, UpdateEventRequest request, CancellationToken ct)

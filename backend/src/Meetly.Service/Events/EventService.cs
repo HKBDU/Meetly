@@ -14,8 +14,8 @@ namespace Meetly.Service.EventScheduling;
 public sealed class EventService(IEventRepository repository, IJwtService jwt) : IEventService
 {
     private const string Alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    private static readonly PasswordHasher<EventParticipants> PasswordHasher = new();
     private static readonly TimeSpan VietnamOffset = TimeSpan.FromHours(7);
+    private static readonly PasswordHasher<EventParticipants> PasswordHasher = new();
 
     public async Task<CreateEventResponse> CreateAsync(CreateEventRequest request, CancellationToken cancellationToken)
     {
@@ -88,24 +88,35 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt) :
         await repository.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task FinalizeAsync(string shortCode, ClaimsPrincipal user, FinalizeEventRequest request, CancellationToken cancellationToken)
+    public async Task<FinalizeEventResponse> FinalizeAsync(string shortCode, ClaimsPrincipal user, FinalizeEventRequest request, CancellationToken cancellationToken)
     {
         var entity = await GetEventAsync(shortCode, cancellationToken);
         RequireAdmin(entity, user);
         if (entity.Status != EventStatus.Open) throw new EventException(409, "Event is already finalized.");
-        SetFinalTime(entity, request.FinalStartTime, request.FinalEndTime);
+        SetFinalTime(entity, request);
         entity.Status = EventStatus.Finalized;
+        entity.Revision++;
         entity.UpdatedAt = DateTimeOffset.UtcNow;
         await repository.SaveChangesAsync(cancellationToken);
+        return new FinalizeEventResponse(
+            (int)entity.Status,
+            new FinalScheduleResponse(
+                entity.FinalDate?.ToString("yyyy-MM-dd"),
+                entity.FinalDayOfWeek is null ? null : (int)entity.FinalDayOfWeek.Value,
+                Format(entity.FinalStartTime!.Value),
+                Format(entity.FinalEndTime!.Value)),
+            entity.Revision);
     }
 
     public async Task UpdateAsync(string shortCode, UpdateEventRequest request, CancellationToken cancellationToken)
     {
         var entity = await GetEventAsync(shortCode, cancellationToken);
-        var admin = entity.Participants.SingleOrDefault(x => x.IsAdmin && string.Equals(x.Username, Required(request.AdminUsername, "adminUsername"), StringComparison.OrdinalIgnoreCase))
+        var admin = entity.Participants
+                        .SingleOrDefault(x => x.IsAdmin && string.Equals(x.Username, Required(request.AdminUsername, "adminUsername"), StringComparison.OrdinalIgnoreCase))
             ?? throw new EventException(403, "Admin credentials are invalid.");
         Verify(admin, request.AdminPassword);
         if (entity.Status != EventStatus.Open) throw new EventException(409, "Event is finalized.");
+
         entity.Title = Required(request.Title, "title");
         entity.EventType = (EventType)request.EventType;
         entity.DailyStartTime = request.DailyStartTime;
@@ -201,12 +212,37 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt) :
         var value = user.FindFirstValue("participantId");
         if (!Guid.TryParse(value, out var id) || !entity.Participants.Any(x => x.Id == id && x.IsAdmin)) throw new EventException(403, "Admin access is required.");
     }
-    private static void SetFinalTime(Events entity, DateTimeOffset start, DateTimeOffset end)
+    private static void SetFinalTime(Events entity, FinalizeEventRequest request)
     {
-        if (start.Offset != VietnamOffset || end.Offset != VietnamOffset || start.Date != end.Date || start >= end) throw new EventException(422, "Final time is invalid.");
-        var date = DateOnly.FromDateTime(start.DateTime); var from = TimeOnly.FromDateTime(start.DateTime); var to = TimeOnly.FromDateTime(end.DateTime);
-        if (from < entity.DailyStartTime || to > entity.DailyEndTime || (entity.EventType == EventType.Dates && !entity.AvailableDates.Any(x => x.SpecificDate == date)) || (entity.EventType == EventType.Weekdays && !entity.AvailableDates.Any(x => x.DayOfWeek == (Meetly.Repository.Enum.DayOfWeek)(int)start.DayOfWeek))) throw new EventException(422, "Final time does not belong to the event.");
-        entity.FinalDate = date; entity.FinalDayOfWeek = entity.EventType == EventType.Weekdays ? (Meetly.Repository.Enum.DayOfWeek)(int)start.DayOfWeek : null; entity.FinalStartTime = from; entity.FinalEndTime = to;
+        if (request.StartTime >= request.EndTime)
+            throw new EventException(422, "startTime must be before endTime.");
+        if (request.StartTime < entity.DailyStartTime || request.EndTime > entity.DailyEndTime)
+            throw new EventException(422, "Final time is outside the event hours.");
+
+        if (entity.EventType == EventType.Dates)
+        {
+            if (request.SpecificDate is null || request.DayOfWeek is not null)
+                throw new EventException(422, "Dates event requires specificDate only.");
+            if (!entity.AvailableDates.Any(x => x.SpecificDate == request.SpecificDate))
+                throw new EventException(422, "specificDate does not belong to the event.");
+
+            entity.FinalDate = request.SpecificDate;
+            entity.FinalDayOfWeek = null;
+        }
+        else
+        {
+            if (request.SpecificDate is not null || request.DayOfWeek is null || request.DayOfWeek is < 0 or > 6)
+                throw new EventException(422, "Weekdays event requires a valid dayOfWeek only.");
+            var day = (Meetly.Repository.Enum.DayOfWeek)request.DayOfWeek.Value;
+            if (!entity.AvailableDates.Any(x => x.DayOfWeek == day))
+                throw new EventException(422, "dayOfWeek does not belong to the event.");
+
+            entity.FinalDate = null;
+            entity.FinalDayOfWeek = day;
+        }
+
+        entity.FinalStartTime = request.StartTime;
+        entity.FinalEndTime = request.EndTime;
     }
     private static DateTimeOffset At(DateOnly date, TimeOnly time) => new(date.ToDateTime(time), VietnamOffset);
     private static string Format(TimeOnly time) => time.ToString("HH:mm");
