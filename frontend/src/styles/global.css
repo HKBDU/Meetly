@@ -1,1 +1,126 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Gần như vuông theo ảnh mẫu, bo nhẹ (~10%) theo yêu cầu mới nhất - 5%
+     trước đó (0.2rem) quá nhẹ, gần như không thấy được */
+  --radius: 0.4rem;
+
+  /* Nền trang có sắc xanh lá rất nhạt, card giữ trắng để nổi bật */
+  --background: hsl(140 40% 98%);
+  --foreground: hsl(150 20% 12%);
+
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(150 20% 12%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(150 20% 12%);
+
+  /* Xanh lá TƯƠI/SÁNG (khớp ảnh mẫu - trước đây quá tối/trầm) - dùng cho
+     logo, header/footer, nút chính, active state */
+  --primary: hsl(120 65% 50%);
+  --primary-foreground: hsl(0 0% 100%);
+
+  /* Xanh lá nhạt - dùng cho badge, chip, vùng nhấn nhẹ */
+  --secondary: hsl(142 45% 93%);
+  --secondary-foreground: hsl(142 70% 18%);
+
+  --muted: hsl(140 25% 95%);
+  --muted-foreground: hsl(150 12% 42%);
+
+  --accent: hsl(142 50% 90%);
+  --accent-foreground: hsl(142 70% 18%);
+
+  --destructive: hsl(0 72% 51%);
+  --destructive-foreground: hsl(0 0% 100%);
+
+  --border: hsl(142 25% 88%);
+  --input: hsl(142 25% 88%);
+  --ring: hsl(120 65% 50%);
+
+  --chart-1: hsl(120 65% 50%);
+  --chart-2: hsl(142 50% 58%);
+  --chart-3: hsl(142 30% 75%);
+  --chart-4: hsl(45 90% 55%);
+  --chart-5: hsl(0 72% 51%);
+}
+
+.dark {
+  --background: hsl(150 18% 8%);
+  --foreground: hsl(140 25% 95%);
+
+  --card: hsl(150 16% 11%);
+  --card-foreground: hsl(140 25% 95%);
+  --popover: hsl(150 16% 11%);
+  --popover-foreground: hsl(140 25% 95%);
+
+  --primary: hsl(120 65% 50%);
+  --primary-foreground: hsl(0 0% 100%);
+
+  --secondary: hsl(150 15% 16%);
+  --secondary-foreground: hsl(140 30% 90%);
+
+  --muted: hsl(150 15% 16%);
+  --muted-foreground: hsl(140 12% 65%);
+
+  --accent: hsl(150 20% 20%);
+  --accent-foreground: hsl(140 30% 92%);
+
+  --destructive: hsl(0 65% 55%);
+  --destructive-foreground: hsl(0 0% 100%);
+
+  --border: hsl(150 15% 20%);
+  --input: hsl(150 15% 20%);
+  --ring: hsl(120 65% 50%);
+
+  --chart-1: hsl(120 65% 50%);
+  --chart-2: hsl(142 40% 60%);
+  --chart-3: hsl(142 25% 40%);
+  --chart-4: hsl(45 80% 55%);
+  --chart-5: hsl(0 65% 55%);
+}
+
+@theme inline {
+  /* Roboto - đúng font family dùng trong Figma design (xem ma-mau-reference.png) */
+  --font-sans: "Roboto", ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
