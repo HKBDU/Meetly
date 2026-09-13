@@ -1,4 +1,4 @@
-using System.Net.Mail;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Meetly.Contract.DTOs.Events;
@@ -19,7 +19,6 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt) :
 
     public async Task<CreateEventResponse> CreateAsync(CreateEventRequest request, CancellationToken cancellationToken)
     {
-        var dates = ParseDates(request);
         var code = await NewCode(cancellationToken);
         var entity = new Events
         {
@@ -31,13 +30,34 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt) :
             TimeZone = "Asia/Ho_Chi_Minh",
             DailyStartTime = request.DailyStartTime,
             DailyEndTime = request.DailyEndTime,
-            AvailableDates = dates,
+            AvailableDates = ParseCreateDates(request),
             CreatedAt = DateTimeOffset.UtcNow
         };
         ValidateHours(entity);
+        var admin = new EventParticipants
+        {
+            Id = Guid.NewGuid(),
+            EventId = entity.Id,
+            Username = Required(request.Admin.Username, "admin.username"),
+            IsAdmin = true,
+            PasswordHash = string.IsNullOrWhiteSpace(request.Admin.Password) ? null : PasswordHasher.HashPassword(null!, request.Admin.Password),
+            CreatedAt = DateTimeOffset.UtcNow
+        };
         repository.Add(entity);
+        repository.Add(admin);
         await repository.SaveChangesAsync(cancellationToken);
-        return new CreateEventResponse(code, entity.URL);
+        var access = IssueToken(entity, admin);
+        return new CreateEventResponse
+        {
+            ShortCode = code,
+            Url = entity.URL,
+            ParticipantId = admin.Id,
+            IsAdmin = true,
+            AccessToken = access.Token,
+            ExpiresAt = access.ExpiresAt,
+            Status = (int)entity.Status,
+            Revision = entity.Revision
+        };
     }
 
     public async Task<EventResponse> GetAsync(string shortCode, CancellationToken cancellationToken) =>
@@ -46,25 +66,9 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt) :
     public async Task<ParticipantAccessResponse> AccessAsync(string shortCode, ParticipantAccessRequest request, CancellationToken cancellationToken)
     {
         var entity = await GetEventAsync(shortCode, cancellationToken);
-        var participant = entity.Participants.SingleOrDefault(x => string.Equals(x.Username, Required(request.Username, "username"), StringComparison.OrdinalIgnoreCase));
-        if (participant is null) return new ParticipantAccessResponse(false, null, []);
-        Verify(participant, request.Password);
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, participant.Id.ToString()), new Claim("participantId", participant.Id.ToString()),
-            new Claim("isAdmin", participant.IsAdmin.ToString().ToLowerInvariant()),
-            new Claim(ClaimTypes.Role, participant.IsAdmin ? "Admin" : "User")
-        };
-        return new ParticipantAccessResponse(participant.IsAdmin, jwt.GenerateAccessToken(claims), participant.TimeSlots.Select(ToParticipantSlot).ToList());
-    }
-
-    public async Task SaveParticipantAsync(string shortCode, SaveParticipantRequest request, CancellationToken cancellationToken)
-    {
-        var entity = await GetEventAsync(shortCode, cancellationToken);
-        if (entity.Status != EventStatus.Open) throw new EventException(409, "Event is finalized.");
-        ValidateEmail(request.Email);
         var name = Required(request.Username, "username");
         var participant = entity.Participants.SingleOrDefault(x => string.Equals(x.Username, name, StringComparison.OrdinalIgnoreCase));
+        var isNew = participant is null;
         if (participant is null)
         {
             participant = new EventParticipants
@@ -72,20 +76,47 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt) :
                 Id = Guid.NewGuid(),
                 EventId = entity.Id,
                 Username = name,
-                IsAdmin = !entity.Participants.Any(),
                 PasswordHash = string.IsNullOrWhiteSpace(request.Password) ? null : PasswordHasher.HashPassword(null!, request.Password),
+                IsAdmin = false,
                 CreatedAt = DateTimeOffset.UtcNow
             };
             repository.Add(participant);
+            await repository.SaveChangesAsync(cancellationToken);
         }
         else Verify(participant, request.Password);
 
-        repository.ReplaceSlots(participant, request.TimeSlots.Select(x => ToSlot(entity, participant, x)));
-        if (!string.IsNullOrWhiteSpace(request.Email) && !await repository.EmailExistsAsync(entity.Id, request.Email.Trim(), cancellationToken))
-            repository.Add(new EventEmails { Id = Guid.NewGuid(), EventId = entity.Id, Email = request.Email.Trim(), CreatedAt = DateTimeOffset.UtcNow });
-        entity.Revision++;
-        entity.UpdatedAt = DateTimeOffset.UtcNow;
-        await repository.SaveChangesAsync(cancellationToken);
+        var access = IssueToken(entity, participant);
+        return new ParticipantAccessResponse
+        {
+            ParticipantId = participant.Id,
+            Username = participant.Username,
+            IsAdmin = participant.IsAdmin,
+            IsNewParticipant = isNew,
+            AccessToken = access.Token,
+            ExpiresAt = access.ExpiresAt,
+            EventStatus = (int)entity.Status,
+            Revision = entity.Revision,
+            TimeSlots = participant.TimeSlots.Select(ToParticipantSlot).ToList()
+        };
+    }
+
+    public async Task<ParticipantMeResponse> GetCurrentParticipantAsync(string shortCode, ClaimsPrincipal user, CancellationToken cancellationToken)
+    {
+        var entity = await GetEventAsync(shortCode, cancellationToken);
+        var id = user.FindFirstValue("participantId");
+        if (!Guid.TryParse(id, out var participantId) || user.FindFirstValue("eventId") != entity.Id.ToString())
+            throw new EventException(403, "Token does not belong to this event.");
+        var participant = entity.Participants.SingleOrDefault(x => x.Id == participantId)
+            ?? throw new EventException(404, "Participant not found.");
+        return new ParticipantMeResponse
+        {
+            ParticipantId = participant.Id,
+            Username = participant.Username,
+            IsAdmin = participant.IsAdmin,
+            TimeSlots = participant.TimeSlots.Select(ToParticipantSlot).ToList(),
+            EventStatus = (int)entity.Status,
+            Revision = entity.Revision
+        };
     }
 
     public async Task FinalizeAsync(string shortCode, ClaimsPrincipal user, FinalizeEventRequest request, CancellationToken cancellationToken)
@@ -111,7 +142,7 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt) :
         entity.DailyStartTime = request.DailyStartTime;
         entity.DailyEndTime = request.DailyEndTime;
         ValidateHours(entity);
-        repository.ReplaceAvailableDates(entity, ParseDates(request));
+        repository.ReplaceAvailableDates(entity, ParseUpdateDates(request));
         entity.Revision++;
         entity.UpdatedAt = DateTimeOffset.UtcNow;
         await repository.SaveChangesAsync(cancellationToken);
@@ -128,7 +159,29 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt) :
         return code;
     }
 
-    private static List<EventAvailableDates> ParseDates(CreateEventRequest request)
+    private (string Token, DateTimeOffset ExpiresAt) IssueToken(Events entity, EventParticipants participant)
+    {
+        var token = jwt.GenerateAccessToken(
+        [
+            new Claim(ClaimTypes.NameIdentifier, participant.Id.ToString()), new Claim("participantId", participant.Id.ToString()),
+            new Claim("eventId", entity.Id.ToString()), new Claim("shortCode", entity.ShortCode),
+            new Claim("isAdmin", participant.IsAdmin.ToString().ToLowerInvariant()),
+            new Claim(ClaimTypes.Role, participant.IsAdmin ? "Admin" : "User")
+        ]);
+        var expiresAt = new DateTimeOffset(new JwtSecurityTokenHandler().ReadJwtToken(token).ValidTo, TimeSpan.Zero).ToOffset(VietnamOffset);
+        return (token, expiresAt);
+    }
+
+    private static List<EventAvailableDates> ParseCreateDates(CreateEventRequest request)
+    {
+        if (request.EventType == (int)EventType.Dates && request.AvailableDates.Count > 0 && request.AvailableWeekdays.Count == 0)
+            return request.AvailableDates.Distinct().Select(date => new EventAvailableDates { Id = Guid.NewGuid(), SpecificDate = date, CreatedAt = DateTimeOffset.UtcNow }).ToList();
+        if (request.EventType == (int)EventType.Weekdays && request.AvailableDates.Count == 0 && request.AvailableWeekdays.Count > 0 && request.AvailableWeekdays.All(day => (int)day is >= 0 and <= 6))
+            return request.AvailableWeekdays.Distinct().Select(day => new EventAvailableDates { Id = Guid.NewGuid(), DayOfWeek = (Meetly.Repository.Enum.DayOfWeek)(int)day, CreatedAt = DateTimeOffset.UtcNow }).ToList();
+        throw new EventException(422, "Event dates and weekdays are invalid.");
+    }
+
+    private static List<EventAvailableDates> ParseUpdateDates(UpdateEventRequest request)
     {
         if (request.EventType is not ((int)EventType.Dates or (int)EventType.Weekdays) || request.AvailableDates.Count == 0)
             throw new EventException(422, "eventType and availableDates are invalid.");
@@ -139,63 +192,41 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt) :
             : values.Select(x => Enum.TryParse<System.DayOfWeek>(x, true, out var day) ? new EventAvailableDates { Id = Guid.NewGuid(), DayOfWeek = (Meetly.Repository.Enum.DayOfWeek)(int)day, CreatedAt = DateTimeOffset.UtcNow } : throw new EventException(422, "availableDates must contain weekday names.")).ToList();
     }
 
-    private static TimeSlots ToSlot(Events entity, EventParticipants participant, ParticipantTimeSlotRequest request)
-    {
-        if (request.StartTime >= request.EndTime || request.StartTime < entity.DailyStartTime || request.EndTime > entity.DailyEndTime)
-            throw new EventException(422, "Time slot is outside the event hours.");
-        if (string.IsNullOrWhiteSpace(request.Date) == string.IsNullOrWhiteSpace(request.Weekday))
-            throw new EventException(422, "A time slot requires exactly one date or weekday.");
-        if (DateOnly.TryParse(request.Date, out var date) && entity.EventType == EventType.Dates && entity.AvailableDates.Any(x => x.SpecificDate == date))
-            return NewSlot(entity, participant, date, null, request);
-        if (Enum.TryParse<System.DayOfWeek>(request.Weekday, true, out var day) && entity.EventType == EventType.Weekdays && entity.AvailableDates.Any(x => x.DayOfWeek == (Meetly.Repository.Enum.DayOfWeek)(int)day))
-            return NewSlot(entity, participant, null, (Meetly.Repository.Enum.DayOfWeek)(int)day, request);
-        throw new EventException(422, "Time slot does not belong to the event.");
-    }
-
-    private static TimeSlots NewSlot(Events entity, EventParticipants participant, DateOnly? date, Meetly.Repository.Enum.DayOfWeek? day, ParticipantTimeSlotRequest request) => new()
-    {
-        Id = Guid.NewGuid(),
-        EventId = entity.Id,
-        ParticipantId = participant.Id,
-        SpecificDate = date,
-        DayOfWeek = day,
-        StartTime = request.StartTime,
-        EndTime = request.EndTime,
-        CreatedAt = DateTimeOffset.UtcNow
-    };
-
     private static EventResponse ToResponse(Events entity) => new()
     {
         Title = entity.Title,
         ShortCode = entity.ShortCode,
         Url = entity.URL,
         EventType = (int)entity.EventType,
-        AvailableDates = entity.AvailableDates.Select(x => x.SpecificDate?.ToString("yyyy-MM-dd") ?? x.DayOfWeek!.Value.ToString()).ToList(),
+        TimeZone = entity.TimeZone,
+        AvailableDates = entity.AvailableDates.Where(x => x.SpecificDate.HasValue).Select(x => x.SpecificDate!.Value).ToList(),
+        AvailableWeekdays = entity.AvailableDates.Where(x => x.DayOfWeek.HasValue).Select(x => (System.DayOfWeek)(int)x.DayOfWeek!.Value).ToList(),
         DailyStartTime = Format(entity.DailyStartTime),
         DailyEndTime = Format(entity.DailyEndTime),
-        IsFinalized = entity.Status == EventStatus.Finalized,
-        FinalStartTime = entity.FinalStartTime is null || entity.FinalDate is null ? null : At(entity.FinalDate.Value, entity.FinalStartTime.Value),
-        FinalEndTime = entity.FinalEndTime is null || entity.FinalDate is null ? null : At(entity.FinalDate.Value, entity.FinalEndTime.Value),
-        Participants = entity.Participants.Select(x => new EventParticipantResponse(x.Username, x.TimeSlots.Select(y => new EventTimeSlotResponse(
-            y.SpecificDate is null ? $"{y.DayOfWeek}T{Format(y.StartTime)}:00+07:00" : At(y.SpecificDate.Value, y.StartTime).ToString("yyyy-MM-ddTHH:mm:sszzz"),
-            y.SpecificDate is null ? $"{y.DayOfWeek}T{Format(y.EndTime)}:00+07:00" : At(y.SpecificDate.Value, y.EndTime).ToString("yyyy-MM-ddTHH:mm:sszzz"))).ToList())).ToList(),
-        HeatmapGrid = Heatmap(entity)
+        Status = (int)entity.Status,
+        Revision = entity.Revision,
+        Participants = entity.Participants.Select(x => new EventParticipantResponse(x.Username)).ToList(),
+        HeatmapGrid = Heatmap(entity),
+        FinalSchedule = entity.Status != EventStatus.Finalized ? null : new FinalScheduleResponse(
+            entity.EventType == EventType.Dates ? entity.FinalDate : null,
+            entity.EventType == EventType.Weekdays ? (System.DayOfWeek?)(int?)entity.FinalDayOfWeek : null,
+            Format(entity.FinalStartTime!.Value), Format(entity.FinalEndTime!.Value))
     };
 
-    private static Dictionary<string, List<string>> Heatmap(Events entity)
+    private static List<HeatmapCellResponse> Heatmap(Events entity)
     {
-        var result = new Dictionary<string, List<string>>();
+        var result = new List<HeatmapCellResponse>();
         foreach (var available in entity.AvailableDates)
             for (var start = entity.DailyStartTime; start < entity.DailyEndTime; start = start.AddMinutes(30))
             {
                 var end = start.AddMinutes(30) > entity.DailyEndTime ? entity.DailyEndTime : start.AddMinutes(30);
-                var key = available.SpecificDate is { } date ? At(date, start).ToString("yyyy-MM-ddTHH:mm:sszzz") : $"{available.DayOfWeek}T{start:HH:mm:ss}+07:00";
-                result[key] = entity.Participants.Where(p => p.TimeSlots.Any(s => s.SpecificDate == available.SpecificDate && s.DayOfWeek == available.DayOfWeek && s.StartTime <= start && s.EndTime >= end)).Select(p => p.Username).Order().ToList();
+                var participants = entity.Participants.Where(p => p.TimeSlots.Any(s => s.SpecificDate == available.SpecificDate && s.DayOfWeek == available.DayOfWeek && s.StartTime <= start && s.EndTime >= end)).Select(p => p.Username).Order().ToList();
+                result.Add(new HeatmapCellResponse(available.SpecificDate, available.DayOfWeek is null ? null : (System.DayOfWeek)(int)available.DayOfWeek.Value, Format(start), participants, participants.Count));
             }
         return result;
     }
 
-    private static ParticipantTimeSlotResponse ToParticipantSlot(TimeSlots slot) => new(slot.SpecificDate?.ToString("yyyy-MM-dd"), slot.DayOfWeek?.ToString(), Format(slot.StartTime), Format(slot.EndTime));
+    private static ParticipantTimeSlotResponse ToParticipantSlot(TimeSlots slot) => new(slot.SpecificDate, slot.DayOfWeek is null ? null : (System.DayOfWeek)(int)slot.DayOfWeek.Value, Format(slot.StartTime), Format(slot.EndTime));
     private static void RequireAdmin(Events entity, ClaimsPrincipal user)
     {
         var value = user.FindFirstValue("participantId");
@@ -208,11 +239,9 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt) :
         if (from < entity.DailyStartTime || to > entity.DailyEndTime || (entity.EventType == EventType.Dates && !entity.AvailableDates.Any(x => x.SpecificDate == date)) || (entity.EventType == EventType.Weekdays && !entity.AvailableDates.Any(x => x.DayOfWeek == (Meetly.Repository.Enum.DayOfWeek)(int)start.DayOfWeek))) throw new EventException(422, "Final time does not belong to the event.");
         entity.FinalDate = date; entity.FinalDayOfWeek = entity.EventType == EventType.Weekdays ? (Meetly.Repository.Enum.DayOfWeek)(int)start.DayOfWeek : null; entity.FinalStartTime = from; entity.FinalEndTime = to;
     }
-    private static DateTimeOffset At(DateOnly date, TimeOnly time) => new(date.ToDateTime(time), VietnamOffset);
     private static string Format(TimeOnly time) => time.ToString("HH:mm");
     private static string Required(string? value, string name) => !string.IsNullOrWhiteSpace(value) ? value.Trim() : throw new EventException(422, $"{name} is required.");
     private static void ValidateHours(Events entity) { if (entity.DailyStartTime >= entity.DailyEndTime) throw new EventException(422, "dailyStartTime must be before dailyEndTime."); }
-    private static void ValidateEmail(string? email) { if (!string.IsNullOrWhiteSpace(email)) try { _ = new MailAddress(email.Trim()); } catch (FormatException) { throw new EventException(422, "email is invalid."); } }
     private static void Verify(EventParticipants participant, string? password) { if (participant.PasswordHash is not null && (string.IsNullOrEmpty(password) || PasswordHasher.VerifyHashedPassword(participant, participant.PasswordHash, password) == PasswordVerificationResult.Failed)) throw new EventException(401, "Password is invalid."); }
 }
 
