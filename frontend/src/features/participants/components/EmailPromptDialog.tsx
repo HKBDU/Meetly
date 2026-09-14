@@ -1,11 +1,11 @@
-import { useState } from "react"
-import type { FormEvent } from "react"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
 import { Mail } from "lucide-react"
+import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 
 import { mergeFreeSlotIdsIntoRanges, resolveFreeSlotIds } from "@/features/participants/gridUtils"
-import { emailSchema } from "@/features/participants/schema"
+import { emailSchema, type EmailFormValues } from "@/features/participants/schema"
 import { saveAvailability } from "@/features/participants/services"
 import { useParticipantStore } from "@/features/participants/store"
 import {
@@ -17,8 +17,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
   Input,
-  Label,
 } from "@/shared/components/ui"
 
 /**
@@ -38,8 +43,10 @@ export function EmailPromptDialog() {
   const closeEmailDialog = useParticipantStore((s) => s.closeEmailDialog)
   const markEmailSubscribed = useParticipantStore((s) => s.markEmailSubscribed)
 
-  const [email, setEmail] = useState("")
-  const [error, setError] = useState<string | null>(null)
+  const form = useForm<EmailFormValues>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: { email: "" },
+  })
 
   const mutation = useMutation({
     mutationFn: (submittedEmail: string) => {
@@ -59,20 +66,17 @@ export function EmailPromptDialog() {
     },
   })
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const result = emailSchema.safeParse({ email })
-    if (!result.success) {
-      setError(result.error.issues[0]?.message ?? "Invalid email address")
-      return
-    }
-
-    setError(null)
-    mutation.mutate(result.data.email)
+  function handleSubmit(values: EmailFormValues) {
+    mutation.mutate(values.email, { onSuccess: () => form.reset() })
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && closeEmailDialog()}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) closeEmailDialog()
+      }}
+    >
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <div className="flex items-center gap-2">
@@ -84,43 +88,49 @@ export function EmailPromptDialog() {
           <DialogDescription>Get notified when the Host confirms the final event time.</DialogDescription>
         </DialogHeader>
 
-        <form className="space-y-3" onSubmit={handleSubmit}>
-          <div className="space-y-1.5">
+        <Form {...form}>
+          <form className="space-y-3" onSubmit={form.handleSubmit(handleSubmit)} noValidate>
             <p className="text-sm font-medium text-foreground">Notify me about this Event</p>
-            <Label htmlFor="notify-email" className="text-xs text-muted-foreground">
-              Email address
-            </Label>
-            <div className="relative">
-              <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                id="notify-email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                aria-invalid={!!error}
-                autoFocus
-                className="pl-9"
-              />
-            </div>
-            {error && <p className="text-xs text-destructive">{error}</p>}
-          </div>
 
-          <DialogFooter className="gap-2 sm:justify-between">
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1"
-              onClick={closeEmailDialog}
-              disabled={mutation.isPending}
-            >
-              Skip
-            </Button>
-            <Button type="submit" className="flex-1" disabled={mutation.isPending}>
-              {mutation.isPending ? "Saving..." : "Save"}
-            </Button>
-          </DialogFooter>
-        </form>
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem className="space-y-1.5">
+                  <FormLabel className="text-xs text-muted-foreground">Email address</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        type="email"
+                        placeholder="you@example.com"
+                        autoFocus
+                        className="pl-9"
+                        {...field}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter className="gap-2 sm:justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={closeEmailDialog}
+                disabled={mutation.isPending}
+              >
+                Skip
+              </Button>
+              <Button type="submit" className="flex-1" disabled={mutation.isPending}>
+                {mutation.isPending ? "Saving..." : "Save"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   )

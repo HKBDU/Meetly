@@ -37,11 +37,16 @@ function formatDateRangeLabel(config: EventScheduleConfig): string {
 }
 
 /**
- * Tên sự kiện + khoảng ngày + link chia sẻ (copy) + nút quay lại Tổng quan -
- * TẤT CẢ trên CÙNG 1 hàng, không có border-bottom riêng (theo đúng ảnh mẫu:
- * chỉ 1 đường kẻ duy nhất ngay dưới header "Meetly/Join with ID" - phần này
- * chỉ cách nhau bằng khoảng trắng, ranh giới với lưới bên dưới là viền của
+ * Tên sự kiện (dòng lớn, cùng hàng với "Back to Overview") + khoảng ngày và
+ * link chia sẻ (dòng nhỏ, meta - KHÔNG còn là 1 nút bo viền/nền riêng như bản
+ * cũ, chỉ là text link cùng cỡ/màu với khoảng ngày để đỡ tranh chỗ với tiêu
+ * đề). Không có border-bottom riêng (ranh giới với lưới bên dưới là viền của
  * chính khung lưới, không phải thêm 1 đường kẻ ngang nữa).
+ *
+ * KHÔNG đặt `bg-card` (trắng) - để lộ nền `bg-background` từ khối cha
+ * (PersonalScheduleView), GIỐNG HỆT với ScheduleActionsBar/grid bên dưới -
+ * feedback: tách 2 màu trắng/xám giữa tiêu đề và lưới nhìn còn xấu hơn, thôi
+ * gộp lại 1 màu nền DUY NHẤT cho toàn bộ phần nội dung dưới header.
  *
  * Link chia sẻ hiện là MOCK (chưa có route/shortCode thật - xem
  * `EventScheduleConfig.eventId` comment) - chỉ demo hành vi copy-to-clipboard.
@@ -63,34 +68,29 @@ export function EventInfoBar({ config }: EventInfoBarProps) {
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 bg-card px-4 py-4 sm:px-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-foreground">{config.eventName}</h1>
-          <p className="mt-0.5 text-xs text-muted-foreground">{formatDateRangeLabel(config)}</p>
-        </div>
+    <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4 pb-2 sm:px-6">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-xl font-bold text-foreground">{config.eventName}</h1>
 
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="flex items-center gap-2 rounded-md border border-input bg-muted/60 px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent"
-        >
-          <Link2 className="size-3.5 shrink-0" />
-          <span className="max-w-35 truncate font-mono sm:max-w-none">{shareLink}</span>
-          <span className="flex shrink-0 items-center gap-1 font-medium text-foreground">
-            {copied ? (
-              <>
-                <Check className="size-3.5 text-primary" />
-                Copied
-              </>
-            ) : (
-              <>
-                <Copy className="size-3.5" />
-                Copy
-              </>
-            )}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+          <span>{formatDateRangeLabel(config)}</span>
+          <span aria-hidden className="text-border">
+            •
           </span>
-        </button>
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="flex items-center gap-1.5 transition-colors hover:text-primary"
+          >
+            <Link2 className="size-3 shrink-0" />
+            <span className="max-w-35 truncate font-mono sm:max-w-none">{shareLink}</span>
+            {copied ? (
+              <Check className="size-3 shrink-0 text-primary" />
+            ) : (
+              <Copy className="size-3 shrink-0" />
+            )}
+          </button>
+        </div>
       </div>
 
       <button

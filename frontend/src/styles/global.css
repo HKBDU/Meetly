@@ -17,29 +17,28 @@
   --popover: hsl(0 0% 100%);
   --popover-foreground: hsl(150 20% 12%);
 
-  /* Xanh lá TƯƠI/SÁNG (khớp ảnh mẫu - trước đây quá tối/trầm) - dùng cho
-     logo, header/footer, nút chính, active state */
-  --primary: hsl(120 65% 50%);
+  /* Xanh lá /80 lấy trực tiếp từ palette Figma. */
+  --primary: #37a700;
   --primary-foreground: hsl(0 0% 100%);
 
   /* Xanh lá nhạt - dùng cho badge, chip, vùng nhấn nhẹ */
-  --secondary: hsl(142 45% 93%);
-  --secondary-foreground: hsl(142 70% 18%);
+  --secondary: hsl(120 32% 93%);
+  --secondary-foreground: hsl(120 70% 18%);
 
   --muted: hsl(140 25% 95%);
   --muted-foreground: hsl(150 12% 42%);
 
-  --accent: hsl(142 50% 90%);
-  --accent-foreground: hsl(142 70% 18%);
+  --accent: hsl(120 38% 90%);
+  --accent-foreground: hsl(120 70% 18%);
 
   --destructive: hsl(0 72% 51%);
   --destructive-foreground: hsl(0 0% 100%);
 
   --border: hsl(142 25% 88%);
   --input: hsl(142 25% 88%);
-  --ring: hsl(120 65% 50%);
+  --ring: #37a700;
 
-  --chart-1: hsl(120 65% 50%);
+  --chart-1: #37a700;
   --chart-2: hsl(142 50% 58%);
   --chart-3: hsl(142 30% 75%);
   --chart-4: hsl(45 90% 55%);
@@ -55,7 +54,7 @@
   --popover: hsl(150 16% 11%);
   --popover-foreground: hsl(140 25% 95%);
 
-  --primary: hsl(120 65% 50%);
+  --primary: #37a700;
   --primary-foreground: hsl(0 0% 100%);
 
   --secondary: hsl(150 15% 16%);
@@ -72,9 +71,9 @@
 
   --border: hsl(150 15% 20%);
   --input: hsl(150 15% 20%);
-  --ring: hsl(120 65% 50%);
+  --ring: #37a700;
 
-  --chart-1: hsl(120 65% 50%);
+  --chart-1: #37a700;
   --chart-2: hsl(142 40% 60%);
   --chart-3: hsl(142 25% 40%);
   --chart-4: hsl(45 80% 55%);

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { SlidersHorizontal } from "lucide-react"
+import { CloudCheck, Loader2, SlidersHorizontal } from "lucide-react"
 
 import { ManualRangeDialog } from "@/features/participants/components/ManualRangeDialog"
 import { useParticipantStore } from "@/features/participants/store"
@@ -10,16 +10,25 @@ import { cn } from "@/lib/utils"
 interface ScheduleActionsBarProps {
   /** "Reset dates"/"Select Manual" cũng làm thay đổi lịch như kéo chuột - phải tự lưu lên server */
   triggerAutoSave: () => void
+  isSaving: boolean
 }
 
 /**
- * Hàng điều khiển dưới grid lịch - GỘP cả "Chọn thủ công" (trước ở
- * ScheduleToolbar) lẫn "Xoá hết"/chuyển chế độ tô (trước ở PaintModeControls)
- * thành 1 hàng duy nhất theo đúng ảnh mẫu: trái là 2 nút nhỏ (Select
- * Manual/Reset dates), phải là cặp Record Busy/Record Available chiếm 50%
- * width - không còn tràn hết chiều ngang như bản cũ.
+ * Hàng điều khiển NGANG HÀNG với "Synced" - đặt TRÊN grid lịch (không phải
+ * dưới như bản cũ) để dù lưới có dài cỡ nào, người dùng vẫn thấy và bấm được
+ * ngay mà không cần cuộn xuống. Gộp "Chọn thủ công" + "Xoá hết" (trái) với
+ * chỉ báo Đang lưu/Đã đồng bộ + cặp Record Busy/Record Available (phải).
+ * Toggle Busy/Available thu hẹp lại theo đúng nội dung (không còn ép rộng
+ * `w-2/5` như bản cũ) theo feedback "width nó đang dài quá".
+ *
+ * KHÔNG đặt `bg-card` (trắng) như EventInfoBar phía trên - để lộ nền
+ * `bg-background` (xám nhạt) của chính khối cha (PersonalScheduleView), tức
+ * hàng này giờ nằm CHUNG 1 vùng nền với khung lưới bên dưới nó, tách biệt
+ * hẳn với khối "tiêu đề sự kiện" màu trắng ở trên - ranh giới giữa 2 khối là
+ * chính sự chuyển màu nền (trắng -> xám), không cần thêm đường kẻ hay border
+ * nào (feedback: quá nhiều đường kẻ đen dồn ở khu vực đầu trang, rối mắt).
  */
-export function ScheduleActionsBar({ triggerAutoSave }: ScheduleActionsBarProps) {
+export function ScheduleActionsBar({ triggerAutoSave, isSaving }: ScheduleActionsBarProps) {
   const paintMode = useParticipantStore((s) => s.paintMode)
   const setPaintMode = useParticipantStore((s) => s.setPaintMode)
   const clearAllPainted = useParticipantStore((s) => s.clearAllPainted)
@@ -33,7 +42,7 @@ export function ScheduleActionsBar({ triggerAutoSave }: ScheduleActionsBarProps)
 
   return (
     <>
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border bg-card px-3 py-3 sm:px-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-3 pt-1 pb-3 sm:px-4">
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -44,41 +53,71 @@ export function ScheduleActionsBar({ triggerAutoSave }: ScheduleActionsBarProps)
             <SlidersHorizontal className="size-4" />
             Select Manual
           </Button>
-          <Button variant="outline" size="sm" disabled={isFinalized} onClick={handleResetDates}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
+            disabled={isFinalized}
+            onClick={handleResetDates}
+          >
             Reset dates
           </Button>
         </div>
 
-        <ToggleGroup
-          type="single"
-          variant="outline"
-          spacing={2}
-          value={paintMode}
-          onValueChange={(value) => value && setPaintMode(value as PaintMode)}
-          disabled={isFinalized}
-          className="grid w-full grid-cols-2 sm:w-2/5"
-        >
-          <ToggleGroupItem
-            value="BUSY"
-            aria-label="Record busy"
+        <div className="flex items-center gap-3">
+          <span
             className={cn(
-              "border-2",
-              "data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+              "flex shrink-0 items-center gap-1 text-xs font-medium",
+              isSaving ? "text-muted-foreground" : "text-foreground"
             )}
           >
-            Record Busy
-          </ToggleGroupItem>
-          <ToggleGroupItem
-            value="FREE"
-            aria-label="Record available"
-            className={cn(
-              "border-2",
-              "data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+            {isSaving ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <CloudCheck className="size-3.5" />
+                Synced
+              </>
             )}
-          >
-            Record Available
-          </ToggleGroupItem>
-        </ToggleGroup>
+          </span>
+
+          <div className="flex items-center gap-2 rounded-md bg-muted px-2 py-1.5">
+            <span className="text-xs font-medium text-muted-foreground">Mode</span>
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              spacing={2}
+              value={paintMode}
+              onValueChange={(value) => value && setPaintMode(value as PaintMode)}
+              disabled={isFinalized}
+              className="w-auto"
+            >
+              <ToggleGroupItem
+                value="BUSY"
+                aria-label="Record busy"
+                className={cn(
+                  "w-24 border-2 text-xs",
+                  "data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                )}
+              >
+                Busy
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="FREE"
+                aria-label="Record available"
+                className={cn(
+                  "w-24 border-2 text-xs",
+                  "data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                )}
+              >
+                Available
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+        </div>
       </div>
 
       <ManualRangeDialog
