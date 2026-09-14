@@ -6,17 +6,17 @@ export const eventUi = {
   brand: 'flex items-center gap-2.5 text-sm font-semibold',
   brandIcon: 'grid size-9 place-items-center rounded bg-emerald-500 text-white',
   button: 'h-12 min-w-[132px] rounded text-base font-semibold',
-  calendar: 'rounded-lg bg-[#eff4ff] p-6 max-[640px]:-mx-2 max-[640px]:px-3 max-[640px]:py-4',
+  calendar: 'rounded-lg bg-[#eff4ff] p-6 max-[640px]:-mx-2 max-[640px]:px-0 max-[640px]:py-4',
   calendarDay: 'p-0 text-center',
   calendarDayButton:
-    'grid h-10 w-[100%] place-items-center rounded border-0 bg-transparent text-xs text-[#0b1c30] hover:bg-[#d9f8e9] disabled:cursor-not-allowed max-[640px]:size-[38px]',
+    'grid h-10 w-[100%] place-items-center rounded border-0 bg-transparent text-xs text-[#0b1c30] hover:bg-[#d9f8e9] disabled:cursor-not-allowed max-[640px]:h-8 w-full',
   calendarDayDisabled: 'opacity-50 [&>button]:cursor-not-allowed [&>button]:text-[#bbcabf]',
   calendarDayOutside: 'text-[#bbcabf]',
   calendarDaySelected: '[&>button]:bg-[#00a854] [&>button]:text-white [&>button]:hover:bg-[#00a854]',
   calendarGrid: 'w-full border-separate border-spacing-1 pt-0',
 
   calendarMonth: 'relative w-full',
-  calendarMonthCaption: 'mb-0 flex h-8 items-center justify-center', // bỏ 'relative' ở đây
+  calendarMonthCaption: 'mb-7 text-sm flex h-8 items-center justify-center text-center', 
   calendarNav: 'absolute inset-x-0 top-0 flex h-8 items-center justify-between',
     
   calendarMonths: 'w-full',
@@ -28,10 +28,10 @@ export const eventUi = {
   closeButton: 'grid place-items-center border-0 bg-transparent text-[#6c7a71]',
   desktopDialog: 'overflow-visible rounded-2xl border border-[#bbcabf]/60 bg-white shadow-[0_1px_1px_rgba(0,0,0,.05)]',
   desktopScreen: 'min-h-screen bg-[#f8f9ff] max-[640px]:hidden',
-  field: 'grid gap-1',
+  field: 'grid gap-2',
   fieldError: 'text-[11px] text-[#ba1a1a]',
   fieldHint: 'text-xs font-semibold text-[#009b4d]',
-  form: 'p-[35px]',
+  form: 'p-[25px]',
   formContent: 'grid max-w-none gap-4 max-[640px]:gap-3',
   formFooter:
     'mt-2 flex justify-start gap-2.5 border-0 pt-2 max-[640px]:fixed max-[640px]:inset-x-0 max-[640px]:bottom-0 max-[640px]:z-[2] max-[640px]:m-0 max-[640px]:justify-stretch max-[640px]:bg-[#009b4d] max-[640px]:px-4 max-[640px]:py-2.5',
@@ -54,11 +54,13 @@ export const eventUi = {
   mobileTitle: 'm-0 mb-8 hidden text-[36px] leading-[44px] tracking-[-0.72px] text-[#0b1c30] max-[640px]:mx-6 max-[640px]:mb-5 max-[640px]:mt-7 max-[640px]:block max-[640px]:text-[28px] max-[640px]:leading-9',
   page: 'mx-auto w-[min(calc(100%_-_40px),760px)] py-5 pb-5',
   pageTitle: 'm-0 mb-8 text-[36px] leading-[44px] tracking-[-0.72px] text-[#0b1c30]',
-  primaryButton: 'min-w-[150px] border-0 bg-[#009b4d] text-white disabled:cursor-wait disabled:opacity-[.65]',
+  primaryButton: 'w-full justify-center border-0 bg-[#009b4d] text-white hover:bg-[#008240] disabled:cursor-wait disabled:opacity-[.65] h-10 rounded text-base font-semibold sm:w-auto sm:min-w-[150px]',
   reopenButton: 'm-[30px] rounded-lg border-0 bg-[#009b4d] px-[18px] py-3 font-bold text-white',
+
   requiredMark: 'text-[#ba1a1a]',
+
+  secondaryButton: 'w-full justify-center border border-gray-300 bg-transparent text-gray-700 h-10 rounded text-base font-semibold sm:w-auto sm:min-w-[132px]',
   screenHeader: 'flex h-16 items-center justify-between border-b border-[#edf1ed] bg-white px-6',
-  secondaryButton: 'hidden',
   shell: 'min-h-screen bg-[#f8f9ff] font-[\'Plus_Jakarta_Sans\',system-ui,sans-serif] text-[#0b1c30]',
   siteHeader: 'flex h-16 items-center justify-between border-b border-[#bbcabf] bg-white px-8',
   submitError: 'mt-[18px] text-[13px] text-[#ba1a1a]',
@@ -76,7 +78,7 @@ export const eventUi = {
   updateWarningDescription: 'm-0 text-[13px] leading-5 text-[#6c7a71]',
   updateWarningSecondary: 'inline-flex items-center justify-center border border-[#6b7280] bg-white text-[#0b1c30]',
   updateWarningTitle: 'mb-2.5 mt-0 text-xl text-[#0b1c30]',
-  weekdayOption: 'aspect-square min-h-[30px] rounded-full border border-[#6b7280] bg-[#ffffff] text-sm text-[#0b1c30]',
+  weekdayOption: 'aspect-square min-h-[30px] w-[100%] h-[70%] border border-[#6b7280] bg-[#ffffff] text-sm text-[#0b1c30]',
   weekdayOptionSelected: 'border-[#00a854] bg-[#00a854] text-white',
-  weekdayOptions: 'grid grid-cols-7 gap-[15px] max-[640px]:gap-2',
+  weekdayOptions: 'grid grid-cols-7 gap-[1%] max-[640px]:gap-2',
 }

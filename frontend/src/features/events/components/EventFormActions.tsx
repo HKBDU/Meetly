@@ -1,11 +1,61 @@
 import { eventUi } from './styles'
+import { Button } from "@/shared/components/ui/button";
 import { cn } from '@/lib/utils'
 
-type EventFormActionsProps = { onCancel: () => void; submitting?: boolean; submitLabel?: string }
+interface CancelActionProps {
+  onCancel?: () => void;
+  label?: string;
+}
 
-export function EventFormActions({ onCancel, submitting = false, submitLabel = 'Create Event' }: EventFormActionsProps) {
-  return <footer className={eventUi.formFooter}>
-    <button className={cn(eventUi.button, eventUi.formFooterButton, eventUi.secondaryButton)} onClick={onCancel} type="button">Cancel</button>
-    <button className={cn(eventUi.button, eventUi.formFooterButton, eventUi.primaryButton)} disabled={submitting} type="submit">{submitting ? 'Saving...' : submitLabel}</button>
-  </footer>
+export function EventFormCancelAction({ onCancel, label = 'Cancel' }: CancelActionProps) {
+  if (!onCancel) return null; // Không truyền handler -> không render (tự động 100% cho nút còn lại)
+
+  return (
+    <Button 
+      type="button" 
+      variant="outline" 
+      className={eventUi.secondaryButton}
+      onClick={onCancel}
+    >
+      {label}
+    </Button>
+  );
+}
+
+interface SubmitActionProps {
+  submitting?: boolean;
+  submitLabel?: string;
+}
+
+export function EventFormSubmitAction({ submitting = false, submitLabel = 'Create Event' }: SubmitActionProps) {
+  return (
+    <Button 
+      type="submit" 
+      disabled={submitting}
+      className={eventUi.primaryButton}
+    >
+      {submitting ? 'Saving...' : submitLabel}
+    </Button>
+  );
+}
+
+interface EventFormActionsProps {
+  onCancel?: () => void;
+  submitting?: boolean;
+  submitLabel?: string;
+  cancelLabel?: string;
+}
+
+export function EventFormActions({ 
+  onCancel, 
+  submitting = false, 
+  submitLabel = 'Create Event',
+  cancelLabel = 'Cancel'
+}: EventFormActionsProps) {
+  return (
+    <footer className={cn("grid w-full grid-flow-col auto-cols-fr gap-3 sm:flex sm:w-auto sm:justify-end", eventUi.formFooter)}>
+      <EventFormSubmitAction submitting={submitting} submitLabel={submitLabel} />
+      <EventFormCancelAction onCancel={onCancel} label={cancelLabel} />
+    </footer>
+  );
 }

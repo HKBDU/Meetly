@@ -14,12 +14,12 @@ export function TimeRangeFields({ start, end, onStartChange, onEndChange, error 
   return (
     <div className={eventUi.timeRange}>
       <div className={eventUi.field}>
-        <label className={eventUi.label} htmlFor="daily-start-time">Start time</label>
+        <label className={eventUi.label} htmlFor="daily-start-time">Start time <span className={eventUi.requiredMark}>*</span></label>
         <TimeSelector id="daily-start-time" value={start} onChange={onStartChange} />
       </div>
 
       <div className={eventUi.field}>
-        <label className={eventUi.label} htmlFor="daily-end-time">End time</label>
+        <label className={eventUi.label} htmlFor="daily-end-time">End time <span className={eventUi.requiredMark}>*</span></label>
         <TimeSelector id="daily-end-time" value={end} onChange={onEndChange} />
       </div>
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
 import { DayButton, type DayButtonProps } from 'react-day-picker'
 import { eventUi } from './styles'
+import { Button } from "@/shared/components/ui/button";
 import { cn } from '@/lib/utils'
 import { Calendar } from '@/shared/components/ui/calendar'
 import type { EventType } from '../types'
@@ -80,9 +81,9 @@ export function AvailabilitySelector({ eventType, value, onChange, error }: Avai
     applyDay(dateKey, mode)
   }
 
-  function toggle(item: string) {
-    onChange(value.includes(item) ? value.filter((current) => current !== item) : [...value, item])
-  }
+  // function toggle(item: string) {
+  //   onChange(value.includes(item) ? value.filter((current) => current !== item) : [...value, item])
+  // }
 
   function resetDates() {
     onChange([])
@@ -94,11 +95,44 @@ export function AvailabilitySelector({ eventType, value, onChange, error }: Avai
 
   const isPrevDisabled = month.getFullYear() === startMonth.getFullYear() && month.getMonth() === startMonth.getMonth()
 
+  function startItemDrag(item: string) {
+    const mode = valueRef.current.includes(item) ? 'remove' : 'add'
+    dragModeRef.current = mode
+    dragVisitedRef.current = new Set([item])
+    setIsDragging(true)
+    applyDay(item, mode)
+  }
+
+  function extendItemDrag(item: string) {
+    const mode = dragModeRef.current
+    if (!mode) return
+    if (dragVisitedRef.current.has(item)) return
+    dragVisitedRef.current.add(item)
+    applyDay(item, mode)
+  }
   if (eventType === 2) {
     return <div className={eventUi.field}>
-      <div className="flex items-center justify-between"><div><label className={eventUi.label}>Weekdays <span className={eventUi.requiredMark}>*</span></label><p className="hidden">Choose one or more weekdays for this event.</p></div><span className={eventUi.fieldHint}>{value.length} selected</span></div>
-      <div className={eventUi.weekdayOptions}>
-        {WEEKDAY_OPTIONS.map((item) => <button className={cn(eventUi.weekdayOption, value.includes(item) && eventUi.weekdayOptionSelected)} key={item} onClick={() => toggle(item)} type="button">{item}</button>)}
+      <div className="flex items-center justify-between">
+        <div>
+          <label className={eventUi.label}>Weekdays <span className={eventUi.requiredMark}>*</span></label>
+          <p className="hidden">Choose one or more weekdays for this event.</p>
+        </div>
+        <span className={eventUi.fieldHint}>{value.length} selected</span>
+      </div>
+      <div className={cn(eventUi.weekdayOptions, 'select-none')}>
+        {WEEKDAY_OPTIONS.map((item) => <Button
+          key={item}
+          type="button"
+          variant="ghost"
+          onMouseDown={() => startItemDrag(item)}
+          onMouseEnter={() => isDragging && extendItemDrag(item)}
+          className={cn(
+            eventUi.weekdayOption,
+            value.includes(item) && eventUi.weekdayOptionSelected
+          )}
+        >
+          {item}
+        </Button>)}
       </div>
       {error && <span className={eventUi.fieldError}>{error}</span>}
     </div>
