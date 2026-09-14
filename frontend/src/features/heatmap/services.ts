@@ -4,6 +4,8 @@ import type {
   HeatmapEvent,
   SuggestedSlot,
   SuggestionParams,
+  UpdateEventPayload,
+  UpdateEventResult,
 } from './types';
 
 interface ApiResponse<T> {
@@ -71,6 +73,19 @@ export function finalizeEvent(
   return request(
     `${encodeURIComponent(shortCode)}/finalize`,
     { method: 'POST', body: JSON.stringify(payload) },
+    accessToken,
+  );
+}
+
+export function updateEvent(
+  shortCode: string,
+  payload: UpdateEventPayload,
+  accessToken: string,
+): Promise<UpdateEventResult> {
+  if (!accessToken) return Promise.reject(new Error('Sign in as the event host to edit this event.'));
+  return request(
+    encodeURIComponent(shortCode),
+    { method: 'PUT', body: JSON.stringify(payload) },
     accessToken,
   );
 }

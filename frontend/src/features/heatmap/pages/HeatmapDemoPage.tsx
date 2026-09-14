@@ -1,7 +1,12 @@
 import { CalendarDays } from 'lucide-react';
 import { HeatmapPage } from './HeatmapPage';
 import { MeetlyFooter } from '../components/MeetlyFooter';
-import { finalizeMockEvent, getMockScenario, getMockSuggestions } from '../mock';
+import {
+  finalizeMockEvent,
+  getMockScenario,
+  getMockSuggestions,
+  updateMockEvent,
+} from '../mock';
 
 
 export default function HeatmapDemoPage() {
@@ -11,13 +16,10 @@ export default function HeatmapDemoPage() {
       <header className="border-b border-slate-200 px-4 py-4 sm:px-8">
         <div className="mx-auto flex max-w-[1376px] items-center justify-between gap-4">
           <span className="flex items-center gap-2 text-xl font-bold text-slate-900">
-            <span className="rounded-lg bg-emerald-500 p-2 text-white">
+            <span className="rounded-lg bg-emerald-600 p-2 text-white">
               <CalendarDays size={21} aria-hidden="true" />
             </span>
             Meetly
-          </span>
-          <span className="text-xs text-slate-500">
-            Sample data · {isAdmin ? 'Admin' : 'Participant'} · Changes last for this preview only
           </span>
         </div>
       </header>
@@ -27,6 +29,7 @@ export default function HeatmapDemoPage() {
           isAdmin={isAdmin}
           onSuggestions={(params) => getMockSuggestions(event, params)}
           onFinalize={(slot) => finalizeMockEvent(event, slot)}
+          onUpdateEvent={updateMockEvent}
         />
       </div>
       <MeetlyFooter />

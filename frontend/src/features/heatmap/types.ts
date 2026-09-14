@@ -42,6 +42,22 @@ export interface HeatmapEvent {
   finalSchedule: FinalSchedule | null;
 }
 
+export type EditableEvent = Pick<
+  HeatmapEvent,
+  | 'title'
+  | 'eventType'
+  | 'availableDates'
+  | 'availableWeekdays'
+  | 'dailyStartTime'
+  | 'dailyEndTime'
+>;
+
+export type UpdateEventPayload = EditableEvent;
+
+export interface UpdateEventResult {
+  revision: number;
+}
+
 export interface SuggestionParams {
   keyParticipant?: string;
   minDuration?: number;

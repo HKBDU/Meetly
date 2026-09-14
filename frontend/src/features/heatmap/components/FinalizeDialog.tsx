@@ -87,7 +87,7 @@ export function FinalizeDialog({
               type="button"
               disabled={pending}
               onClick={onConfirm}
-              className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
             >
               {pending ? 'Confirming…' : 'Confirm Final Time'}
             </button>
