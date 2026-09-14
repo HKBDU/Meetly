@@ -1,4 +1,4 @@
-namespace Meetly.Contract.DTOs.Participants;
+namespace Meetly.Service.Availability;
 
 public sealed record UpdateAvailabilityResponse
 {
