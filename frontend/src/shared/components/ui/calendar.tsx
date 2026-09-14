@@ -1,1 +1,1 @@
-export * from "@/components/ui/calendar"
+export { Calendar, CalendarDemo, type CalendarProps } from "@/components/ui/calendar"
