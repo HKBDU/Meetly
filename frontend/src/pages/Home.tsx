@@ -123,6 +123,7 @@ export function Home() {
           {mode === 'create' ? (
             <form onSubmit={submitCreate} className="create-split-grid">
               <div className="create-fields-col">
+                <p className="create-fields-title">Thông tin sự kiện</p>
                 <label>
                   Tên cuộc họp
                   <input

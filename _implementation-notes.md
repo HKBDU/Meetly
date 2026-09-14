@@ -17,3 +17,5 @@
 - Rejoin the SignalR group after reconnect because group membership belongs to the old connection.
 - Allow both Docker web and local development origins; the previous Docker default blocks browser SignalR while command-line clients still pass.
 - Use Windows-native variable fonts with Vietnamese glyph coverage; avoid a remote font dependency.
+- Give both create columns matching section headings; keep fixed left-control spacing and reserve desktop calendar height across schedule modes.
+- Let responsive grid children shrink and stack create fields on phones so the redesigned card never causes horizontal overflow.

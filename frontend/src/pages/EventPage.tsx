@@ -21,6 +21,7 @@ import { Brand } from '@/components/Brand'
 import { TimeSelect } from '@/components/TimeSelect'
 import { WeekdayPicker } from '@/components/WeekdayPicker'
 import { Calendar } from '@/components/ui/calendar'
+import { CustomSelect } from '@/components/ui/select'
 import {
   cellKey,
   cellsToSlots,
@@ -647,23 +648,21 @@ function Availability({
       <div className="manual-row">
         <label>
           Ngày
-          <select
-            className="styled-select"
+          <CustomSelect
             value={manual.target}
-            onChange={(e) => setManual({ ...manual, target: e.target.value })}
-          >
-            {event.eventType === 1
-              ? event.availableDates.map((date) => (
-                  <option key={date} value={date}>
-                    {formatDateDMY(date)} ({targetLabel(event, date, null)})
-                  </option>
-                ))
-              : event.availableWeekdays.map((day) => (
-                  <option key={day} value={`weekday:${day}`}>
-                    {WEEKDAYS[day]}
-                  </option>
-                ))}
-          </select>
+            onChange={(val) => setManual({ ...manual, target: String(val) })}
+            options={
+              event.eventType === 1
+                ? event.availableDates.map((date) => ({
+                    value: date,
+                    label: `${formatDateDMY(date)} (${targetLabel(event, date, null)})`,
+                  }))
+                : event.availableWeekdays.map((day) => ({
+                    value: `weekday:${day}`,
+                    label: WEEKDAYS[day],
+                  }))
+            }
+          />
         </label>
         <label>
           Từ
@@ -747,32 +746,33 @@ function AdminTools({
         <div className="filter-row">
           <label>
             Người chủ chốt
-            <select
-              className="styled-select"
+            <CustomSelect
               value={person}
-              onChange={(e) => setPerson(e.target.value)}
-            >
-              <option value="">Không bắt buộc</option>
-              {event.participants.map(({ username }) => (
-                <option key={username}>{username}</option>
-              ))}
-            </select>
+              onChange={(val) => setPerson(String(val))}
+              options={[
+                { value: '', label: 'Không bắt buộc' },
+                ...event.participants.map(({ username }) => ({
+                  value: username,
+                  label: username,
+                })),
+              ]}
+            />
           </label>
           <label>
             Thời lượng
-            <select
-              className="styled-select"
+            <CustomSelect
               value={duration}
-              onChange={(e) => setDuration(Number(e.target.value))}
-            >
-              <option value={15}>15 phút</option>
-              <option value={30}>30 phút</option>
-              <option value={45}>45 phút</option>
-              <option value={60}>60 phút (1 giờ)</option>
-              <option value={90}>90 phút (1.5 giờ)</option>
-              <option value={120}>120 phút (2 giờ)</option>
-              <option value={180}>180 phút (3 giờ)</option>
-            </select>
+              onChange={(val) => setDuration(Number(val))}
+              options={[
+                { value: 15, label: '15 phút' },
+                { value: 30, label: '30 phút' },
+                { value: 45, label: '45 phút' },
+                { value: 60, label: '60 phút (1 giờ)' },
+                { value: 90, label: '90 phút (1.5 giờ)' },
+                { value: 120, label: '120 phút (2 giờ)' },
+                { value: 180, label: '180 phút (3 giờ)' },
+              ]}
+            />
           </label>
           <button className="secondary-button" onClick={search} disabled={busy}>
             {busy ? <LoaderCircle className="spin" /> : <Sparkles />} Tìm
@@ -1028,23 +1028,21 @@ function FinalizeEvent({
       <h3>Chốt lịch chính thức</h3>
       <label>
         Ngày
-        <select
-          className="styled-select"
+        <CustomSelect
           value={form.target}
-          onChange={(e) => setForm({ ...form, target: e.target.value })}
-        >
-          {event.eventType === 1
-            ? event.availableDates.map((date) => (
-                <option key={date} value={date}>
-                  {formatDateDMY(date)} ({targetLabel(event, date, null)})
-                </option>
-              ))
-            : event.availableWeekdays.map((day) => (
-                <option key={day} value={`weekday:${day}`}>
-                  {WEEKDAYS[day]}
-                </option>
-              ))}
-        </select>
+          onChange={(val) => setForm({ ...form, target: String(val) })}
+          options={
+            event.eventType === 1
+              ? event.availableDates.map((date) => ({
+                  value: date,
+                  label: `${formatDateDMY(date)} (${targetLabel(event, date, null)})`,
+                }))
+              : event.availableWeekdays.map((day) => ({
+                  value: `weekday:${day}`,
+                  label: WEEKDAYS[day],
+                }))
+          }
+        />
       </label>
       <div className="two-col">
         <label>
