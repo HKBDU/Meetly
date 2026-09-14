@@ -2,7 +2,7 @@ import { useEffect, useRef, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
 import { DayButton, type DayButtonProps } from 'react-day-picker'
 import { eventUi } from './styles'
-import { Button } from "@/shared/components/ui/button";
+import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Calendar } from '@/shared/components/ui/calendar'
 import type { EventType } from '../types'
@@ -10,9 +10,19 @@ import { getDateKey } from '../utils/date.utils'
 
 const WEEKDAY_OPTIONS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-type AvailabilitySelectorProps = { eventType: EventType; value: string[]; onChange: (value: string[]) => void; error?: string }
+type AvailabilitySelectorProps = {
+  eventType: EventType
+  value: string[]
+  onChange: (value: string[]) => void
+  error?: string
+}
 
-export function AvailabilitySelector({ eventType, value, onChange, error }: AvailabilitySelectorProps) {
+export function AvailabilitySelector({
+  eventType,
+  value,
+  onChange,
+  error,
+}: AvailabilitySelectorProps) {
   const [isDragging, setIsDragging] = useState(false)
   const valueRef = useRef(value)
   const dragModeRef = useRef<'add' | 'remove' | null>(null)
@@ -32,7 +42,10 @@ export function AvailabilitySelector({ eventType, value, onChange, error }: Avai
 
   const [month, setMonth] = useState(startMonth)
 
-  const selectedDates = useMemo(() => value.map((date) => new Date(`${date}T00:00:00`)), [value])
+  const selectedDates = useMemo(
+    () => value.map((date) => new Date(`${date}T00:00:00`)),
+    [value],
+  )
 
   useEffect(() => {
     valueRef.current = value
@@ -81,10 +94,6 @@ export function AvailabilitySelector({ eventType, value, onChange, error }: Avai
     applyDay(dateKey, mode)
   }
 
-  // function toggle(item: string) {
-  //   onChange(value.includes(item) ? value.filter((current) => current !== item) : [...value, item])
-  // }
-
   function resetDates() {
     onChange([])
   }
@@ -93,7 +102,9 @@ export function AvailabilitySelector({ eventType, value, onChange, error }: Avai
     setMonth((current) => new Date(current.getFullYear(), current.getMonth() + diff, 1))
   }
 
-  const isPrevDisabled = month.getFullYear() === startMonth.getFullYear() && month.getMonth() === startMonth.getMonth()
+  const isPrevDisabled =
+    month.getFullYear() === startMonth.getFullYear() &&
+    month.getMonth() === startMonth.getMonth()
 
   function startItemDrag(item: string) {
     const mode = valueRef.current.includes(item) ? 'remove' : 'add'
@@ -110,94 +121,113 @@ export function AvailabilitySelector({ eventType, value, onChange, error }: Avai
     dragVisitedRef.current.add(item)
     applyDay(item, mode)
   }
+
   if (eventType === 2) {
-    return <div className={eventUi.field}>
-      <div className="flex items-center justify-between">
-        <div>
-          <label className={eventUi.label}>Weekdays <span className={eventUi.requiredMark}>*</span></label>
-          <p className="hidden">Choose one or more weekdays for this event.</p>
+    return (
+      <div className={eventUi.field}>
+        <div className="flex items-center justify-between">
+          <div>
+            <label className={eventUi.label}>
+              Weekdays <span className={eventUi.requiredMark}>*</span>
+            </label>
+            <p className="hidden">Choose one or more weekdays for this event.</p>
+          </div>
+          <span className={eventUi.fieldHint}>{value.length} selected</span>
         </div>
-        <span className={eventUi.fieldHint}>{value.length} selected</span>
+        <div className={cn(eventUi.weekdayOptions, 'select-none')}>
+          {WEEKDAY_OPTIONS.map((item) => (
+            <Button
+              className={cn(
+                eventUi.weekdayOption,
+                value.includes(item) && eventUi.weekdayOptionSelected,
+              )}
+              key={item}
+              onMouseDown={() => startItemDrag(item)}
+              onMouseEnter={() => isDragging && extendItemDrag(item)}
+              type="button"
+              variant="ghost"
+            >
+              {item}
+            </Button>
+          ))}
+        </div>
+        {error && <span className={eventUi.fieldError}>{error}</span>}
       </div>
-      <div className={cn(eventUi.weekdayOptions, 'select-none')}>
-        {WEEKDAY_OPTIONS.map((item) => <Button
-          key={item}
-          type="button"
-          variant="ghost"
-          onMouseDown={() => startItemDrag(item)}
-          onMouseEnter={() => isDragging && extendItemDrag(item)}
-          className={cn(
-            eventUi.weekdayOption,
-            value.includes(item) && eventUi.weekdayOptionSelected
-          )}
-        >
-          {item}
-        </Button>)}
-      </div>
-      {error && <span className={eventUi.fieldError}>{error}</span>}
-    </div>
+    )
   }
 
   function DragDayButton({ onMouseDown, ...props }: DayButtonProps) {
-    return <DayButton
-      {...props}
-      onMouseDown={(event) => {
-        onMouseDown?.(event)
-        if (!props.modifiers.disabled) startDrag(props.day.date)
-      }}
-    />
+    return (
+      <DayButton
+        {...props}
+        onMouseDown={(event) => {
+          onMouseDown?.(event)
+          if (!props.modifiers.disabled) startDrag(props.day.date)
+        }}
+      />
+    )
   }
 
-  return <div className={eventUi.field}>
-    <div className="flex items-center justify-between">
-      <label className={eventUi.label}>Date selection <span className={eventUi.requiredMark}>*</span></label>
-      <span className={eventUi.fieldHint}>{value.length} selected</span>
-    </div>
-    <div className={eventUi.calendar}>
-      <div className={eventUi.calendarMonthCaption}>
-        <button
-          className={eventUi.calendarToolbarButton}
-          disabled={isPrevDisabled}
-          onClick={() => shiftMonth(-1)}
-          type="button"
-        >
-          <ChevronLeft size={16} />
-        </button>
-        <span className={eventUi.calendarToolbarTitle}>
-          {month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-        </span>
-        <button className={eventUi.calendarToolbarButton} onClick={() => shiftMonth(1)} type="button">
-          <ChevronRight size={16} />
+  return (
+    <div className={eventUi.field}>
+      <div className="flex items-center justify-between">
+        <label className={eventUi.label}>
+          Date selection <span className={eventUi.requiredMark}>*</span>
+        </label>
+        <span className={eventUi.fieldHint}>{value.length} selected</span>
+      </div>
+      <div className={eventUi.calendar}>
+        <div className={eventUi.calendarMonthCaption}>
+          <button
+            className={eventUi.calendarToolbarButton}
+            disabled={isPrevDisabled}
+            onClick={() => shiftMonth(-1)}
+            type="button"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <span className={eventUi.calendarToolbarTitle}>
+            {month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          </span>
+          <button
+            className={eventUi.calendarToolbarButton}
+            onClick={() => shiftMonth(1)}
+            type="button"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+        <Calendar
+          classNames={{
+            root: eventUi.calendarRoot,
+            months: eventUi.calendarMonths,
+            month: eventUi.calendarMonth,
+            month_caption: 'hidden',
+            month_grid: eventUi.calendarGrid,
+            weekday: eventUi.calendarWeekday,
+            day: eventUi.calendarDay,
+            day_button: eventUi.calendarDayButton,
+            selected: eventUi.calendarDaySelected,
+            outside: eventUi.calendarDayOutside,
+            disabled: eventUi.calendarDayDisabled,
+          }}
+          components={{ DayButton: DragDayButton }}
+          disabled={{ before: firstSelectableDate }}
+          hideNavigation
+          mode="multiple"
+          month={month}
+          onDayMouseEnter={(date) => isDragging && extendDrag(date)}
+          onMonthChange={setMonth}
+          onSelect={() => undefined}
+          selected={selectedDates}
+          showOutsideDays={false}
+          weekStartsOn={1}
+        />
+        <button className={eventUi.calendarReset} onClick={resetDates} type="button">
+          <RotateCcw size={13} /> Reset dates
         </button>
       </div>
-      <Calendar
-        classNames={{
-          root: eventUi.calendarRoot,
-          months: eventUi.calendarMonths,
-          month: eventUi.calendarMonth,
-          month_caption: 'hidden',
-          month_grid: eventUi.calendarGrid,
-          weekday: eventUi.calendarWeekday,
-          day: eventUi.calendarDay,
-          day_button: eventUi.calendarDayButton,
-          selected: eventUi.calendarDaySelected,
-          outside: eventUi.calendarDayOutside,
-          disabled: eventUi.calendarDayDisabled,
-        }}
-        disabled={{ before: firstSelectableDate }}
-        components={{ DayButton: DragDayButton }}
-        mode="multiple"
-        month={month}
-        hideNavigation
-        onMonthChange={setMonth}
-        onDayMouseEnter={(date) => isDragging && extendDrag(date)}
-        onSelect={() => undefined}
-        selected={selectedDates}
-        showOutsideDays={false}
-        weekStartsOn={1}
-      />
-      <button className={eventUi.calendarReset} onClick={resetDates} type="button"><RotateCcw size={13} /> Reset dates</button>
+      {error && <span className={eventUi.fieldError}>{error}</span>}
     </div>
-    {error && <span className={eventUi.fieldError}>{error}</span>}
-  </div>
+  )
 }

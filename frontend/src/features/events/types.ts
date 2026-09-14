@@ -15,7 +15,16 @@ export type CreateEventResponse = {
   isSuccess: boolean
   code: number
   message: string
-  value: { shortCode: string; url: string; participantId: string; isAdmin: boolean; accessToken: string; expiresAt: string; status: number; revision: number } | null
+  value: {
+    shortCode: string
+    url: string
+    participantId: string
+    isAdmin: boolean
+    accessToken: string
+    expiresAt: string
+    status: number
+    revision: number
+  } | null
 }
 
 export type CreateEventRequest = {
