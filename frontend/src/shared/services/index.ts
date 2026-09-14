@@ -4,7 +4,6 @@ import type {
   CreateEventInput,
   EventData,
   FinalSchedule,
-  HeatmapCell,
   Session,
   Suggestion,
   TimeSlot,
@@ -16,6 +15,7 @@ const hubUrl = import.meta.env.VITE_SIGNALR_HUB_URL?.trim() || `${API_BASE}/hubs
 
 async function request<T>(path: string, init?: RequestInit, token?: string): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
+    cache: 'no-store',
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -73,19 +73,20 @@ export const api = {
 }
 
 type RealtimeHandlers = {
-  heatmapUpdated: (payload: { revision: number; heatmapGrid: HeatmapCell[] }) => void
+  heatmapUpdated: (payload: { revision: number }) => void
   eventChanged: () => void
 }
 
-export async function connectRealtime(code: string, token: string, handlers: RealtimeHandlers): Promise<HubConnection> {
+export async function connectRealtime(code: string, token: string | undefined, handlers: RealtimeHandlers): Promise<HubConnection> {
   const connection = new HubConnectionBuilder()
-    .withUrl(hubUrl, { accessTokenFactory: () => token })
-    .withAutomaticReconnect()
+    .withUrl(hubUrl, token ? { accessTokenFactory: () => token } : {})
+    .withAutomaticReconnect({ nextRetryDelayInMilliseconds: ({ previousRetryCount }) => Math.min(1000 * 2 ** previousRetryCount, 30000) })
     .configureLogging(LogLevel.Warning)
     .build()
   connection.on('HeatmapUpdated', handlers.heatmapUpdated)
   connection.on('EventUpdated', handlers.eventChanged)
   connection.on('EventFinalized', handlers.eventChanged)
+  connection.onreconnected(() => connection.invoke('JoinEvent', code).catch(() => undefined))
   await connection.start()
   await connection.invoke('JoinEvent', code)
   return connection

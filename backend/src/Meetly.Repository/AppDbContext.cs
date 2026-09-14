@@ -31,12 +31,12 @@ public class AppDbContext : DbContext
         events.HasIndex(x => x.ShortCode).IsUnique();
         events.ToTable(t =>
         {
-            t.HasCheckConstraint("CK_Events_DailyTime", "\"DailyStartTime\" < \"DailyEndTime\"");
+            t.HasCheckConstraint("CK_Events_DailyTime", "\"DailyStartTime\" <> \"DailyEndTime\"");
             t.HasCheckConstraint("CK_Events_EventType", "\"EventType\" IN (1, 2)");
             t.HasCheckConstraint("CK_Events_Status", "\"Status\" IN (1, 2, 3)");
             t.HasCheckConstraint(
                 "CK_Events_FinalSelection",
-                "(\"FinalDate\" IS NULL AND \"FinalDayOfWeek\" IS NULL AND \"FinalStartTime\" IS NULL AND \"FinalEndTime\" IS NULL) OR (((\"FinalDate\" IS NOT NULL AND \"FinalDayOfWeek\" IS NULL) OR (\"FinalDate\" IS NULL AND \"FinalDayOfWeek\" IS NOT NULL)) AND \"FinalStartTime\" IS NOT NULL AND \"FinalEndTime\" IS NOT NULL AND \"FinalStartTime\" < \"FinalEndTime\")");
+                "(\"FinalDate\" IS NULL AND \"FinalDayOfWeek\" IS NULL AND \"FinalStartTime\" IS NULL AND \"FinalEndTime\" IS NULL) OR (((\"FinalDate\" IS NOT NULL AND \"FinalDayOfWeek\" IS NULL) OR (\"FinalDate\" IS NULL AND \"FinalDayOfWeek\" IS NOT NULL)) AND \"FinalStartTime\" IS NOT NULL AND \"FinalEndTime\" IS NOT NULL AND \"FinalStartTime\" <> \"FinalEndTime\")");
         });
 
         var dates = modelBuilder.Entity<EventAvailableDates>();
@@ -81,7 +81,7 @@ public class AppDbContext : DbContext
                 "\"DayOfWeek\" IS NULL OR \"DayOfWeek\" BETWEEN 0 AND 6");
             t.HasCheckConstraint(
                 "CK_TimeSlots_Time",
-                "\"StartTime\" < \"EndTime\"");
+                "\"StartTime\" <> \"EndTime\"");
         });
 
         events.HasMany(x => x.AvailableDates).WithOne(x => x.Event).HasForeignKey(x => x.EventId).OnDelete(DeleteBehavior.Cascade);

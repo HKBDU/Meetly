@@ -2,13 +2,26 @@ import type { EventData, TimeSlot } from '@/shared/types'
 
 export const WEEKDAYS = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy']
 
+const DAY_MINUTES = 24 * 60
 const minutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5))
-const clock = (value: number) => `${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`
+const clock = (value: number) => {
+  const normalized = ((value % DAY_MINUTES) + DAY_MINUTES) % DAY_MINUTES
+  return `${String(Math.floor(normalized / 60)).padStart(2, '0')}:${String(normalized % 60).padStart(2, '0')}`
+}
+const duration = (start: string, end: string) => (minutes(end) - minutes(start) + DAY_MINUTES) % DAY_MINUTES
+const offset = (start: string, time: string) => (minutes(time) - minutes(start) + DAY_MINUTES) % DAY_MINUTES
 
 export function times(start: string, end: string, step = 15) {
   const result: string[] = []
-  for (let value = minutes(start); value < minutes(end); value += step) result.push(clock(value))
+  for (let value = 0; value < duration(start, end); value += step) result.push(clock(minutes(start) + value))
   return result
+}
+
+export const isOvernight = (start: string, end: string) => minutes(end) < minutes(start)
+export const timeLabel = (time: string, start: string) => `${time}${minutes(time) < minutes(start) ? ' (+1 ngày)' : ''}`
+export const rangeInWindow = (windowStart: string, windowEnd: string, start: string, end: string) => {
+  const rangeDuration = duration(start, end)
+  return rangeDuration > 0 && offset(windowStart, start) + rangeDuration <= duration(windowStart, windowEnd)
 }
 
 export const targetKey = (specificDate: string | null, dayOfWeek: number | null) =>

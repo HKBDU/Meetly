@@ -4,6 +4,7 @@ using Meetly.Repository.EventScheduling;
 using Meetly.Service.EventScheduling;
 using Meetly.Service.JwtService;
 using Meetly.Service.Realtime;
+using Meetly.Service.Scheduling;
 using Microsoft.Extensions.Configuration;
 using EventStatus = Meetly.Repository.Enum.EventStatus;
 using EventType = Meetly.Repository.Enum.EventType;
@@ -12,6 +13,17 @@ namespace Meetly.Api.Tests;
 
 public class EventServiceTests
 {
+    [Fact]
+    public void ScheduleTime_SupportsOvernightWindow()
+    {
+        var cells = ScheduleTime.Cells(TimeOnly.Parse("23:00"), TimeOnly.Parse("01:00"), 15).ToArray();
+
+        Assert.Equal(8, cells.Length);
+        Assert.Equal(TimeOnly.Parse("00:00"), cells[4].Start);
+        Assert.True(ScheduleTime.Contains(TimeOnly.Parse("23:00"), TimeOnly.Parse("01:00"), TimeOnly.Parse("23:30"), TimeOnly.Parse("00:30")));
+        Assert.False(ScheduleTime.Contains(TimeOnly.Parse("23:00"), TimeOnly.Parse("01:00"), TimeOnly.Parse("22:30"), TimeOnly.Parse("00:30")));
+    }
+
     [Fact]
     public async Task Update_TruncatesValidSlotsAndRemovesDeletedDates()
     {

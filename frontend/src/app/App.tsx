@@ -4,7 +4,7 @@ import {
   LogOut, Mail, MousePointer2, Plus, Search, ShieldCheck, Sparkles, Users, X,
 } from 'lucide-react'
 import { api, connectRealtime } from '@/shared/services'
-import { cellKey, cellsToSlots, slotsToCells, targetKey, targetLabel, times, WEEKDAYS } from '@/shared/schedule'
+import { cellKey, cellsToSlots, isOvernight, rangeInWindow, slotsToCells, targetKey, targetLabel, timeLabel, times, WEEKDAYS } from '@/shared/schedule'
 import type { CreateEventInput, EventData, FinalSchedule, Session, Suggestion, TimeSlot } from '@/shared/types'
 
 const emptyCreate: CreateEventInput = {
@@ -104,7 +104,7 @@ function Home() {
           </fieldset> : <WeekdayPicker value={create.availableWeekdays} onChange={(availableWeekdays) => setCreate({ ...create, availableWeekdays })} />}
           <div className="two-col">
             <label>Bắt đầu<input required type="time" step={900} value={create.dailyStartTime} onChange={(e) => setCreate({ ...create, dailyStartTime: e.target.value })} /></label>
-            <label>Kết thúc<input required type="time" step={900} value={create.dailyEndTime} onChange={(e) => setCreate({ ...create, dailyEndTime: e.target.value })} /></label>
+            <label>Kết thúc <small>{isOvernight(create.dailyStartTime, create.dailyEndTime) ? 'sang ngày hôm sau' : ''}</small><input required type="time" step={900} value={create.dailyEndTime} onChange={(e) => setCreate({ ...create, dailyEndTime: e.target.value })} /></label>
           </div>
           {error && <p className="form-error">{error}</p>}
           <button className="primary-button" disabled={busy || (create.eventType === 1 ? !create.availableDates.length : !create.availableWeekdays.length)}>{busy ? <LoaderCircle className="spin" /> : <ArrowRight />} Tạo lịch và tiếp tục</button>
@@ -124,7 +124,7 @@ function Home() {
 
 function WeekdayPicker({ value, onChange }: { value: number[]; onChange: (days: number[]) => void }) {
   return <fieldset><legend>Ngày trong tuần</legend><div className="weekday-grid">
-    {WEEKDAYS.map((day, index) => <button type="button" key={day} className={value.includes(index) ? 'day active' : 'day'} onClick={() => onChange(value.includes(index) ? value.filter((item) => item !== index) : [...value, index].sort())}>{day.replace('Thứ ', 'T')}</button>)}
+    {WEEKDAYS.map((day, index) => <button type="button" key={day} className={value.includes(index) ? 'day active' : 'day'} onClick={() => onChange(value.includes(index) ? value.filter((item) => item !== index) : [...value, index].sort())}>{day}</button>)}
   </div></fieldset>
 }
 
@@ -136,6 +136,7 @@ function EventPage({ code }: { code: string }) {
   const [notice, setNotice] = useState('')
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [adminPanel, setAdminPanel] = useState<'edit' | 'finalize' | null>(null)
+  const [realtimeRetry, setRealtimeRetry] = useState(0)
 
   const load = useCallback(async () => {
     try {
@@ -155,15 +156,17 @@ function EventPage({ code }: { code: string }) {
   useEffect(() => { void load() }, [load])
   const accessToken = session?.accessToken
   useEffect(() => {
-    if (!accessToken) return
     let disposed = false
     let connection: Awaited<ReturnType<typeof connectRealtime>> | null = null
+    let retryTimer: ReturnType<typeof setTimeout> | undefined
     void connectRealtime(code, accessToken, {
-      heatmapUpdated: (payload) => setData((current) => current && payload.revision > current.revision ? { ...current, revision: payload.revision, heatmapGrid: payload.heatmapGrid } : current),
+      heatmapUpdated: () => { void load() },
       eventChanged: () => { void load() },
-    }).then((value) => { if (disposed) void value.stop(); else connection = value }).catch(() => undefined)
-    return () => { disposed = true; if (connection) void connection.stop() }
-  }, [accessToken, code, load])
+    }).then((value) => { if (disposed) void value.stop(); else connection = value }).catch(() => {
+      if (!disposed) retryTimer = setTimeout(() => setRealtimeRetry((value) => value + 1), 3000)
+    })
+    return () => { disposed = true; clearTimeout(retryTimer); if (connection) void connection.stop() }
+  }, [accessToken, code, load, realtimeRetry])
 
   const authenticate = async (username: string, password: string) => {
     const result = await api.accessEvent(code, username, password)
@@ -179,7 +182,7 @@ function EventPage({ code }: { code: string }) {
       {session ? <><span className="user-pill"><span>{session.username.slice(0, 1).toUpperCase()}</span>{session.username}{session.isAdmin && <ShieldCheck size={15} />}</span><button className="icon-button" onClick={logout} aria-label="Đăng xuất"><LogOut size={17} /></button></> : null}
     </div></nav>
     <section className="event-heading">
-      <div><p className="eyebrow">Mã sự kiện · {code}</p><h1>{data.title}</h1><p><Clock3 size={15} /> {data.dailyStartTime}–{data.dailyEndTime} · {data.timezone}</p></div>
+      <div><p className="eyebrow">Mã sự kiện · {code}</p><h1>{data.title}</h1><p><Clock3 size={15} /> {data.dailyStartTime}–{data.dailyEndTime}{isOvernight(data.dailyStartTime, data.dailyEndTime) ? ' (+1 ngày)' : ''} · {data.timezone}</p></div>
       <div className="event-stats"><strong>{data.participants.length}</strong><span>người tham gia</span><strong>{data.revision}</strong><span>lần cập nhật</span></div>
     </section>
     {data.finalSchedule && <FinalBanner data={data} />}
@@ -216,13 +219,12 @@ function Heatmap({ event, suggestions = [], selectable, selected, mode = 'free',
   const rows = times(event.dailyStartTime, event.dailyEndTime)
   const cells = new Map(event.heatmapGrid.map((item) => [cellKey(targetKey(item.specificDate, item.dayOfWeek), item.startTime), item]))
   const max = Math.max(1, event.participants.length)
-  const highlighted = (column: (typeof columns)[number], time: string) => suggestions.some((slot) =>
-    slot.specificDate === column.date && slot.dayOfWeek === column.day && time >= slot.startTime && time < slot.endTime)
+  const suggested = slotsToCells(suggestions)
   return <div className="heatmap-wrap"><table className="heatmap"><thead><tr><th>Giờ</th>{columns.map((column) => <th key={column.key}>{targetLabel(event, column.date, column.day)}</th>)}</tr></thead>
-    <tbody>{rows.map((time) => <tr key={time}><th>{time}</th>{columns.map((column) => {
+    <tbody>{rows.map((time) => <tr key={time}><th>{timeLabel(time, event.dailyStartTime)}</th>{columns.map((column) => {
       const key = cellKey(column.key, time); const cell = cells.get(key); const free = selected?.has(key) ?? false; const active = mode === 'free' ? free : !free
       const level = cell ? Math.ceil((cell.count / max) * 4) : 0
-      return <td key={key}><button type="button" disabled={!selectable} className={`heat-cell level-${level}${active && selectable ? ' selected' : ''}${highlighted(column, time) ? ' suggested' : ''}`} title={selectable ? `${targetLabel(event, column.date, column.day)} ${time}` : cell?.participants.join(', ') || 'Chưa có ai rảnh'} onPointerDown={(pointer) => onCellDown?.(key, pointer)} onPointerEnter={(pointer) => onCellEnter?.(key, pointer)}><span>{selectable ? (active ? <Check size={14} /> : '') : cell?.count || ''}</span></button></td>
+      return <td key={key}><button type="button" disabled={!selectable} className={`heat-cell level-${level}${active && selectable ? ' selected' : ''}${suggested.has(key) ? ' suggested' : ''}`} title={selectable ? `${targetLabel(event, column.date, column.day)} ${timeLabel(time, event.dailyStartTime)}` : cell?.participants.join(', ') || 'Chưa có ai rảnh'} onPointerDown={(pointer) => onCellDown?.(key, pointer)} onPointerEnter={(pointer) => onCellEnter?.(key, pointer)}><span>{selectable ? (active ? <Check size={14} /> : '') : cell?.count || ''}</span></button></td>
     })}</tr>)}</tbody></table></div>
 }
 
@@ -236,7 +238,7 @@ function Availability({ event, session, onSaved }: { event: EventData; session: 
   const pointerDown = (key: string, pointer: PointerEvent<HTMLButtonElement>) => { pointer.preventDefault(); const next = !selected.has(key); dragValue.current = next; setCell(key, next) }
   const pointerEnter = (key: string, pointer: PointerEvent<HTMLButtonElement>) => { if (pointer.buttons === 1 && dragValue.current !== null) setCell(key, dragValue.current) }
   const addManual = () => {
-    if (manual.start >= manual.end) return setError('Giờ bắt đầu phải trước giờ kết thúc.')
+    if (!rangeInWindow(event.dailyStartTime, event.dailyEndTime, manual.start, manual.end)) return setError('Khoảng giờ nằm ngoài khung giờ của sự kiện.')
     const next = new Set(selected); const markFree = mode === 'free'
     for (const time of times(manual.start, manual.end)) { const key = cellKey(manual.target, time); if (markFree) next.add(key); else next.delete(key) }
     setSelected(next); setError('')
@@ -246,7 +248,7 @@ function Availability({ event, session, onSaved }: { event: EventData; session: 
   return <div className="availability">
     <div className="schedule-toolbar"><div><p className="eyebrow">Lịch của {session.username}</p><h2>Kéo hoặc chạm để đánh dấu</h2></div><div className="segmented compact"><button className={mode === 'free' ? 'active' : ''} onClick={() => setMode('free')}>Tôi rảnh</button><button className={mode === 'busy' ? 'active' : ''} onClick={() => setMode('busy')}>Tôi bận</button></div></div>
     <Heatmap event={event} selectable selected={selected} mode={mode} onCellDown={pointerDown} onCellEnter={pointerEnter} />
-    <div className="manual-row"><label>Ngày<select value={manual.target} onChange={(e) => setManual({ ...manual, target: e.target.value })}>{event.eventType === 1 ? event.availableDates.map((date) => <option key={date} value={date}>{targetLabel(event, date, null)}</option>) : event.availableWeekdays.map((day) => <option key={day} value={`weekday:${day}`}>{WEEKDAYS[day]}</option>)}</select></label><label>Từ<input type="time" step={900} min={event.dailyStartTime} max={event.dailyEndTime} value={manual.start} onChange={(e) => setManual({ ...manual, start: e.target.value })} /></label><label>Đến<input type="time" step={900} min={event.dailyStartTime} max={event.dailyEndTime} value={manual.end} onChange={(e) => setManual({ ...manual, end: e.target.value })} /></label><button className="secondary-button" onClick={addManual}><Plus size={16} /> Đánh dấu</button></div>
+    <div className="manual-row"><label>Ngày<select value={manual.target} onChange={(e) => setManual({ ...manual, target: e.target.value })}>{event.eventType === 1 ? event.availableDates.map((date) => <option key={date} value={date}>{targetLabel(event, date, null)}</option>) : event.availableWeekdays.map((day) => <option key={day} value={`weekday:${day}`}>{WEEKDAYS[day]}</option>)}</select></label><label>Từ<input type="time" step={900} value={manual.start} onChange={(e) => setManual({ ...manual, start: e.target.value })} /></label><label>Đến<input type="time" step={900} value={manual.end} onChange={(e) => setManual({ ...manual, end: e.target.value })} /></label><button className="secondary-button" onClick={addManual}><Plus size={16} /> Đánh dấu</button></div>
     <div className="save-bar"><label><Mail size={17} /> Nhận lịch chốt qua email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ban@congty.vn" /></label><div>{error && <span className="form-error">{error}</span>}<button className="primary-button" onClick={save} disabled={busy}>{busy ? <LoaderCircle className="spin" /> : <Check />} Lưu lịch của tôi</button></div></div>
   </div>
 }
@@ -282,5 +284,5 @@ function FinalizeEvent({ event, token, done }: { event: EventData; token: string
 
 function FinalBanner({ data }: { data: EventData }) {
   const slot = data.finalSchedule!
-  return <div className="final-banner"><span className="final-icon"><Check /></span><div><p>Lịch họp đã chốt</p><strong>{targetLabel(data, slot.specificDate, slot.dayOfWeek)} · {slot.startTime}–{slot.endTime}</strong></div><button className="ghost-button" onClick={() => navigator.clipboard.writeText(`${data.title}: ${targetLabel(data, slot.specificDate, slot.dayOfWeek)} ${slot.startTime}-${slot.endTime}`)}><Clipboard /> Sao chép</button></div>
+  return <div className="final-banner"><span className="final-icon"><Check /></span><div><p>Lịch họp đã chốt</p><strong>{targetLabel(data, slot.specificDate, slot.dayOfWeek)} · {slot.startTime}–{slot.endTime}{isOvernight(slot.startTime, slot.endTime) ? ' (+1 ngày)' : ''}</strong></div><button className="ghost-button" onClick={() => navigator.clipboard.writeText(`${data.title}: ${targetLabel(data, slot.specificDate, slot.dayOfWeek)} ${slot.startTime}-${slot.endTime}`)}><Clipboard /> Sao chép</button></div>
 }

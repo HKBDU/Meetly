@@ -10,3 +10,10 @@
 - Used PostgreSQL `CURRENT_TIMESTAMP` for creation timestamps so existing and newly inserted rows receive valid values.
 - Left update timestamp stamping for the future write pipeline; the current task only defines the persistence contract.
 - Removed the database default for event status because the entity already initializes it and EF otherwise reports ambiguous sentinel behavior.
+- Treat an end time earlier than the start time as the following day; equal times remain invalid instead of representing 24 hours.
+- Store overnight ranges in existing time-only columns and compare them as minute offsets from the event start to avoid a schema expansion.
+- Broadcast lightweight SignalR invalidation events, then reload uncached event data so every client uses one heatmap implementation.
+- Allow read-only realtime subscriptions without authentication because event details are already readable by anyone with the event code.
+- Rejoin the SignalR group after reconnect because group membership belongs to the old connection.
+- Allow both Docker web and local development origins; the previous Docker default blocks browser SignalR while command-line clients still pass.
+- Use Windows-native variable fonts with Vietnamese glyph coverage; avoid a remote font dependency.

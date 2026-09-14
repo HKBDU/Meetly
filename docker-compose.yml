@@ -34,7 +34,7 @@ services:
       JwtOptions__SecretKey: ${JWT_SECRET:?Set JWT_SECRET in .env}
       JwtOptions__ExpirationMinutes: 1440
       PublicBaseUrl: ${PUBLIC_BASE_URL:-http://localhost:8080}
-      AllowedOrigins: ${ALLOWED_ORIGINS:-http://localhost:5173}
+      AllowedOrigins: ${ALLOWED_ORIGINS:-http://localhost:8080;http://localhost:5173}
       ApplyMigrations: 'true'
     ports:
       - '${API_PORT:-5000}:8080'

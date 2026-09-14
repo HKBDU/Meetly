@@ -4,6 +4,7 @@ using Meetly.Repository.Availability;
 using Meetly.Repository.Entity;
 using Meetly.Repository.Enum;
 using Meetly.Service.Realtime;
+using Meetly.Service.Scheduling;
 
 namespace Meetly.Service.Availability;
 
@@ -70,14 +71,13 @@ public sealed class AvailabilityService : IAvailabilityService
 
     private static void ValidateSlot(Events eventEntity, TimeSlotsRequest slot)
     {
-        if (slot.StartTime >= slot.EndTime)
-            throw new AvailabilityException(422, "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.");
+        if (slot.StartTime == slot.EndTime)
+            throw new AvailabilityException(422, "Khoảng thời gian phải dài hơn 0 phút.");
 
         if (!Aligned(slot.StartTime) || !Aligned(slot.EndTime))
             throw new AvailabilityException(422, "Time slot phải theo mốc 15 phút.");
 
-        if (slot.StartTime < eventEntity.DailyStartTime ||
-            slot.EndTime > eventEntity.DailyEndTime)
+        if (!ScheduleTime.Contains(eventEntity.DailyStartTime, eventEntity.DailyEndTime, slot.StartTime, slot.EndTime))
             throw new AvailabilityException(422, "Time slot nằm ngoài khung giờ của sự kiện.");
 
         var hasDate = slot.SpecificDate.HasValue;

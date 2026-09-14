@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Meetly.Repository.Entity;
 using Meetly.Repository.Enum;
 using Meetly.Repository.SuggestionSlots;
+using Meetly.Service.Scheduling;
 
 namespace Meetly.Service.SuggestionSlots;
 
@@ -81,11 +82,16 @@ public sealed class SuggestionService : ISuggestionService
         if (matchingSlots.Length == 0)
             return [];
 
+        var windowDuration = ScheduleTime.Duration(eventEntity.DailyStartTime, eventEntity.DailyEndTime);
         var boundaries = matchingSlots
-            .SelectMany(x => new[] { x.Slot.StartTime, x.Slot.EndTime })
-            .Append(eventEntity.DailyStartTime)
-            .Append(eventEntity.DailyEndTime)
-            .Where(time => time >= eventEntity.DailyStartTime && time <= eventEntity.DailyEndTime)
+            .SelectMany(x =>
+            {
+                var start = ScheduleTime.Offset(eventEntity.DailyStartTime, x.Slot.StartTime);
+                return new[] { start, start + ScheduleTime.Duration(x.Slot.StartTime, x.Slot.EndTime) };
+            })
+            .Append(0)
+            .Append(windowDuration)
+            .Where(time => time >= 0 && time <= windowDuration)
             .Distinct()
             .Order()
             .ToArray();
@@ -99,7 +105,11 @@ public sealed class SuggestionService : ISuggestionService
                 continue;
 
             var participants = matchingSlots
-                .Where(x => x.Slot.StartTime <= start && x.Slot.EndTime >= end)
+                .Where(x =>
+                {
+                    var slotStart = ScheduleTime.Offset(eventEntity.DailyStartTime, x.Slot.StartTime);
+                    return slotStart <= start && slotStart + ScheduleTime.Duration(x.Slot.StartTime, x.Slot.EndTime) >= end;
+                })
                 .Select(x => x.Participant)
                 .DistinctBy(x => x.Id)
                 .OrderBy(x => x.Username)
@@ -113,13 +123,13 @@ public sealed class SuggestionService : ISuggestionService
         }
 
         return MergeAdjacent(atomicSlots)
-            .Where(x => (x.End - x.Start).TotalMinutes >= minimumDuration)
+            .Where(x => x.End - x.Start >= minimumDuration)
             .Select(x => new TimeSlotsSuggestionRequest
             {
                 SpecificDate = specificDate,
                 DayOfWeek = dayOfWeek is null ? null : (System.DayOfWeek)(int)dayOfWeek.Value,
-                StartTime = x.Start,
-                EndTime = x.End,
+                StartTime = ScheduleTime.At(eventEntity.DailyStartTime, x.Start),
+                EndTime = ScheduleTime.At(eventEntity.DailyStartTime, x.End),
                 ParticipantCount = x.Participants.Length,
                 TotalParticipants = eventEntity.Participants.Count
             })
@@ -171,8 +181,8 @@ public sealed class SuggestionService : ISuggestionService
         user.IsInRole("Admin");
 
     private sealed record SlotCandidate(
-        TimeOnly Start,
-        TimeOnly End,
+        int Start,
+        int End,
         EventParticipants[] Participants);
 }
 

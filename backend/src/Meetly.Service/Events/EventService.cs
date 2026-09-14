@@ -6,6 +6,7 @@ using Meetly.Repository.Enum;
 using Meetly.Repository.EventScheduling;
 using Meetly.Service.JwtService;
 using Meetly.Service.Realtime;
+using Meetly.Service.Scheduling;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 
@@ -85,7 +86,10 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt, I
                 CreatedAt = DateTimeOffset.UtcNow
             };
             repository.Add(participant);
+            entity.Revision++;
+            entity.UpdatedAt = DateTimeOffset.UtcNow;
             await repository.SaveChangesAsync(cancellationToken);
+            await notifier.NotifyEventUpdatedAsync(shortCode, entity.Revision, cancellationToken);
         }
         else Verify(participant, request.Password);
 
@@ -160,23 +164,24 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt, I
 
         foreach (var participant in entity.Participants)
         {
-            var validSlots = participant.TimeSlots
-                .Where(slot => request.EventType == (int)EventType.Dates
+            var validSlots = new List<TimeSlots>();
+            foreach (var slot in participant.TimeSlots.Where(slot => request.EventType == (int)EventType.Dates
                     ? slot.SpecificDate.HasValue && dates.Any(date => date.SpecificDate == slot.SpecificDate)
-                    : slot.DayOfWeek.HasValue && dates.Any(date => date.DayOfWeek == slot.DayOfWeek))
-                .Select(slot => new TimeSlots
+                    : slot.DayOfWeek.HasValue && dates.Any(date => date.DayOfWeek == slot.DayOfWeek)))
+            {
+                if (!ScheduleTime.TryClip(entity.DailyStartTime, entity.DailyEndTime, slot.StartTime, slot.EndTime, out var start, out var end)) continue;
+                validSlots.Add(new TimeSlots
                 {
                     Id = Guid.NewGuid(),
                     EventId = entity.Id,
                     ParticipantId = participant.Id,
                     SpecificDate = slot.SpecificDate,
                     DayOfWeek = slot.DayOfWeek,
-                    StartTime = slot.StartTime < entity.DailyStartTime ? entity.DailyStartTime : slot.StartTime,
-                    EndTime = slot.EndTime > entity.DailyEndTime ? entity.DailyEndTime : slot.EndTime,
+                    StartTime = start,
+                    EndTime = end,
                     CreatedAt = DateTimeOffset.UtcNow
-                })
-                .Where(slot => slot.StartTime < slot.EndTime)
-                .ToArray();
+                });
+            }
             repository.ReplaceSlots(participant, validSlots);
         }
 
@@ -260,10 +265,9 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt, I
         foreach (var available in entity.AvailableDates
                      .OrderBy(x => x.SpecificDate)
                      .ThenBy(x => x.DayOfWeek))
-            for (var start = entity.DailyStartTime; start < entity.DailyEndTime; start = start.AddMinutes(SlotMinutes))
+            foreach (var (start, end) in ScheduleTime.Cells(entity.DailyStartTime, entity.DailyEndTime, SlotMinutes))
             {
-                var end = start.AddMinutes(SlotMinutes) > entity.DailyEndTime ? entity.DailyEndTime : start.AddMinutes(SlotMinutes);
-                var participants = entity.Participants.Where(p => p.TimeSlots.Any(s => s.SpecificDate == available.SpecificDate && s.DayOfWeek == available.DayOfWeek && s.StartTime <= start && s.EndTime >= end)).Select(p => p.Username).Order().ToList();
+                var participants = entity.Participants.Where(p => p.TimeSlots.Any(s => s.SpecificDate == available.SpecificDate && s.DayOfWeek == available.DayOfWeek && ScheduleTime.Covers(entity.DailyStartTime, s.StartTime, s.EndTime, start, end))).Select(p => p.Username).Order().ToList();
                 result.Add(new HeatmapCellResponse(available.SpecificDate, available.DayOfWeek is null ? null : (System.DayOfWeek)(int)available.DayOfWeek.Value, Format(start), participants, participants.Count));
             }
         return result;
@@ -277,11 +281,11 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt, I
     }
     private static void SetFinalTime(Events entity, FinalizeEventRequest request)
     {
-        if (request.StartTime >= request.EndTime)
-            throw new EventException(422, "startTime must be before endTime.");
+        if (request.StartTime == request.EndTime)
+            throw new EventException(422, "Final time must be longer than 0 minutes.");
         if (!Aligned(request.StartTime) || !Aligned(request.EndTime))
             throw new EventException(422, "Final time must align to 15-minute intervals.");
-        if (request.StartTime < entity.DailyStartTime || request.EndTime > entity.DailyEndTime)
+        if (!ScheduleTime.Contains(entity.DailyStartTime, entity.DailyEndTime, request.StartTime, request.EndTime))
             throw new EventException(422, "Final time is outside the event hours.");
 
         if (entity.EventType == EventType.Dates)
@@ -319,7 +323,7 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt, I
     private static DateOnly VietnamToday() => DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
     private static void ValidateHours(Events entity)
     {
-        if (entity.DailyStartTime >= entity.DailyEndTime) throw new EventException(422, "dailyStartTime must be before dailyEndTime.");
+        if (entity.DailyStartTime == entity.DailyEndTime) throw new EventException(422, "Event hours must be longer than 0 minutes.");
         if (!Aligned(entity.DailyStartTime) || !Aligned(entity.DailyEndTime)) throw new EventException(422, "Event hours must align to 15-minute intervals.");
     }
     private static void ValidatePassword(string? password)
