@@ -1,5 +1,4 @@
 using Meetly.Contract.DTOs.Common;
-using Meetly.Contract.DTOs.Events;
 using Meetly.Service.SuggestionSlots;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
