@@ -1,91 +1,169 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
+import { DayButton, type DayButtonProps } from 'react-day-picker'
+import { eventUi } from './styles'
+import { cn } from '@/lib/utils'
+import { Calendar } from '@/shared/components/ui/calendar'
 import type { EventType } from '../types'
-import { formatDateForDisplay, getDateKey, getMonthDays, isFutureDate } from '../utils/date.utils'
+import { getDateKey } from '../utils/date.utils'
 
 const WEEKDAY_OPTIONS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const WEEKDAY_SHORT = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
 
 type AvailabilitySelectorProps = { eventType: EventType; value: string[]; onChange: (value: string[]) => void; error?: string }
 
 export function AvailabilitySelector({ eventType, value, onChange, error }: AvailabilitySelectorProps) {
-  const [visibleMonth, setVisibleMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1))
   const [isDragging, setIsDragging] = useState(false)
-  const today = useMemo(() => new Date(), [])
-  const monthDays = useMemo(() => getMonthDays(visibleMonth), [visibleMonth])
+  const valueRef = useRef(value)
+  const dragModeRef = useRef<'add' | 'remove' | null>(null)
+  const dragVisitedRef = useRef<Set<string>>(new Set())
+
+  const firstSelectableDate = useMemo(() => {
+    const date = new Date()
+    date.setHours(0, 0, 0, 0)
+    date.setDate(date.getDate() + 1)
+    return date
+  }, [])
+
+  const startMonth = useMemo(
+    () => new Date(firstSelectableDate.getFullYear(), firstSelectableDate.getMonth(), 1),
+    [firstSelectableDate],
+  )
+
+  const [month, setMonth] = useState(startMonth)
+
+  const selectedDates = useMemo(() => value.map((date) => new Date(`${date}T00:00:00`)), [value])
 
   useEffect(() => {
-    const stopDragging = () => setIsDragging(false)
-    window.addEventListener('mouseup', stopDragging)
-    return () => window.removeEventListener('mouseup', stopDragging)
+    valueRef.current = value
+  }, [value])
+
+  useEffect(() => {
+    function finishDrag() {
+      dragModeRef.current = null
+      dragVisitedRef.current = new Set()
+      setIsDragging(false)
+    }
+    window.addEventListener('mouseup', finishDrag)
+    return () => window.removeEventListener('mouseup', finishDrag)
   }, [])
+
+  function applyDay(dateKey: string, mode: 'add' | 'remove') {
+    const current = valueRef.current
+    const has = current.includes(dateKey)
+    if (mode === 'add' && !has) {
+      const next = [...current, dateKey]
+      valueRef.current = next
+      onChange(next)
+    } else if (mode === 'remove' && has) {
+      const next = current.filter((d) => d !== dateKey)
+      valueRef.current = next
+      onChange(next)
+    }
+  }
+
+  function startDrag(date: Date) {
+    if (date < firstSelectableDate) return
+    const dateKey = getDateKey(date)
+    const mode = valueRef.current.includes(dateKey) ? 'remove' : 'add'
+    dragModeRef.current = mode
+    dragVisitedRef.current = new Set([dateKey])
+    setIsDragging(true)
+    applyDay(dateKey, mode)
+  }
+
+  function extendDrag(date: Date) {
+    const mode = dragModeRef.current
+    if (!mode || date < firstSelectableDate) return
+    const dateKey = getDateKey(date)
+    if (dragVisitedRef.current.has(dateKey)) return
+    dragVisitedRef.current.add(dateKey)
+    applyDay(dateKey, mode)
+  }
 
   function toggle(item: string) {
     onChange(value.includes(item) ? value.filter((current) => current !== item) : [...value, item])
-  }
-
-  function selectDate(date: Date) {
-    if (!isFutureDate(date)) return
-    const key = getDateKey(date)
-    const next = new Set(value)
-    if (isDragging) {
-      next.add(key)
-    } else if (next.has(key)) {
-      next.delete(key)
-    } else {
-      next.add(key)
-    }
-    onChange([...next].sort())
-  }
-
-  function startDateDrag(date: Date) {
-    if (!isFutureDate(date)) return
-    setIsDragging(true)
-    const key = getDateKey(date)
-    onChange(value.includes(key) ? value.filter((current) => current !== key) : [...value, key].sort())
-  }
-
-  function dragOverDate(date: Date) {
-    if (isDragging && isFutureDate(date)) selectDate(date)
   }
 
   function resetDates() {
     onChange([])
   }
 
-  function changeMonth(offset: number) {
-    setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1))
+  function shiftMonth(diff: number) {
+    setMonth((current) => new Date(current.getFullYear(), current.getMonth() + diff, 1))
   }
+
+  const isPrevDisabled = month.getFullYear() === startMonth.getFullYear() && month.getMonth() === startMonth.getMonth()
 
   if (eventType === 2) {
-    return <div className="form-field availability-selector">
-      <div className="availability-selector__heading"><div><label>Weekdays <span className="required-mark">*</span></label><p>Choose one or more weekdays for this event.</p></div><span>{value.length} selected</span></div>
-      <div className="weekday-options">
-        {WEEKDAY_OPTIONS.map((item) => <button className={'weekday-option' + (value.includes(item) ? ' is-selected' : '')} key={item} onClick={() => toggle(item)} type="button">{item}</button>)}
+    return <div className={eventUi.field}>
+      <div className="flex items-center justify-between"><div><label className={eventUi.label}>Weekdays <span className={eventUi.requiredMark}>*</span></label><p className="hidden">Choose one or more weekdays for this event.</p></div><span className={eventUi.fieldHint}>{value.length} selected</span></div>
+      <div className={eventUi.weekdayOptions}>
+        {WEEKDAY_OPTIONS.map((item) => <button className={cn(eventUi.weekdayOption, value.includes(item) && eventUi.weekdayOptionSelected)} key={item} onClick={() => toggle(item)} type="button">{item}</button>)}
       </div>
-      {error && <span className="field-error">{error}</span>}
+      {error && <span className={eventUi.fieldError}>{error}</span>}
     </div>
   }
 
-  return <div className="form-field availability-selector">
-    <div className="availability-selector__heading"><div><label>Date selection <span className="required-mark">*</span></label></div><span className="selection-help">Drag or click to select multiple dates</span></div>
-    <div className="calendar" onMouseLeave={() => setIsDragging(false)}>
-      <div className="calendar__toolbar">
-        <button aria-label="Previous month" disabled={visibleMonth.getFullYear() === today.getFullYear() && visibleMonth.getMonth() <= today.getMonth()} onClick={() => changeMonth(-1)} type="button"><ChevronLeft size={16} /></button>
-        <strong>{visibleMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</strong>
-        <button aria-label="Next month" onClick={() => changeMonth(1)} type="button"><ChevronRight size={16} /></button>
-      </div>
-      <div className="calendar__grid">
-        {WEEKDAY_SHORT.map((day) => <span className="calendar__weekday" key={day}>{day}</span>)}
-        {monthDays.map((date) => {
-          const key = getDateKey(date)
-          const isCurrentMonth = date.getMonth() === visibleMonth.getMonth()
-          const isDisabled = !isCurrentMonth || !isFutureDate(date)
-          return <button aria-label={formatDateForDisplay(key)} className={'calendar__day' + (value.includes(key) ? ' is-selected' : '') + (!isCurrentMonth ? ' is-outside' : '')} disabled={isDisabled} key={key} onMouseDown={() => startDateDrag(date)} onMouseEnter={() => dragOverDate(date)} onClick={(event) => event.preventDefault()} type="button">{date.getDate()}</button>
-        })}
-      </div>
-      <button className="calendar__reset" onClick={resetDates} type="button"><RotateCcw size={13} /> Reset dates</button>
+  function DragDayButton({ onMouseDown, ...props }: DayButtonProps) {
+    return <DayButton
+      {...props}
+      onMouseDown={(event) => {
+        onMouseDown?.(event)
+        if (!props.modifiers.disabled) startDrag(props.day.date)
+      }}
+    />
+  }
+
+  return <div className={eventUi.field}>
+    <div className="flex items-center justify-between">
+      <label className={eventUi.label}>Date selection <span className={eventUi.requiredMark}>*</span></label>
+      <span className={eventUi.fieldHint}>{value.length} selected</span>
     </div>
-    {error && <span className="field-error">{error}</span>}
+    <div className={eventUi.calendar}>
+      <div className={eventUi.calendarMonthCaption}>
+        <button
+          className={eventUi.calendarToolbarButton}
+          disabled={isPrevDisabled}
+          onClick={() => shiftMonth(-1)}
+          type="button"
+        >
+          <ChevronLeft size={16} />
+        </button>
+        <span className={eventUi.calendarToolbarTitle}>
+          {month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+        </span>
+        <button className={eventUi.calendarToolbarButton} onClick={() => shiftMonth(1)} type="button">
+          <ChevronRight size={16} />
+        </button>
+      </div>
+      <Calendar
+        classNames={{
+          root: eventUi.calendarRoot,
+          months: eventUi.calendarMonths,
+          month: eventUi.calendarMonth,
+          month_caption: 'hidden',
+          month_grid: eventUi.calendarGrid,
+          weekday: eventUi.calendarWeekday,
+          day: eventUi.calendarDay,
+          day_button: eventUi.calendarDayButton,
+          selected: eventUi.calendarDaySelected,
+          outside: eventUi.calendarDayOutside,
+          disabled: eventUi.calendarDayDisabled,
+        }}
+        disabled={{ before: firstSelectableDate }}
+        components={{ DayButton: DragDayButton }}
+        mode="multiple"
+        month={month}
+        hideNavigation
+        onMonthChange={setMonth}
+        onDayMouseEnter={(date) => isDragging && extendDrag(date)}
+        onSelect={() => undefined}
+        selected={selectedDates}
+        showOutsideDays={false}
+        weekStartsOn={1}
+      />
+      <button className={eventUi.calendarReset} onClick={resetDates} type="button"><RotateCcw size={13} /> Reset dates</button>
+    </div>
+    {error && <span className={eventUi.fieldError}>{error}</span>}
   </div>
 }

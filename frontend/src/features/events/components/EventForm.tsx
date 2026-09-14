@@ -4,6 +4,8 @@ import { AvailabilitySelector } from './AvailabilitySelector'
 import { EventTitleField } from './EventTitleField'
 import { EventTypeSelect } from './EventTypeSelect'
 import { TimeRangeFields } from './TimeRangeFields'
+import { eventUi } from './styles'
+import { cn } from '@/lib/utils'
 import type { EventFormValues, FieldErrors } from '../types'
 import { validateEventForm } from '../schema'
 
@@ -43,15 +45,15 @@ export function EventForm({ compact = false, onCancel, onSubmit, adminUsername, 
     }
   }
 
-  return <form className={'event-form' + (compact ? ' event-form--mobile' : '')} onSubmit={submit}>
-    <section className="event-form__content">
+  return <form className={cn(eventUi.form, compact && eventUi.mobileForm)} onSubmit={submit}>
+    <section className={eventUi.formContent}>
       <EventTitleField error={errors.title} onChange={(value) => update('title', value)} value={values.title} />
 
       <EventTypeSelect onChange={changeEventType} value={values.eventType} />
       <AvailabilitySelector error={errors.availableDates} eventType={values.eventType} onChange={(value) => update('availableDates', value)} value={values.availableDates} />
       <TimeRangeFields end={values.dailyEndTime} error={errors.dailyEndTime} onEndChange={(value) => update('dailyEndTime', value)} onStartChange={(value) => update('dailyStartTime', value)} start={values.dailyStartTime} />
     </section>
-    {error && <div className="form-submit-error" role="alert">{error}</div>}
+    {error && <div className={eventUi.submitError} role="alert">{error}</div>}
     <EventFormActions onCancel={onCancel ?? (() => undefined)} submitLabel={submitLabel} submitting={submitting} />
   </form>
 }
