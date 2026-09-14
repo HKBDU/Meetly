@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Meetly.API.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(Roles = "Admin")]
 [Route("api/v1/events/{shortCode}/suggestions")]
 public sealed class SuggestionController : ControllerBase
 {

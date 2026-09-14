@@ -7,7 +7,7 @@ namespace Meetly.Service.SuggestionSlots;
 
 public sealed class SuggestionService : ISuggestionService
 {
-    private const int DefaultDurationMinutes = 30;
+    private const int DefaultDurationMinutes = 15;
     private readonly ISuggestionRepository _repository;
 
     public SuggestionService(ISuggestionRepository repository)
@@ -33,6 +33,8 @@ public sealed class SuggestionService : ISuggestionService
         var minimumDuration = request.MinDuration ?? DefaultDurationMinutes;
         if (minimumDuration <= 0)
             throw new SuggestionException(422, "minDuration phải lớn hơn 0.");
+        if (minimumDuration % 15 != 0)
+            throw new SuggestionException(422, "minDuration phải chia hết cho 15 phút.");
 
         var keyParticipant = FindKeyParticipant(eventEntity, request.KeyParticipant);
         var suggestions = new List<TimeSlotsSuggestionRequest>();

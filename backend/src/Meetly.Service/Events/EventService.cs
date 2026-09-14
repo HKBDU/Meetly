@@ -7,25 +7,29 @@ using Meetly.Repository.EventScheduling;
 using Meetly.Service.JwtService;
 using Meetly.Service.Realtime;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 
 namespace Meetly.Service.EventScheduling;
 
-public sealed class EventService(IEventRepository repository, IJwtService jwt, IEventRealtimeNotifier notifier) : IEventService
+public sealed class EventService(IEventRepository repository, IJwtService jwt, IEventRealtimeNotifier notifier, IConfiguration configuration) : IEventService
 {
     private const string Alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    private const int SlotMinutes = 15;
     private static readonly TimeSpan VietnamOffset = TimeSpan.FromHours(7);
     private static readonly PasswordHasher<EventParticipants> PasswordHasher = new();
+    private readonly string _publicBaseUrl = (configuration["PublicBaseUrl"] ?? "http://localhost:5173").TrimEnd('/');
 
     public async Task<CreateEventResponse> CreateAsync(CreateEventRequest request, CancellationToken cancellationToken)
     {
+        ValidatePassword(request.Admin.Password);
         var code = await NewCode(cancellationToken);
         var entity = new Events
         {
             Id = Guid.NewGuid(),
-            Title = Required(request.Title, "title"),
+            Title = Required(request.Title, "title", 255),
             EventType = (EventType)request.EventType,
             ShortCode = code,
-            URL = $"https://meetly.com/{code}",
+            URL = $"{_publicBaseUrl}/event/{code}",
             TimeZone = "Asia/Ho_Chi_Minh",
             DailyStartTime = request.DailyStartTime,
             DailyEndTime = request.DailyEndTime,
@@ -37,7 +41,7 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt, I
         {
             Id = Guid.NewGuid(),
             EventId = entity.Id,
-            Username = Required(request.Admin.Username, "admin.username"),
+            Username = Required(request.Admin.Username, "admin.username", 100),
             IsAdmin = true,
             PasswordHash = string.IsNullOrWhiteSpace(request.Admin.Password) ? null : PasswordHasher.HashPassword(null!, request.Admin.Password),
             CreatedAt = DateTimeOffset.UtcNow
@@ -64,8 +68,9 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt, I
 
     public async Task<ParticipantAccessResponse> AccessAsync(string shortCode, ParticipantAccessRequest request, CancellationToken cancellationToken)
     {
+        ValidatePassword(request.Password);
         var entity = await GetEventAsync(shortCode, cancellationToken);
-        var name = Required(request.Username, "username");
+        var name = Required(request.Username, "username", 100);
         var participant = entity.Participants.SingleOrDefault(x => string.Equals(x.Username, name, StringComparison.OrdinalIgnoreCase));
         var isNew = participant is null;
         if (participant is null)
@@ -140,25 +145,47 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt, I
         return response;
     }
 
-    public async Task UpdateAsync(string shortCode, UpdateEventRequest request, CancellationToken cancellationToken)
+    public async Task<UpdateEventResponse> UpdateAsync(string shortCode, ClaimsPrincipal user, UpdateEventRequest request, CancellationToken cancellationToken)
     {
         var entity = await GetEventAsync(shortCode, cancellationToken);
-        var admin = entity.Participants
-                        .SingleOrDefault(x => x.IsAdmin && string.Equals(x.Username, Required(request.AdminUsername, "adminUsername"), StringComparison.OrdinalIgnoreCase))
-            ?? throw new EventException(403, "Admin credentials are invalid.");
-        Verify(admin, request.AdminPassword);
+        RequireAdmin(entity, user);
         if (entity.Status != EventStatus.Open) throw new EventException(409, "Event is finalized.");
 
-        entity.Title = Required(request.Title, "title");
+        var dates = ParseUpdateDates(request);
+        entity.Title = Required(request.Title, "title", 255);
         entity.EventType = (EventType)request.EventType;
         entity.DailyStartTime = request.DailyStartTime;
         entity.DailyEndTime = request.DailyEndTime;
         ValidateHours(entity);
-        repository.ReplaceAvailableDates(entity, ParseUpdateDates(request));
+
+        foreach (var participant in entity.Participants)
+        {
+            var validSlots = participant.TimeSlots
+                .Where(slot => request.EventType == (int)EventType.Dates
+                    ? slot.SpecificDate.HasValue && dates.Any(date => date.SpecificDate == slot.SpecificDate)
+                    : slot.DayOfWeek.HasValue && dates.Any(date => date.DayOfWeek == slot.DayOfWeek))
+                .Select(slot => new TimeSlots
+                {
+                    Id = Guid.NewGuid(),
+                    EventId = entity.Id,
+                    ParticipantId = participant.Id,
+                    SpecificDate = slot.SpecificDate,
+                    DayOfWeek = slot.DayOfWeek,
+                    StartTime = slot.StartTime < entity.DailyStartTime ? entity.DailyStartTime : slot.StartTime,
+                    EndTime = slot.EndTime > entity.DailyEndTime ? entity.DailyEndTime : slot.EndTime,
+                    CreatedAt = DateTimeOffset.UtcNow
+                })
+                .Where(slot => slot.StartTime < slot.EndTime)
+                .ToArray();
+            repository.ReplaceSlots(participant, validSlots);
+        }
+
+        repository.ReplaceAvailableDates(entity, dates);
         entity.Revision++;
         entity.UpdatedAt = DateTimeOffset.UtcNow;
         await repository.SaveChangesAsync(cancellationToken);
         await notifier.NotifyEventUpdatedAsync(shortCode, entity.Revision, cancellationToken);
+        return new UpdateEventResponse(entity.Revision);
     }
 
     private async Task<Events> GetEventAsync(string shortCode, CancellationToken cancellationToken) =>
@@ -166,10 +193,12 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt, I
 
     private async Task<string> NewCode(CancellationToken cancellationToken)
     {
-        string code;
-        do code = RandomNumberGenerator.GetString(Alphabet, 6);
-        while (await repository.ShortCodeExistsAsync(code, cancellationToken));
-        return code;
+        for (var attempt = 0; attempt < 8; attempt++)
+        {
+            var code = RandomNumberGenerator.GetString(Alphabet, 6);
+            if (!await repository.ShortCodeExistsAsync(code, cancellationToken)) return code;
+        }
+        throw new EventException(503, "Could not allocate an event code. Please retry.");
     }
 
     private (string Token, DateTimeOffset ExpiresAt) IssueToken(Events entity, EventParticipants participant)
@@ -187,7 +216,7 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt, I
 
     private static List<EventAvailableDates> ParseCreateDates(CreateEventRequest request)
     {
-        if (request.EventType == (int)EventType.Dates && request.AvailableDates.Count > 0 && request.AvailableWeekdays.Count == 0)
+        if (request.EventType == (int)EventType.Dates && request.AvailableDates.Count > 0 && request.AvailableWeekdays.Count == 0 && request.AvailableDates.All(date => date >= VietnamToday()))
             return request.AvailableDates.Distinct().Select(date => new EventAvailableDates { Id = Guid.NewGuid(), SpecificDate = date, CreatedAt = DateTimeOffset.UtcNow }).ToList();
         if (request.EventType == (int)EventType.Weekdays && request.AvailableDates.Count == 0 && request.AvailableWeekdays.Count > 0 && request.AvailableWeekdays.All(day => (int)day is >= 0 and <= 6))
             return request.AvailableWeekdays.Distinct().Select(day => new EventAvailableDates { Id = Guid.NewGuid(), DayOfWeek = (Meetly.Repository.Enum.DayOfWeek)(int)day, CreatedAt = DateTimeOffset.UtcNow }).ToList();
@@ -211,8 +240,8 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt, I
         Url = entity.URL,
         EventType = (int)entity.EventType,
         TimeZone = entity.TimeZone,
-        AvailableDates = entity.AvailableDates.Where(x => x.SpecificDate.HasValue).Select(x => x.SpecificDate!.Value).ToList(),
-        AvailableWeekdays = entity.AvailableDates.Where(x => x.DayOfWeek.HasValue).Select(x => (System.DayOfWeek)(int)x.DayOfWeek!.Value).ToList(),
+        AvailableDates = entity.AvailableDates.Where(x => x.SpecificDate.HasValue).Select(x => x.SpecificDate!.Value).Order().ToList(),
+        AvailableWeekdays = entity.AvailableDates.Where(x => x.DayOfWeek.HasValue).Select(x => (System.DayOfWeek)(int)x.DayOfWeek!.Value).OrderBy(x => (int)x).ToList(),
         DailyStartTime = Format(entity.DailyStartTime),
         DailyEndTime = Format(entity.DailyEndTime),
         Status = (int)entity.Status,
@@ -228,10 +257,12 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt, I
     private static List<HeatmapCellResponse> Heatmap(Events entity)
     {
         var result = new List<HeatmapCellResponse>();
-        foreach (var available in entity.AvailableDates)
-            for (var start = entity.DailyStartTime; start < entity.DailyEndTime; start = start.AddMinutes(30))
+        foreach (var available in entity.AvailableDates
+                     .OrderBy(x => x.SpecificDate)
+                     .ThenBy(x => x.DayOfWeek))
+            for (var start = entity.DailyStartTime; start < entity.DailyEndTime; start = start.AddMinutes(SlotMinutes))
             {
-                var end = start.AddMinutes(30) > entity.DailyEndTime ? entity.DailyEndTime : start.AddMinutes(30);
+                var end = start.AddMinutes(SlotMinutes) > entity.DailyEndTime ? entity.DailyEndTime : start.AddMinutes(SlotMinutes);
                 var participants = entity.Participants.Where(p => p.TimeSlots.Any(s => s.SpecificDate == available.SpecificDate && s.DayOfWeek == available.DayOfWeek && s.StartTime <= start && s.EndTime >= end)).Select(p => p.Username).Order().ToList();
                 result.Add(new HeatmapCellResponse(available.SpecificDate, available.DayOfWeek is null ? null : (System.DayOfWeek)(int)available.DayOfWeek.Value, Format(start), participants, participants.Count));
             }
@@ -242,12 +273,14 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt, I
     private static void RequireAdmin(Events entity, ClaimsPrincipal user)
     {
         var value = user.FindFirstValue("participantId");
-        if (!Guid.TryParse(value, out var id) || !entity.Participants.Any(x => x.Id == id && x.IsAdmin)) throw new EventException(403, "Admin access is required.");
+        if (!Guid.TryParse(value, out var id) || user.FindFirstValue("eventId") != entity.Id.ToString() || !entity.Participants.Any(x => x.Id == id && x.IsAdmin)) throw new EventException(403, "Admin access is required.");
     }
     private static void SetFinalTime(Events entity, FinalizeEventRequest request)
     {
         if (request.StartTime >= request.EndTime)
             throw new EventException(422, "startTime must be before endTime.");
+        if (!Aligned(request.StartTime) || !Aligned(request.EndTime))
+            throw new EventException(422, "Final time must align to 15-minute intervals.");
         if (request.StartTime < entity.DailyStartTime || request.EndTime > entity.DailyEndTime)
             throw new EventException(422, "Final time is outside the event hours.");
 
@@ -277,8 +310,22 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt, I
         entity.FinalEndTime = request.EndTime;
     }
     private static string Format(TimeOnly time) => time.ToString("HH:mm");
-    private static string Required(string? value, string name) => !string.IsNullOrWhiteSpace(value) ? value.Trim() : throw new EventException(422, $"{name} is required.");
-    private static void ValidateHours(Events entity) { if (entity.DailyStartTime >= entity.DailyEndTime) throw new EventException(422, "dailyStartTime must be before dailyEndTime."); }
+    private static string Required(string? value, string name, int maxLength)
+    {
+        var result = !string.IsNullOrWhiteSpace(value) ? value.Trim() : throw new EventException(422, $"{name} is required.");
+        return result.Length <= maxLength ? result : throw new EventException(422, $"{name} is too long.");
+    }
+    private static bool Aligned(TimeOnly time) => time.Minute % SlotMinutes == 0 && time.Second == 0;
+    private static DateOnly VietnamToday() => DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+    private static void ValidateHours(Events entity)
+    {
+        if (entity.DailyStartTime >= entity.DailyEndTime) throw new EventException(422, "dailyStartTime must be before dailyEndTime.");
+        if (!Aligned(entity.DailyStartTime) || !Aligned(entity.DailyEndTime)) throw new EventException(422, "Event hours must align to 15-minute intervals.");
+    }
+    private static void ValidatePassword(string? password)
+    {
+        if (password?.Length > 128) throw new EventException(422, "password is too long.");
+    }
     private static void Verify(EventParticipants participant, string? password) { if (participant.PasswordHash is not null && (string.IsNullOrEmpty(password) || PasswordHasher.VerifyHashedPassword(participant, participant.PasswordHash, password) == PasswordVerificationResult.Failed)) throw new EventException(401, "Password is invalid."); }
 }
 

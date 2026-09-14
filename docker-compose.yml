@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgrespassword}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: ${POSTGRES_DB:-meetly_db}
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
@@ -16,6 +16,40 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: src/Meetly.API/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-meetly_db};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      JwtOptions__Issuer: Meetly
+      JwtOptions__Audience: Meetly.Web
+      JwtOptions__SecretKey: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      JwtOptions__ExpirationMinutes: 1440
+      PublicBaseUrl: ${PUBLIC_BASE_URL:-http://localhost:8080}
+      AllowedOrigins: ${ALLOWED_ORIGINS:-http://localhost:5173}
+      ApplyMigrations: 'true'
+    ports:
+      - '${API_PORT:-5000}:8080'
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ''
+        VITE_SIGNALR_HUB_URL: ''
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - '${WEB_PORT:-8080}:80'
 
 volumes:
   postgres_data:

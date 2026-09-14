@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text;
+using Meetly.Contract.DTOs.Common;
 using Meetly.Service.JwtService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -15,6 +16,8 @@ public static class JwtExtensions
     {
         JwtOptions jwtOption = new JwtOptions();
         configuration.GetSection(nameof(JwtOptions)).Bind(jwtOption);
+        if (jwtOption.SecretKey.Length < 32 || string.IsNullOrWhiteSpace(jwtOption.Issuer) || string.IsNullOrWhiteSpace(jwtOption.Audience))
+            throw new InvalidOperationException("JwtOptions must include issuer, audience, and a secret key of at least 32 characters.");
         var key = Encoding.UTF8.GetBytes(jwtOption.SecretKey);
 
         services.AddAuthentication(options =>
@@ -33,6 +36,19 @@ public static class JwtExtensions
                             context.HttpContext.Request.Path.StartsWithSegments("/hubs/events"))
                             context.Token = accessToken;
                         return Task.CompletedTask;
+                    },
+                    OnChallenge = async context =>
+                    {
+                        context.HandleResponse();
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        context.Response.ContentType = "application/json";
+                        await context.Response.WriteAsJsonAsync(ApiResponse<object?>.Failure(401, "Authentication is required."));
+                    },
+                    OnForbidden = async context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        context.Response.ContentType = "application/json";
+                        await context.Response.WriteAsJsonAsync(ApiResponse<object?>.Failure(403, "Admin access is required."));
                     }
                 };
                 options.TokenValidationParameters = new TokenValidationParameters()
@@ -41,6 +57,7 @@ public static class JwtExtensions
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
+                    ClockSkew = TimeSpan.Zero,
                     ValidIssuer = jwtOption.Issuer,
                     ValidAudience = jwtOption.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(key),
@@ -51,9 +68,9 @@ public static class JwtExtensions
         services.AddAuthorization(options =>
         {
             options.AddPolicy(AdminPolicy, policy =>
-                policy.RequireClaim("Admin"));
+                policy.RequireRole("Admin"));
             options.AddPolicy(UserPolicy, policy =>
-                policy.RequireClaim("User"));
+                policy.RequireRole("User", "Admin"));
         });
     }
 }

@@ -15,6 +15,7 @@ public sealed record CreateEventResponse
 }
 
 public sealed record FinalizeEventResponse(int Status, FinalScheduleResponse FinalSchedule, long Revision);
+public sealed record UpdateEventResponse(long Revision);
 
 public sealed record EventResponse
 {

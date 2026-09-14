@@ -39,8 +39,8 @@ public sealed class EventRealtimeNotifier(
                 shortCode = entity.ShortCode,
                 title = entity.Title,
                 eventType = (int)entity.EventType,
-                availableDates = entity.AvailableDates.Where(x => x.SpecificDate.HasValue).Select(x => x.SpecificDate).ToList(),
-                availableWeekdays = entity.AvailableDates.Where(x => x.DayOfWeek.HasValue).Select(x => (int)x.DayOfWeek!.Value).ToList(),
+                availableDates = entity.AvailableDates.Where(x => x.SpecificDate.HasValue).Select(x => x.SpecificDate).Order().ToList(),
+                availableWeekdays = entity.AvailableDates.Where(x => x.DayOfWeek.HasValue).Select(x => (int)x.DayOfWeek!.Value).Order().ToList(),
                 dailyStartTime = entity.DailyStartTime.ToString("HH:mm"),
                 dailyEndTime = entity.DailyEndTime.ToString("HH:mm"),
                 revision
@@ -57,11 +57,13 @@ public sealed class EventRealtimeNotifier(
     private static List<object> BuildHeatmap(Events entity)
     {
         var cells = new List<object>();
-        foreach (var available in entity.AvailableDates)
+        foreach (var available in entity.AvailableDates
+                     .OrderBy(x => x.SpecificDate)
+                     .ThenBy(x => x.DayOfWeek))
         {
-            for (var start = entity.DailyStartTime; start < entity.DailyEndTime; start = start.AddMinutes(30))
+            for (var start = entity.DailyStartTime; start < entity.DailyEndTime; start = start.AddMinutes(15))
             {
-                var end = start.AddMinutes(30) > entity.DailyEndTime ? entity.DailyEndTime : start.AddMinutes(30);
+                var end = start.AddMinutes(15) > entity.DailyEndTime ? entity.DailyEndTime : start.AddMinutes(15);
                 var participants = entity.Participants
                     .Where(p => p.TimeSlots.Any(slot =>
                         slot.SpecificDate == available.SpecificDate &&

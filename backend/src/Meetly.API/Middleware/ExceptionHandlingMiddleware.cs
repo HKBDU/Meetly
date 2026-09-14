@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Meetly.Contract.DTOs.Common;
 using Meetly.Service.Availability;
 using Meetly.Service.EventScheduling;
@@ -9,10 +8,12 @@ namespace Meetly.API.Middleware;
 public sealed class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
+    private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-    public ExceptionHandlingMiddleware(RequestDelegate next)
+    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
     {
         _next = next;
+        _logger = logger;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -33,6 +34,11 @@ public sealed class ExceptionHandlingMiddleware
         {
             await WriteErrorAsync(context, exception.StatusCode, exception.Message);
         }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Unhandled request failure for {Method} {Path}", context.Request.Method, context.Request.Path);
+            await WriteErrorAsync(context, StatusCodes.Status500InternalServerError, "An unexpected error occurred.");
+        }
     }
 
     private static async Task WriteErrorAsync(
@@ -43,8 +49,6 @@ public sealed class ExceptionHandlingMiddleware
         context.Response.StatusCode = statusCode;
         context.Response.ContentType = "application/json";
 
-        await JsonSerializer.SerializeAsync(
-            context.Response.Body,
-            ApiResponse<object?>.Failure(statusCode, message));
+        await context.Response.WriteAsJsonAsync(ApiResponse<object?>.Failure(statusCode, message));
     }
 }

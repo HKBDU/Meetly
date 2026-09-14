@@ -2,6 +2,18 @@
 
 Meetly is a modern, real-time group scheduling application inspired by When2meet. It allows organizers to create meeting polls, collect participant availability via an intuitive drag-and-paint time grid, and visualize overlapping free times with a live heatmap powered by WebSockets.
 
+## Run full stack
+
+```bash
+copy .env.example .env
+# Replace POSTGRES_PASSWORD and JWT_SECRET in .env.
+docker compose up --build -d
+```
+
+- Web: `http://localhost:8080`
+- API: `http://localhost:5000`
+- Health: `http://localhost:5000/health`
+
 ---
 
 ## 🚀 Tech Stacks

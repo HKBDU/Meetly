@@ -2,6 +2,7 @@ using Meetly.Contract.DTOs.Common;
 using Meetly.Service.EventScheduling;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Meetly.API.Controllers;
 
@@ -10,6 +11,7 @@ namespace Meetly.API.Controllers;
 public sealed class EventsController(IEventService service) : ControllerBase
 {
     [HttpPost]
+    [EnableRateLimiting("create-event")]
     public async Task<ActionResult<ApiResponse<CreateEventResponse>>> Create(CreateEventRequest request, CancellationToken ct) =>
         StatusCode(StatusCodes.Status201Created, ApiResponse<CreateEventResponse>.Success(201, "Event created successfully", await service.CreateAsync(request, ct)));
 
@@ -26,15 +28,13 @@ public sealed class EventsController(IEventService service) : ControllerBase
     public async Task<ActionResult<ApiResponse<ParticipantMeResponse>>> GetCurrentParticipant(string shortCode, CancellationToken ct) =>
         Ok(ApiResponse<ParticipantMeResponse>.Success(200, "Participant loaded successfully", await service.GetCurrentParticipantAsync(shortCode, User, ct)));
 
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [HttpPost("{shortCode}/finalize")]
     public async Task<ActionResult<ApiResponse<FinalizeEventResponse>>> Finalize(string shortCode, FinalizeEventRequest request, CancellationToken ct) =>
         Ok(ApiResponse<FinalizeEventResponse>.Success(200, "Event finalized successfully", await service.FinalizeAsync(shortCode, User, request, ct)));
 
+    [Authorize(Roles = "Admin")]
     [HttpPut("{shortCode}")]
-    public async Task<ActionResult<ApiResponse<object?>>> Update(string shortCode, UpdateEventRequest request, CancellationToken ct)
-    {
-        await service.UpdateAsync(shortCode, request, ct);
-        return Ok(ApiResponse<object?>.Success(200, "Event updated successfully", null));
-    }
+    public async Task<ActionResult<ApiResponse<UpdateEventResponse>>> Update(string shortCode, UpdateEventRequest request, CancellationToken ct) =>
+        Ok(ApiResponse<UpdateEventResponse>.Success(200, "Event updated successfully", await service.UpdateAsync(shortCode, User, request, ct)));
 }

@@ -24,4 +24,5 @@ RUN dotnet publish "Meetly.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+USER app
 ENTRYPOINT ["dotnet", "Meetly.API.dll"]

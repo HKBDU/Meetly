@@ -9,6 +9,7 @@ namespace Meetly.Service.Availability;
 
 public sealed class AvailabilityService : IAvailabilityService
 {
+    private const int SlotMinutes = 15;
     private readonly IAvailabilityRepository _repository;
     private readonly IEventRealtimeNotifier _notifier;
 
@@ -72,6 +73,9 @@ public sealed class AvailabilityService : IAvailabilityService
         if (slot.StartTime >= slot.EndTime)
             throw new AvailabilityException(422, "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.");
 
+        if (!Aligned(slot.StartTime) || !Aligned(slot.EndTime))
+            throw new AvailabilityException(422, "Time slot phải theo mốc 15 phút.");
+
         if (slot.StartTime < eventEntity.DailyStartTime ||
             slot.EndTime > eventEntity.DailyEndTime)
             throw new AvailabilityException(422, "Time slot nằm ngoài khung giờ của sự kiện.");
@@ -86,6 +90,8 @@ public sealed class AvailabilityService : IAvailabilityService
         {
             if (!hasDate || !eventEntity.AvailableDates.Any(x => x.SpecificDate == slot.SpecificDate))
                 throw new AvailabilityException(422, "Ngày không thuộc cấu hình của sự kiện.");
+            if (slot.SpecificDate < DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)))
+                throw new AvailabilityException(409, "Không thể bình chọn cho ngày đã qua.");
         }
         else if (eventEntity.EventType == EventType.Weekdays)
         {
@@ -94,6 +100,8 @@ public sealed class AvailabilityService : IAvailabilityService
                 throw new AvailabilityException(422, "Thứ không thuộc cấu hình của sự kiện.");
         }
     }
+
+    private static bool Aligned(TimeOnly time) => time.Minute % SlotMinutes == 0 && time.Second == 0;
 
     private static void ValidateEmail(string? email)
     {
