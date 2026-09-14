@@ -2,7 +2,7 @@ import { CalendarDays, Heart, MessageCircle, Send } from 'lucide-react';
 
 export function MeetlyFooter() {
   return (
-    <footer className="mt-auto bg-[#24cc27] px-5 py-5 text-white sm:px-8">
+    <footer className="mt-auto bg-emerald-600 px-5 py-5 text-white sm:px-8">
       <div className="mx-auto flex max-w-[1376px] flex-wrap items-center justify-between gap-4">
         <div>
           <p className="flex items-center gap-2 text-lg font-semibold">

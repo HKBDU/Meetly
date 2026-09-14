@@ -1,4 +1,5 @@
 import type { FinalizeResult, FinalSchedule, HeatmapEvent, SuggestedSlot, SuggestionParams } from './types.ts'
+import type { UpdateEventPayload, UpdateEventResult } from '../events/types.ts'
 import { buildRows, formatTime, getColumns, isValidSchedule, toMinutes } from './time.ts'
 
 const participants = ['Dương', 'An', 'Bình', 'Chi', 'Duy', 'Huyền', 'Khoa', 'Linh'].map(username => ({ username }))
@@ -7,7 +8,7 @@ const baseEvent: HeatmapEvent = {
   title: 'Meetly Team Meeting', shortCode: 'DEMO26', url: 'https://meetly.example/DEMO26',
   eventType: 1, timezone: 'Asia/Ho_Chi_Minh',
   availableDates: ['2026-09-10', '2026-09-11', '2026-09-12'], availableWeekdays: [],
-  dailyStartTime: '08:00', dailyEndTime: '12:00', status: 1, revision: 12,
+  dailyStartTime: '08:00', dailyEndTime: '14:00', status: 1, revision: 12,
   participants, heatmapGrid: [], finalSchedule: null,
 }
 
@@ -58,4 +59,19 @@ export async function finalizeMockEvent(event: HeatmapEvent, slot: FinalSchedule
     finalSchedule: { specificDate: slot.specificDate, dayOfWeek: slot.dayOfWeek, startTime: slot.startTime, endTime: slot.endTime },
     revision: event.revision + 1,
   }
+}
+
+export async function updateMockEvent(
+  payload: UpdateEventPayload,
+  event: HeatmapEvent,
+): Promise<UpdateEventResult> {
+  if (event.status !== 1) throw new Error('This event is locked and cannot be edited.');
+  if (!payload.title.trim()) throw new Error('Event name is required.');
+  if (toMinutes(payload.dailyStartTime) >= toMinutes(payload.dailyEndTime))
+    throw new Error('Start time must be earlier than end time.');
+  if (payload.eventType === 1 && payload.availableDates.length === 0)
+    throw new Error('Select at least one date.');
+  if (payload.eventType === 2 && payload.availableWeekdays.length === 0)
+    throw new Error('Select at least one weekday.');
+  return { revision: event.revision + 1 };
 }

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { CalendarDays, Copy, Globe2, Users } from 'lucide-react';
+import { Copy, Globe2, Link2, Users } from 'lucide-react';
+import { EditEventDialog } from '@/features/events';
+import type { UpdateEventPayload, UpdateEventResult } from '@/features/events';
 import type {
   CellDetails,
   FinalizeResult,
@@ -23,6 +25,10 @@ export interface HeatmapPageProps {
   loadError?: string;
   onSuggestions?: (params: SuggestionParams) => Promise<SuggestedSlot[]>;
   onFinalize?: (slot: FinalSchedule) => Promise<FinalizeResult>;
+  onUpdateEvent?: (
+    payload: UpdateEventPayload,
+    currentEvent: HeatmapEvent,
+  ) => Promise<UpdateEventResult>;
   myScheduleHref?: string;
 }
 
@@ -33,6 +39,7 @@ function EventOverview({
   loadError,
   onSuggestions,
   onFinalize,
+  onUpdateEvent,
   myScheduleHref,
 }: HeatmapPageProps) {
   const [event, setEvent] = useState(initialEvent);
@@ -42,7 +49,7 @@ function EventOverview({
   const [searched, setSearched] = useState(false);
   const [details, setDetails] = useState<CellDetails | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [pending, setPending] = useState<'suggestions' | 'finalize' | null>(null);
+  const [pending, setPending] = useState<'suggestions' | 'finalize' | 'update' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const busy = useRef(false);
@@ -132,6 +139,29 @@ function EventOverview({
     }
   }
 
+  async function updateEventDetails(payload: UpdateEventPayload) {
+    if (!canEdit || !event || !onUpdateEvent || busy.current)
+      throw new Error('Event editing is not available.');
+
+    busy.current = true;
+    setPending('update');
+    try {
+      const result = await onUpdateEvent(payload, event);
+      if (!Number.isFinite(result.revision)) throw new Error('Invalid update event response.');
+      if (!active.current) return;
+      setEvent({ ...event, ...payload, revision: result.revision });
+      setDetails(null);
+      setSuggestions([]);
+      setSearched(false);
+      selection.cancel();
+      setNotice('Event updated successfully.');
+      setError(null);
+    } finally {
+      busy.current = false;
+      if (active.current) setPending(null);
+    }
+  }
+
   if (loading)
     return (
       <p role="status" className="p-8 text-center text-slate-500">
@@ -147,7 +177,6 @@ function EventOverview({
   if (!event) return <p className="p-8 text-center text-slate-500">Event not found.</p>;
 
   const columns = getColumns(event);
-  const selectedDayLabels = columns.map((column) => formatDay(column)).join(' · ');
   const interactive = canEdit && pending === null && !dialogOpen;
   const canOpenMySchedule =
     Boolean(myScheduleHref) && event.status === 1 && pending === null && !dialogOpen;
@@ -184,12 +213,15 @@ function EventOverview({
                 {event.status === 1 ? 'Overview · Read-only' : 'Event locked · Read-only'}
               </span>
             )}
+            {canEdit && (
+              <EditEventDialog
+                event={event}
+                disabled={pending !== null || !onUpdateEvent}
+                onSave={updateEventDetails}
+              />
+            )}
           </div>
           <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-600">
-            <span className="flex items-center gap-2">
-              <CalendarDays size={15} aria-hidden="true" />
-              {selectedDayLabels || 'No dates'}
-            </span>
             <span className="flex items-center gap-2">
               <Users size={15} aria-hidden="true" />
               {event.participants.length} participants
@@ -203,12 +235,14 @@ function EventOverview({
         <div className="w-full space-y-3 sm:w-72">
           {event.url && (
             <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-2">
+              <Link2 size={14} className="shrink-0 text-emerald-700" aria-hidden="true" />
               <input
                 aria-label="Event share link"
+                title={event.url}
                 value={event.url}
                 readOnly
                 onFocus={(e) => e.currentTarget.select()}
-                className="min-w-0 flex-1 bg-transparent text-xs text-slate-600"
+                className="min-w-0 flex-1 truncate bg-transparent text-xs text-slate-600"
               />
               <button
                 type="button"
@@ -232,7 +266,7 @@ function EventOverview({
                   ? 'My Schedule is not available yet.'
                   : undefined
             }
-            className="block w-full rounded-lg bg-[#24cc27] px-4 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-[#20b923] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 aria-disabled:cursor-not-allowed aria-disabled:opacity-60"
+            className="block w-full rounded-lg bg-emerald-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 aria-disabled:cursor-not-allowed aria-disabled:opacity-60"
           >
             My Schedule
           </a>

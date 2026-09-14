@@ -20,13 +20,19 @@ interface Props {
 }
 
 const legendColors = [
-  'bg-slate-100',
-  'bg-emerald-50',
-  'bg-emerald-100',
-  'bg-emerald-200',
-  'bg-emerald-300',
-  'bg-emerald-500',
+  'bg-white',
+  'bg-[#d8f0e1]',
+  'bg-[#b7e4c7]',
+  'bg-[#8fd3a8]',
+  'bg-[#55bd7c]',
+  'bg-[#00a844]',
 ];
+
+function formatHourLabel(time: string): string {
+  const hour = Number(time.slice(0, 2));
+  const displayHour = hour % 12 || 12;
+  return `${displayHour} ${hour < 12 ? 'AM' : 'PM'}`;
+}
 
 export function Heatmap({ event, ...interaction }: Props) {
   const columns = getColumns(event);
@@ -69,24 +75,25 @@ export function Heatmap({ event, ...interaction }: Props) {
       {event.heatmapGrid.length === 0 && (
         <p className="mb-3 text-sm text-slate-500">No availability data yet.</p>
       )}
-      <div className="max-h-[70vh] overflow-auto rounded-xl border border-slate-200 bg-white p-2">
-        <table
-          className="w-full table-fixed border-separate border-spacing-0"
-          style={{ minWidth: 72 + columns.length * 155 }}
-        >
+      <div className="w-full overflow-hidden border border-slate-300 bg-white">
+        <table className="w-full table-fixed border-collapse">
           <caption className="sr-only">
             Availability grid with 15-minute slots. Hover, tap, or use Tab to view details.
           </caption>
-          <thead className="sticky top-0 z-20 bg-white">
+          <thead className="bg-white">
             <tr>
               <th
                 scope="col"
-                className="sticky left-0 z-30 w-[72px] bg-white p-3 text-xs text-slate-500"
+                className="w-16 border-b border-r border-slate-200 p-2 text-xs text-slate-500 sm:w-20"
               >
                 Time
               </th>
               {columns.map((column) => (
-                <th scope="col" key={column.key} className="p-3 text-sm font-semibold">
+                <th
+                  scope="col"
+                  key={column.key}
+                  className="border-b border-r border-slate-200 px-1 py-3 text-xs font-semibold last:border-r-0 sm:text-sm"
+                >
                   {column.label}
                   <span className="mt-1 block text-xs font-normal text-slate-500">
                     {column.detail}
@@ -96,39 +103,40 @@ export function Heatmap({ event, ...interaction }: Props) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
-              <tr key={row.startTime}>
-                <th
-                  scope="row"
-                  className="sticky left-0 z-10 bg-white p-2 text-xs font-medium text-slate-500"
-                >
-                  {row.startTime}
-                </th>
-                {columns.map((column) => {
-                  const cell = event.heatmapGrid.find(
-                    (cell) =>
-                      cell.startTime === row.startTime &&
-                      cell.specificDate === column.specificDate &&
-                      cell.dayOfWeek === column.dayOfWeek,
-                  );
-                  return (
-                    <HeatmapCell
-                      key={column.key}
-                      point={{ column, row }}
-                      cell={cell}
-                      total={event.participants.length}
-                      {...interaction}
-                    />
-                  );
-                })}
-              </tr>
-            ))}
+            {rows.map((row) => {
+              const hourBoundary = row.startTime.endsWith(':00');
+              return (
+                <tr key={row.startTime}>
+                  <th
+                    scope="row"
+                    aria-label={row.startTime}
+                    className={`w-16 border-r border-slate-200 bg-white px-1 text-left text-xs font-medium text-slate-500 sm:w-20 sm:px-2 ${hourBoundary ? 'border-t border-t-slate-300 align-top pt-1' : 'border-t border-t-transparent'}`}
+                  >
+                    {hourBoundary ? formatHourLabel(row.startTime) : null}
+                  </th>
+                  {columns.map((column) => {
+                    const cell = event.heatmapGrid.find(
+                      (cell) =>
+                        cell.startTime === row.startTime &&
+                        cell.specificDate === column.specificDate &&
+                        cell.dayOfWeek === column.dayOfWeek,
+                    );
+                    return (
+                      <HeatmapCell
+                        key={column.key}
+                        point={{ column, row }}
+                        cell={cell}
+                        total={event.participants.length}
+                        {...interaction}
+                      />
+                    );
+                  })}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
-      <p className="mt-3 text-xs text-slate-500">
-        15-minute slots · Ends at {event.dailyEndTime} · Hover or tap a slot to view details.
-      </p>
     </section>
   );
 }
