@@ -1,7 +1,7 @@
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
 import { generateTimeSlots } from '../utils/time.utils'
-import { eventUi } from './styles'
+import { eventUi } from '../../../shared/components/ui/styles'
 
 interface TimePickerSelectProps {
   value: string

@@ -1,4 +1,4 @@
-import { eventUi } from './styles'
+import { eventUi } from '../../../shared/components/ui/styles'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/lib/utils'
 

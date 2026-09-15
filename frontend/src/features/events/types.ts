@@ -1,15 +1,10 @@
+import type { z } from 'zod'
+import type { eventFormSchema } from './schema'
+
 export type EventType = 1 | 2
 
-export type EventFormValues = {
-  title: string
-  timezone: string
-  eventType: EventType
-  availableDates: string[]
-  dailyStartTime: string
-  dailyEndTime: string
-  adminUsername?: string
-  adminPassword?: string
-}
+
+export const WEEKDAY_OPTIONS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 export type CreateEventResponse = {
   isSuccess: boolean
@@ -46,4 +41,5 @@ export type UpdateEventResponse = {
   value: { revision: number }
 }
 
-export type FieldErrors = Partial<Record<keyof EventFormValues, string>>
+
+export type EventFormValues = z.infer<typeof eventFormSchema>

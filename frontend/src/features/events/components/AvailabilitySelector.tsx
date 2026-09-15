@@ -1,14 +1,14 @@
 import { useEffect, useRef, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
 import { DayButton, type DayButtonProps } from 'react-day-picker'
-import { eventUi } from './styles'
+import { eventUi } from '../../../shared/components/ui/styles'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Calendar } from '@/shared/components/ui/calendar'
 import type { EventType } from '../types'
+import { WEEKDAY_OPTIONS } from '../types'
 import { getDateKey } from '../utils/date.utils'
 
-const WEEKDAY_OPTIONS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 type AvailabilitySelectorProps = {
   eventType: EventType

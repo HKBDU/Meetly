@@ -1,5 +1,5 @@
 import { TimeSelector } from './TimeSelector'
-import { eventUi } from './styles'
+import { eventUi } from '../../../shared/components/ui/styles'
 import { cn } from '@/lib/utils'
 
 interface TimeRangeFieldsProps {

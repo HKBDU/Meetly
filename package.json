@@ -1,1 +1,10 @@
-{}
+{
+  "name": "meetly-root",
+  "private": true,
+  "scripts": {
+    "install:frontend": "cd frontend && npm install",
+    "dev:frontend": "cd frontend && npm run dev",
+    "install": "npm run install:frontend",
+    "dev": "npm run dev:frontend"
+  }
+}

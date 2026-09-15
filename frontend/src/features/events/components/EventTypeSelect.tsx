@@ -1,5 +1,5 @@
 import type { EventType } from '../types'
-import { eventUi } from './styles'
+import { eventUi } from '../../../shared/components/ui/styles'
 import { cn } from '@/lib/utils'
 
 type EventTypeSelectProps = {

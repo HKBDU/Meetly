@@ -1,10 +1,17 @@
-import type { EventFormValues, FieldErrors } from './types'
+import { z } from 'zod'
 import { isValidTimeRange } from './utils/time.utils'
 
-export function validateEventForm(values: EventFormValues): FieldErrors {
-  const errors: FieldErrors = {}
-  if (!values.title.trim()) errors.title = 'Event name is required.'
-  if (!values.availableDates.length) errors.availableDates = values.eventType === 1 ? 'Choose at least one date.' : 'Choose at least one weekday.'
-  if (!isValidTimeRange(values.dailyStartTime, values.dailyEndTime)) errors.dailyEndTime = 'End time must be later than start time.'
-  return errors
-}
+export const eventFormSchema = z
+  .object({
+    title: z.string().trim().min(1, 'Title cannot be empty.'),
+    eventType: z.union([z.literal(1), z.literal(2)]),
+    availableDates: z.array(z.string()).min(1, 'Please select at least one available option.'),
+    dailyStartTime: z.string().min(1, 'Please select a start time.'),
+    dailyEndTime: z.string().min(1, 'Please select an end time.'),
+    adminUsername: z.string(),
+    adminPassword: z.string(),
+  })
+  .refine((data) => isValidTimeRange(data.dailyStartTime, data.dailyEndTime), {
+    message: 'End time must be later than start time.',
+    path: ['dailyEndTime'],
+  })

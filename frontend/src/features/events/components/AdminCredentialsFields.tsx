@@ -1,24 +1,25 @@
-import { eventUi } from './styles'
+import { useFormContext } from 'react-hook-form'
+import { eventUi } from '../../../shared/components/ui/styles'
+
+type CredentialsFormValues = {
+  adminUsername: string
+  adminPassword: string
+}
 
 type AdminCredentialsFieldsProps = {
-  username: string
-  password: string
-  onUsernameChange: (value: string) => void
-  onPasswordChange: (value: string) => void
   usernameRequired?: boolean
   passwordRequired?: boolean
-  error?: string
 }
 
 export function AdminCredentialsFields({
-  username,
-  password,
-  onUsernameChange,
-  onPasswordChange,
   usernameRequired = false,
   passwordRequired = false,
-  error,
 }: AdminCredentialsFieldsProps) {
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext<CredentialsFormValues>()
+
   return (
     <fieldset className={eventUi.adminFieldset}>
       <legend className={eventUi.adminLegend}>
@@ -33,31 +34,33 @@ export function AdminCredentialsFields({
             Username {usernameRequired && <span className={eventUi.requiredMark}>*</span>}
           </label>
           <input
-            aria-invalid={Boolean(error)}
+            aria-invalid={Boolean(errors.adminUsername)}
             className={eventUi.input}
             id="admin-username"
-            onChange={(event) => onUsernameChange(event.target.value)}
+            {...register('adminUsername')}
             required={usernameRequired}
-            value={username}
           />
+          {errors.adminUsername?.message && (
+            <span className={eventUi.fieldError}>{errors.adminUsername.message}</span>
+          )}
         </div>
         <div className={eventUi.field}>
           <label className={eventUi.label} htmlFor="admin-password">
             Password {passwordRequired && <span className={eventUi.requiredMark}>*</span>}
           </label>
           <input
-            aria-invalid={Boolean(error)}
+            aria-invalid={Boolean(errors.adminPassword)}
             className={eventUi.input}
             id="admin-password"
-            onChange={(event) => onPasswordChange(event.target.value)}
-            required={passwordRequired}
             type="password"
-            value={password}
+            {...register('adminPassword')}
+            required={passwordRequired}
           />
+          {errors.adminPassword?.message && (
+            <span className={eventUi.fieldError}>{errors.adminPassword.message}</span>
+          )}
         </div>
       </div>
-      {error && <span className={eventUi.fieldError}>{error}</span>}
     </fieldset>
   )
 }
-

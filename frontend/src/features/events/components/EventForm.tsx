@@ -1,14 +1,14 @@
-import { useState, type FormEvent } from 'react'
 import { EventFormActions } from './EventFormActions'
 import { AvailabilitySelector } from './AvailabilitySelector'
 import { EventTitleField } from './EventTitleField'
 import { EventTypeSelect } from './EventTypeSelect'
 import { TimeRangeFields } from './TimeRangeFields'
-import { eventUi } from './styles'
+import { eventUi } from '../../../shared/components/ui/styles'
 import { cn } from '@/lib/utils'
-import type { EventFormValues, FieldErrors } from '../types'
-import { validateEventForm } from '../schema'
-
+import { useForm, Controller, FormProvider } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { type EventFormValues, type EventType } from '../types'
+import { eventFormSchema } from '../schema'
 type EventFormProps = {
   compact?: boolean
   onCancel?: () => void
@@ -21,9 +21,8 @@ type EventFormProps = {
   submitLabel?: string
 }
 
-const INITIAL_VALUES: EventFormValues = {
+const INITIAL_VALUES: Partial<EventFormValues> = {
   title: '',
-  timezone: 'Asia/Ho_Chi_Minh',
   eventType: 2,
   availableDates: ['Mon'],
   dailyStartTime: '09:00',
@@ -41,72 +40,123 @@ export function EventForm({
   initialValues,
   submitLabel,
 }: EventFormProps) {
-  const [values, setValues] = useState<EventFormValues>({
-    ...INITIAL_VALUES,
-    ...initialValues,
-    adminUsername,
-    adminPassword,
+    const methods = useForm<EventFormValues>({
+    resolver: zodResolver(eventFormSchema),
+    defaultValues: {
+      ...INITIAL_VALUES,
+      ...initialValues,
+      adminUsername,
+      adminPassword,
+    },
   })
-  const [errors, setErrors] = useState<FieldErrors>({})
 
-  function update<K extends keyof EventFormValues>(field: K, value: EventFormValues[K]) {
-    setValues((current) => ({ ...current, [field]: value }))
-    setErrors((current) => ({ ...current, [field]: undefined }))
+const {
+      control,
+      handleSubmit,
+      setValue,
+      watch,
+      formState: { errors, isSubmitting },
+  } = methods
+
+const currentEventType = watch("eventType");
+
+
+// Dates and weekdays are different value domains. Do not carry a value
+// from one mode into the other.
+  function handleChangeEventType(newType: EventType) {
+    setValue("eventType", newType);
+    setValue("availableDates", [], { shouldValidate: true});
   }
 
-  function changeEventType(eventType: EventFormValues['eventType']) {
-    // Dates and weekdays are different value domains. Do not carry a value
-    // from one mode into the other.
-    setValues((current) => ({ ...current, eventType, availableDates: [] }))
-    setErrors((current) => ({ ...current, eventType: undefined, availableDates: undefined }))
-  }
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const nextErrors = validateEventForm(values)
-    setErrors(nextErrors)
-    if (Object.keys(nextErrors).length === 0) {
-      await onSubmit?.(values)
-    }
+  const onFormSubmit = async(data: EventFormValues) => {
+    await onSubmit?.(data);
   }
 
   return (
-    <form className={cn(eventUi.form, compact && eventUi.mobileForm)} onSubmit={submit}>
+    <FormProvider {...methods}>
+   <form
+      className={cn(eventUi.form, compact && eventUi.mobileForm)}
+      onSubmit={handleSubmit(onFormSubmit)}
+    >
+      <input type="hidden" {...methods.register('adminUsername')} />
+      <input type="hidden" {...methods.register('adminPassword')} />
       <section className={eventUi.formContent}>
-        <EventTitleField
-          error={errors.title}
-          onChange={(value) => update('title', value)}
-          value={values.title}
+        {/* Title Field */}
+        <Controller
+          control={control}
+          name="title"
+          render={({ field }) => (
+            <EventTitleField
+              error={errors.title?.message}
+              onChange={field.onChange}
+              value={field.value}
+            />
+          )}
         />
-        <EventTypeSelect
-          onChange={changeEventType}
-          value={values.eventType}
+
+        {/* Event Type Select */}
+        <Controller
+          control={control}
+          name="eventType"
+          render={({ field }) => (
+            <EventTypeSelect
+              onChange={(type) => {
+                field.onChange(type)
+                handleChangeEventType(type)
+              }}
+              value={field.value}
+            />
+          )}
         />
-        <AvailabilitySelector
-          error={errors.availableDates}
-          eventType={values.eventType}
-          onChange={(value) => update('availableDates', value)}
-          value={values.availableDates}
+
+        {/* Availability Selector */}
+        <Controller
+          control={control}
+          name="availableDates"
+          render={({ field }) => (
+            <AvailabilitySelector
+              error={errors.availableDates?.message}
+              eventType={currentEventType}
+              onChange={field.onChange}
+              value={field.value}
+            />
+          )}
         />
-        <TimeRangeFields
-          end={values.dailyEndTime}
-          error={errors.dailyEndTime}
-          onEndChange={(value) => update('dailyEndTime', value)}
-          onStartChange={(value) => update('dailyStartTime', value)}
-          start={values.dailyStartTime}
+
+        {/* Time Range Fields */}
+        <Controller
+          control={control}
+          name="dailyStartTime"
+          render={({ field: startField }) => (
+            <Controller
+              control={control}
+              name="dailyEndTime"
+              render={({ field: endField }) => (
+                <TimeRangeFields
+                  end={endField.value}
+                  error={errors.dailyEndTime?.message}
+                  onEndChange={endField.onChange}
+                  onStartChange={startField.onChange}
+                  start={startField.value}
+                />
+              )}
+            />
+          )}
         />
       </section>
+
       {error && (
         <div className={eventUi.submitError} role="alert">
           {error}
         </div>
       )}
+
       <EventFormActions
         onCancel={onCancel ?? (() => undefined)}
         submitLabel={submitLabel}
-        submitting={submitting}
+        submitting={submitting || isSubmitting}
       />
     </form>
+    </FormProvider>
   )
 }
-

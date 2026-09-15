@@ -1,4 +1,4 @@
-import { eventUi } from './styles'
+import { eventUi } from '../../../shared/components/ui/styles'
 
 type EventTitleFieldProps = {
   value: string

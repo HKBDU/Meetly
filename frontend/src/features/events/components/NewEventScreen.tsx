@@ -1,32 +1,41 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { CalendarDays, X } from 'lucide-react'
+import { useForm, FormProvider } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+
 import { AdminCredentialsFields } from './AdminCredentialsFields'
 import { EventForm } from './EventForm'
-import { eventUi } from './styles'
+import { eventUi } from '../../../shared/components/ui/styles'
 import { cn } from '@/lib/utils'
 import { createEvent, updateEvent } from '../services'
 import type { CreateEventResponse, EventFormValues } from '../types'
 
 type EventStep = 'credentials' | 'event'
 
+const credentialsSchema = z.object({
+  adminUsername: z.string().min(1, 'Username is required.'),
+  adminPassword: z.string(),
+})
+
+type CredentialsValues = z.infer<typeof credentialsSchema>
+
 export function NewEventScreen() {
   const [isOpen, setIsOpen] = useState(true)
   const [step, setStep] = useState<EventStep>('credentials')
-  const [adminUsername, setAdminUsername] = useState('')
-  const [adminPassword, setAdminPassword] = useState('')
-  const [credentialsError, setCredentialsError] = useState<string>()
+
+  const [adminCredentials, setAdminCredentials] = useState<CredentialsValues>({
+    adminUsername: '',
+    adminPassword: '',
+  })
+
   const [createError, setCreateError] = useState<string>()
   const [isCreating, setIsCreating] = useState(false)
   const [createdEvent, setCreatedEvent] = useState<CreateEventResponse['value']>(null)
   const [createdValues, setCreatedValues] = useState<EventFormValues>()
 
-  function continueToEvent(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!adminUsername.trim()) {
-      setCredentialsError('Username is required.')
-      return
-    }
-    setCredentialsError(undefined)
+  function handleCredentialsSubmit(values: CredentialsValues) {
+    setAdminCredentials(values)
     setStep('event')
   }
 
@@ -62,6 +71,7 @@ export function NewEventScreen() {
 
   return (
     <div className={eventUi.shell}>
+      {/* Mobile Screen */}
       <div className={eventUi.mobileScreen}>
         <header className={eventUi.screenHeader}>
           <Brand />
@@ -77,25 +87,15 @@ export function NewEventScreen() {
         {step === 'credentials' ? (
           <CredentialsStep
             compact
-            error={credentialsError}
-            onPasswordChange={(value) => {
-              setAdminPassword(value)
-              setCredentialsError(undefined)
-            }}
-            onSubmit={continueToEvent}
-            onUsernameChange={(value) => {
-              setAdminUsername(value)
-              setCredentialsError(undefined)
-            }}
-            password={adminPassword}
-            username={adminUsername}
+            defaultValues={adminCredentials}
+            onSubmit={handleCredentialsSubmit}
           />
         ) : (
           <>
             <h1 className={eventUi.mobileTitle}>Create New Event</h1>
             <EventForm
-              adminPassword={adminPassword}
-              adminUsername={adminUsername}
+              adminPassword={adminCredentials.adminPassword}
+              adminUsername={adminCredentials.adminUsername}
               compact
               error={createError}
               onCancel={() => setIsOpen(false)}
@@ -106,6 +106,7 @@ export function NewEventScreen() {
         )}
       </div>
 
+      {/* Desktop Screen */}
       <div className={eventUi.desktopScreen}>
         <header className={eventUi.siteHeader}>
           <Brand />
@@ -120,23 +121,13 @@ export function NewEventScreen() {
           <div className={eventUi.desktopDialog}>
             {step === 'credentials' ? (
               <CredentialsStep
-                error={credentialsError}
-                onPasswordChange={(value) => {
-                  setAdminPassword(value)
-                  setCredentialsError(undefined)
-                }}
-                onSubmit={continueToEvent}
-                onUsernameChange={(value) => {
-                  setAdminUsername(value)
-                  setCredentialsError(undefined)
-                }}
-                password={adminPassword}
-                username={adminUsername}
+                defaultValues={adminCredentials}
+                onSubmit={handleCredentialsSubmit}
               />
             ) : (
               <EventForm
-                adminPassword={adminPassword}
-                adminUsername={adminUsername}
+                adminPassword={adminCredentials.adminPassword}
+                adminUsername={adminCredentials.adminUsername}
                 error={createError}
                 onCancel={() => setIsOpen(false)}
                 onSubmit={submitEvent}
@@ -163,45 +154,43 @@ function Brand() {
 
 type CredentialsStepProps = {
   compact?: boolean
-  username: string
-  password: string
-  error?: string
-  onUsernameChange: (value: string) => void
-  onPasswordChange: (value: string) => void
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+  defaultValues: CredentialsValues
+  onSubmit: (values: CredentialsValues) => void
 }
 
 function CredentialsStep({
   compact = false,
-  username,
-  password,
-  error,
-  onUsernameChange,
-  onPasswordChange,
+  defaultValues,
   onSubmit,
 }: CredentialsStepProps) {
+  const methods = useForm<CredentialsValues>({
+    resolver: zodResolver(credentialsSchema),
+    defaultValues,
+  })
+
   return (
-    <form className={cn(eventUi.form, compact && eventUi.mobileForm)} onSubmit={onSubmit}>
-      <div>
-        <p>Enter the admin credentials for this event before continuing.</p>
-      </div>
-      <AdminCredentialsFields
-        error={error}
-        onPasswordChange={onPasswordChange}
-        onUsernameChange={onUsernameChange}
-        password={password}
-        username={username}
-        usernameRequired
-      />
-      <footer className={eventUi.formFooter}>
-        <button
-          className={cn(eventUi.button, eventUi.formFooterButton, eventUi.primaryButton)}
-          type="submit"
-        >
-          Continue
-        </button>
-      </footer>
-    </form>
+    <FormProvider {...methods}>
+      <form
+        className={cn(eventUi.form, compact && eventUi.mobileForm)}
+        onSubmit={methods.handleSubmit(onSubmit)}
+      >
+        <div>
+          <p>Enter the admin credentials for this event before continuing.</p>
+        </div>
+
+        {/* Cấu hình lại để khớp với component AdminCredentialsFields dùng Context */}
+        <AdminCredentialsFields usernameRequired />
+
+        <footer className={eventUi.formFooter}>
+          <button
+            className={cn(eventUi.button, eventUi.formFooterButton, eventUi.primaryButton)}
+            type="submit"
+          >
+            Continue
+          </button>
+        </footer>
+      </form>
+    </FormProvider>
   )
 }
 
@@ -385,4 +374,3 @@ function UpdateWarning({
     </div>
   )
 }
-
