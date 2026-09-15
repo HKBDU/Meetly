@@ -10,6 +10,7 @@ import {
 } from "@/features/participants/gridUtils"
 import { manualRangeSchema, type ManualRangeFormValues } from "@/features/participants/schema"
 import { useParticipantStore } from "@/features/participants/store"
+import { PAINT_MODE_LABEL } from "@/features/participants/types"
 import {
   Button,
   Dialog,
@@ -105,7 +106,7 @@ export function ManualRangeDialog({ open, onOpenChange, triggerAutoSave }: Manua
         <DialogHeader>
           <DialogTitle>Manual Range Entry</DialogTitle>
           <DialogDescription>
-            Add a continuous block of {paintMode === "FREE" ? "availability" : "busy time"}
+            Add a continuous block of {PAINT_MODE_LABEL[paintMode]}
           </DialogDescription>
         </DialogHeader>
 

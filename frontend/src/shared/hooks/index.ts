@@ -1,1 +1,1 @@
-export { useDebouncedCallback } from "@/shared/hooks/useDebouncedCallback"
+export { useDebouncedCallback } from "use-debounce"

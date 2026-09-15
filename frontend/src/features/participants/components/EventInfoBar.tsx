@@ -2,6 +2,7 @@ import { useState } from "react"
 import { ArrowLeft, Check, Copy, Link2 } from "lucide-react"
 import { toast } from "sonner"
 
+import { monthDayFormatter, monthDayYearFormatter, weekdayShortFormatter } from "@/lib/date-format"
 import { formatDateLabel } from "@/features/participants/gridUtils"
 import { useParticipantStore } from "@/features/participants/store"
 import type { EventScheduleConfig } from "@/features/participants/types"
@@ -9,14 +10,6 @@ import type { EventScheduleConfig } from "@/features/participants/types"
 interface EventInfoBarProps {
   config: EventScheduleConfig
 }
-
-const weekdayShortFormatter = new Intl.DateTimeFormat("en-US", { weekday: "short" })
-const monthDayFormatter = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" })
-const monthDayYearFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-})
 
 /** "2026-09-09".."2026-09-11" -> "Wed, Sep 9 - Fri, Sep 11, 2026" (SPECIFIC_DATES) or "Monday - Friday" (DAYS_OF_WEEK) */
 function formatDateRangeLabel(config: EventScheduleConfig): string {

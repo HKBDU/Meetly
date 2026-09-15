@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 
-import { getGridTimes, getSlotId } from "@/features/participants/gridUtils"
+import { usePaintSlots } from "@/features/participants/hooks/usePaintSlots"
 import { useParticipantStore } from "@/features/participants/store"
 
 interface UseOptimizedDragOptions {
@@ -26,9 +26,10 @@ interface LastCell {
  * 3. Các handler trả về ở đây có tham chiếu (reference) không đổi giữa
  *    các lần render (useCallback, deps rỗng) nên có thể gắn thẳng cho
  *    hàng trăm ô mà không phá vỡ React.memo của ScheduleCell.
- * 4. Đọc isFinalized bằng store.getState() (không phải hook reactive)
- *    ngay tại thời điểm sự kiện xảy ra, để bản thân hook này (và
- *    component gọi nó) không phải re-render theo state đó.
+ * 4. Việc ĐỌC/GHI store khi tô ô (`paintSlot`/`paintRowRange`, gồm cả đọc
+ *    isFinalized bằng store.getState() ngay tại thời điểm sự kiện xảy ra)
+ *    nằm ở `usePaintSlots` riêng - hook này chỉ lo theo dõi CỬ CHỈ kéo thả
+ *    (mousedown/mouseenter/mouseup), không cần biết gì về store.
  * 5. TÔ hay XOÁ trong 1 lượt kéo được quyết định NGAY LÚC MOUSEDOWN, dựa
  *    vào trạng thái của ô đầu tiên được nhấn: nếu ô đó đang RỖNG -> cả
  *    lượt kéo này sẽ TÔ; nếu ô đó đang ĐƯỢC TÔ SẴN -> cả lượt kéo này sẽ
@@ -48,27 +49,7 @@ export function useOptimizedDrag({ onDragEnd }: UseOptimizedDragOptions) {
   // true = lượt kéo hiện tại đang TÔ, false = đang XOÁ - chốt lúc mousedown, xem điểm 5 ở trên.
   const dragPaintValueRef = useRef(true)
 
-  const paintSlot = useCallback((slotId: string, isPainted: boolean) => {
-    const { setSlotPainted, isFinalized } = useParticipantStore.getState()
-    if (isFinalized) return
-    setSlotPainted(slotId, isPainted)
-  }, [])
-
-  // Lấp đầy các ô cùng cột ngày bị bỏ sót giữa hàng `fromRow` và `toRow`.
-  const paintRowRange = useCallback(
-    (date: string, fromRow: number, toRow: number, isPainted: boolean) => {
-      const config = useParticipantStore.getState().scheduleConfig
-      if (!config) return
-
-      const times = getGridTimes(config)
-      const [start, end] = fromRow <= toRow ? [fromRow, toRow] : [toRow, fromRow]
-      for (let row = start; row <= end; row++) {
-        const time = times[row]
-        if (time) paintSlot(getSlotId(date, time), isPainted)
-      }
-    },
-    [paintSlot]
-  )
+  const { paintSlot, paintRowRange } = usePaintSlots()
 
   const endDrag = useCallback(() => {
     if (!isDraggingRef.current) return

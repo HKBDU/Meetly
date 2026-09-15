@@ -1,3 +1,4 @@
+import { monthDayFormatter, weekdayFormatter, weekdayShortFormatter } from '@/lib/date-format';
 import type {
   EventScheduleConfig,
   PaintMode,
@@ -26,10 +27,6 @@ export function getGridTimes(config: EventScheduleConfig): string[] {
 export function getSlotId(date: string, time: string): string {
   return `${date}T${time}`;
 }
-
-const weekdayFormatter = new Intl.DateTimeFormat('en-US', { weekday: 'long' });
-const weekdayShortFormatter = new Intl.DateTimeFormat('en-US', { weekday: 'short' });
-const monthDayFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
 
 /** "2026-09-14" -> { weekday: "Monday", weekdayShort: "Mon", dayMonth: "Sep 14" } - dùng cho header cột lưới */
 export function formatDateLabel(

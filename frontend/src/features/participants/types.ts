@@ -3,6 +3,12 @@ export type ParticipantView = 'AUTH' | 'OVERVIEW' | 'PERSONAL';
 
 export type PaintMode = 'FREE' | 'BUSY';
 
+/** Nhãn hiển thị cho từng `PaintMode` - khai báo 1 lần, dùng chung mọi nơi cần hiện text (thay vì so sánh chuỗi lặp lại ở từng component). */
+export const PAINT_MODE_LABEL: Record<PaintMode, string> = {
+  FREE: 'availability',
+  BUSY: 'busy time',
+};
+
 /**
  * Kiểu lịch của sự kiện (giống When2Meet):
  * - SPECIFIC_DATES: chọn các ngày cụ thể trên lịch (VD: 12/09, 13/09...)

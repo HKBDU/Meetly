@@ -5,12 +5,6 @@ import { accessParticipant, fetchEventScheduleConfig } from '@/features/particip
 import { useParticipantStore } from '@/features/participants/store';
 import type { ParticipantRequest, ScheduleDateMode } from '@/features/participants/types';
 
-interface AccessParticipantInput {
-  credentials: ParticipantRequest;
-  /** CHỈ phục vụ demo chọn kiểu lịch ở ParticipantAuthForm - xem `ScheduleDateMode` */
-  dateMode: ScheduleDateMode;
-}
-
 /**
  * Xử lý đăng nhập định danh (Màn hình 1).
  * Sau khi định danh thành công, tải luôn cấu hình lưới của sự kiện rồi
@@ -21,7 +15,14 @@ export function useAuthParticipant() {
   const setScheduleConfig = useParticipantStore((s) => s.setScheduleConfig);
 
   const mutation = useMutation({
-    mutationFn: async ({ credentials, dateMode }: AccessParticipantInput) => {
+    mutationFn: async ({
+      credentials,
+      dateMode,
+    }: {
+      credentials: ParticipantRequest;
+      /** CHỈ phục vụ demo chọn kiểu lịch ở ParticipantAuthForm - xoá khi có API thật (xem `ScheduleDateMode`) */
+      dateMode: ScheduleDateMode;
+    }) => {
       const [authResult, scheduleConfig] = await Promise.all([
         accessParticipant(credentials),
         fetchEventScheduleConfig(dateMode),
