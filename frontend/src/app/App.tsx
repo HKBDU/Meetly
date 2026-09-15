@@ -1,20 +1,28 @@
+import { QueryProvider } from "@/app/providers"
+import { AppHeader } from "@/features/participants/components/AppHeader"
+import { ParticipantPage } from "@/features/participants"
+import { Toaster } from "@/shared/components/ui"
+import { AppFooter } from "@/shared/layouts"
+
 export default function App() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-6 text-slate-800">
-      <div className="w-full max-w-xl rounded-xl border border-slate-200 bg-white p-8 shadow-sm text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-emerald-600">Meetly</h1>
-        <p className="mt-2 text-slate-600">
-          When2meet clone - Real-time meeting scheduling with React, Vite & Tailwind CSS.
-        </p>
-        <div className="mt-6 flex justify-center gap-3">
-          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-            Frontend: React + Vite + Tailwind
-          </span>
-          <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-            Backend: .NET + SignalR
-          </span>
-        </div>
+    <QueryProvider>
+      {/* `min-h-dvh` nằm TRÊN CHÍNH `main` (không phải trên khung ngoài) - CỐ Ý bắt
+          `main` luôn cao ÍT NHẤT bằng 1 màn hình, CỘNG THÊM header/footer nằm ngoài
+          phần đó, nên tổng chiều cao trang LUÔN lớn hơn viewport một chút -> footer
+          KHÔNG BAO GIỜ lộ ra ngay khi vào trang (phải cuộn mới thấy), kể cả khi nội
+          dung thật sự rất ngắn (VD màn Join). Khi nội dung dài hơn 1 màn hình (VD:
+          lưới lịch nhiều giờ) thì `main` tự giãn tiếp theo nội dung, cả trang cuộn
+          bình thường thay vì tạo thanh cuộn riêng bên trong (xem PersonalScheduleGrid -
+          nó không còn tự cuộn riêng nữa, dựa hẳn vào cách chia layout này). */}
+      <div className="flex flex-col bg-background">
+        <AppHeader />
+        <main className="min-h-dvh">
+          <ParticipantPage />
+        </main>
+        <AppFooter />
       </div>
-    </div>
+      <Toaster position="top-right" theme="light" richColors />
+    </QueryProvider>
   )
 }
