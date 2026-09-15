@@ -5,7 +5,12 @@ export const loginSchema = z.object({
     .trim()
     .min(2, 'Display name must be at least 2 characters')
     .max(50, 'Display name must be at most 50 characters'),
-  password: z.string().trim().max(100, 'Password must be at most 100 characters').optional().or(z.literal('')),
+  password: z
+    .string()
+    .trim()
+    .max(100, 'Password must be at most 100 characters')
+    .optional()
+    .or(z.literal('')),
 });
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
@@ -16,7 +21,6 @@ export const emailSchema = z.object({
 
 export type EmailFormValues = z.infer<typeof emailSchema>;
 
-// `range` là cặp [startIndex, endIndex] trỏ vào mảng mốc giờ (boundaries) của
 // Manual Range Entry - Slider tự đảm bảo startIndex < endIndex bằng
 // `minStepsBetweenThumbs`, nên không cần refine thêm ở đây.
 export const manualRangeSchema = z.object({
