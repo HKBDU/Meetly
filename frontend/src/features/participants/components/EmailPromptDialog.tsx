@@ -55,7 +55,7 @@ export function EmailPromptDialog() {
 
       const freeSlotIds = resolveFreeSlotIds(selectedSlotIds, paintMode, scheduleConfig)
       const timeSlots = mergeFreeSlotIdsIntoRanges(freeSlotIds, scheduleConfig)
-      return saveAvailability(scheduleConfig.eventId, { timeSlots, email: submittedEmail })
+      return saveAvailability(scheduleConfig.shortCode, { timeSlots, email: submittedEmail })
     },
     onSuccess: () => {
       toast.success("You'll be notified by email")

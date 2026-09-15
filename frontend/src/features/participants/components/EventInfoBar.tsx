@@ -41,17 +41,18 @@ function formatDateRangeLabel(config: EventScheduleConfig): string {
  * feedback: tách 2 màu trắng/xám giữa tiêu đề và lưới nhìn còn xấu hơn, thôi
  * gộp lại 1 màu nền DUY NHẤT cho toàn bộ phần nội dung dưới header.
  *
- * Link chia sẻ hiện là MOCK (chưa có route/shortCode thật - xem
- * `EventScheduleConfig.eventId` comment) - chỉ demo hành vi copy-to-clipboard.
+ * Link chia sẻ dựng từ chính domain đang chạy (`window.location.origin`) +
+ * `shortCode` thật của event, khớp route `/e/:shortCode` (xem app/router.tsx) -
+ * ai mở link này cũng vào thẳng đúng màn Join của event đó.
  */
 export function EventInfoBar({ config }: EventInfoBarProps) {
   const setView = useParticipantStore((s) => s.setView)
   const [copied, setCopied] = useState(false)
-  const shareLink = `meetly.app/e/${config.eventId}`
+  const shareLink = `${window.location.host}/e/${config.shortCode}`
 
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(`https://${shareLink}`)
+      await navigator.clipboard.writeText(`${window.location.origin}/e/${config.shortCode}`)
       setCopied(true)
       toast.success("Link copied")
       setTimeout(() => setCopied(false), 1500)

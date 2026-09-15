@@ -47,7 +47,7 @@ export function useAutoSaveSchedule() {
 
       // BE cần các KHOẢNG start-end liên tục, không nhận từng ô rời rạc.
       const timeSlots = mergeFreeSlotIdsIntoRanges(freeSlotIds, scheduleConfig)
-      return saveAvailability(scheduleConfig.eventId, { timeSlots })
+      return saveAvailability(scheduleConfig.shortCode, { timeSlots })
     },
     onSuccess: () => {
       const { hasSavedOnce, hasEmailSubscribed } = useParticipantStore.getState()

@@ -14,9 +14,9 @@ export const PAINT_MODE_LABEL: Record<PaintMode, string> = {
  * - SPECIFIC_DATES: chọn các ngày cụ thể trên lịch (VD: 12/09, 13/09...)
  * - DAYS_OF_WEEK: chọn theo thứ trong tuần, lặp lại hàng tuần (VD: Thứ 2, Thứ 3...),
  *   không gắn với ngày cụ thể nào.
- * Do tổ chức sự kiện (organizer) chọn khi tạo event - participant chỉ xem theo
- * đúng kiểu đã chọn. Hiện chưa có màn tạo event thật nên FE mock cả 2 kiểu để
- * có thể xem trước giao diện (xem `ParticipantAuthForm` - toggle "Kiểu lịch (demo)").
+ * Do tổ chức sự kiện (organizer) chọn khi tạo event (feature khác đảm nhận) -
+ * participant chỉ xem theo đúng kiểu BE đã trả về trong `EventScheduleConfig`,
+ * không tự chọn được (khớp `Meetly.Repository.Enum.EventType`: Dates=1, Weekdays=2).
  */
 export type ScheduleDateMode = 'SPECIFIC_DATES' | 'DAYS_OF_WEEK';
 
@@ -27,23 +27,47 @@ export interface ParticipantRequest {
   password?: string;
 }
 
+/**
+ * Khớp `TimeSlotsRequest`/`ParticipantTimeSlotResponse` bên BE khi đọc VỀ (GET/access) -
+ * MỘT OBJECT = MỘT KHOẢNG THỜI GIAN LIÊN TỤC đã lưu trước đó, không phải từng
+ * ô rời rạc. Dùng `expandTimeSlotRangesToIds` (gridUtils.ts) để bung ngược
+ * thành tập slotId rời rạc mà lưới (`selectedSlotIds`) cần.
+ */
+export interface TimeSlotRangeResponse {
+  /** "YYYY-MM-DD" - có giá trị khi dateMode = SPECIFIC_DATES */
+  specificDate: string | null;
+  /** 0 = CN...6 = Th7 - có giá trị khi dateMode = DAYS_OF_WEEK */
+  dayOfWeek: number | null;
+  /** "HH:mm" */
+  startTime: string;
+  /** "HH:mm" */
+  endTime: string;
+}
+
+/** Khớp `ParticipantAccessResponse` bên BE (`POST .../participants/access`) */
 export interface ParticipantResponse {
   participantId: string;
   username: string;
-  token: string;
-  freeSlotIds: string[]; // trả về lịch rảnh nếu trước đó đã từng điển
+  isAdmin: boolean;
+  isNewParticipant: boolean;
+  accessToken: string;
+  eventStatus: number;
+  revision: number;
+  /** Lịch rảnh đã lưu từ trước, nếu participant này đã từng điền (participant mới -> mảng rỗng) */
+  timeSlots: TimeSlotRangeResponse[];
 }
 
 export interface ParticipantAuthInfo {
   participantId: string;
   username: string;
-  token: string;
+  accessToken: string;
 }
 
-/* Cấu hình lưới thời gian của sự kiện (mock, thay bằng API thật sau)  */
+/* Cấu hình lưới thời gian của sự kiện - suy ra từ `EventResponse` (GET /events/{shortCode}) */
 
 export interface EventScheduleConfig {
-  eventId: string;
+  /** Route param định danh event (`GET/POST /events/{shortCode}/...`) - KHÔNG phải GUID `Events.Id` */
+  shortCode: string;
   eventName: string;
   /** SPECIFIC_DATES hay DAYS_OF_WEEK - quyết định cách hiển thị header cột (xem PersonalScheduleGrid) */
   dateMode: ScheduleDateMode;
@@ -59,16 +83,19 @@ export interface EventScheduleConfig {
    *     tục, trải dài tới cả tháng (VD: admin chọn 12/09, 15/09, 21/09...).
    *   - dateMode = DAYS_OF_WEEK: có thể chỉ là MỘT VÀI thứ trong tuần, không
    *     nhất thiết đủ 7 ngày (VD: admin chỉ chọn Thứ 2, Thứ 4, Thứ 6). Mảng
-   *     vẫn chứa ngày thật (không chỉ tên thứ) để dùng chung 1 logic sinh
-   *     slot id với SPECIFIC_DATES - dateMode chỉ đổi NHÃN hiển thị trên
+   *     vẫn chứa ngày thật (không chỉ tên thứ, quy về tuần hiện tại - xem
+   *     `resolveDaysOfWeekDates` trong services.ts) để dùng chung 1 logic
+   *     sinh slot id với SPECIFIC_DATES - dateMode chỉ đổi NHÃN hiển thị trên
    *     header (ẩn phần ngày/tháng cụ thể, chỉ hiện tên thứ).
    */
   dates: string[];
-  /** Giờ bắt đầu / kết thúc trong ngày, theo hệ 24h */
+  /** Giờ bắt đầu / kết thúc trong ngày, theo hệ 24h - BE hiện luôn trả `dailyStartTime`/`dailyEndTime` tròn giờ */
   startHour: number;
   endHour: number;
-  /** Độ dài mỗi ô lưới, tính bằng phút */
+  /** Độ dài mỗi ô lưới, tính bằng phút - lựa chọn hiển thị của FE, BE không ràng buộc granularity này */
   slotMinutes: number;
+  /** `Meetly.Repository.Enum.EventStatus`: Open=1, Finalized=2, Closed=3 - dùng để biết lịch đã bị chốt ngay từ lúc tải, không cần đợi SignalR */
+  status: number;
 }
 
 /** Một ô thời gian trong lưới (1 ngày x 1 khung giờ) */
@@ -92,9 +119,9 @@ export interface TimeSlotRangeRequest {
   specificDate?: string;
   /** 0 = CN...6 = Th7 - khớp enum `DayOfWeek` bên BE (và trùng luôn với JS `Date.getDay()`) - có giá trị khi dateMode = DAYS_OF_WEEK */
   dayOfWeek?: number;
-  /** "HH:mm:ss" - BE validate startTime phải nhỏ hơn endTime */
+  /** "HH:mm" - BE validate startTime phải nhỏ hơn endTime */
   startTime: string;
-  /** "HH:mm:ss" */
+  /** "HH:mm" */
   endTime: string;
 }
 
@@ -107,8 +134,8 @@ export interface TimeSlotRangeRequest {
 export interface SaveAvailabilityRequest {
   /**
    * Email nhận thông báo khi lịch được chốt - BE nhận email CHUNG với request
-   * này, KHÔNG có endpoint đăng ký email riêng (xem EmailPromptDialog - hiện
-   * đang gọi 1 endpoint mock riêng, cần gộp lại khi nối API thật).
+   * này, KHÔNG có endpoint đăng ký email riêng (xem `EmailPromptDialog` - gửi
+   * lại nguyên lịch hiện tại kèm email vì BE dùng REPLACE, không có endpoint riêng).
    */
   email?: string;
   timeSlots: TimeSlotRangeRequest[];

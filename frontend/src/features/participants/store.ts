@@ -6,7 +6,6 @@ import type {
   ParticipantAuthInfo,
   ParticipantView,
   PaintMode,
-  ScheduleDateMode,
 } from '@/features/participants/types';
 
 interface ParticipantState {
@@ -23,15 +22,6 @@ interface ParticipantState {
    * cũ nếu cấu hình event đã đổi.
    */
   scheduleConfig: EventScheduleConfig | null;
-
-  /**
-   * dateMode CỦA LẦN TẢI GẦN NHẤT - CÓ lưu localStorage (nhẹ, khác với
-   * scheduleConfig đầy đủ) để khi reload biết cần tải lại đúng biến thể nào.
-   * Hiện chỉ dùng cho mock/demo (xem ParticipantAuthForm) - khi có BE thật,
-   * dateMode sẽ luôn đến từ chính `scheduleConfig` mới tải, field này chỉ
-   * còn ý nghĩa "tải lại được" chứ participant không tự chọn.
-   */
-  dateMode: ScheduleDateMode | null;
 
   /*
    * Tập slotId đang được TÔ (highlight xanh) trên lưới - KHÔNG đồng nghĩa
@@ -131,7 +121,6 @@ export const useParticipantStore = create<ParticipantState>()(
       auth: null,
       currentView: 'AUTH',
       scheduleConfig: null,
-      dateMode: null,
       selectedSlotIds: new Set<string>(),
       paintMode: 'FREE',
       hasSavedOnce: false,
@@ -151,7 +140,12 @@ export const useParticipantStore = create<ParticipantState>()(
 
       setView: (view) => set({ currentView: view }),
 
-      setScheduleConfig: (config) => set({ scheduleConfig: config, dateMode: config.dateMode }),
+      // `status` khác Open (1) nghĩa là lịch ĐÃ bị chốt/đóng từ trước khi
+      // participant này vào (VD: F5 lại sau khi admin đã chốt) - không thể
+      // đợi SignalR báo "EventFinalized" vì sự kiện đó chỉ bắn tại THỜI ĐIỂM
+      // chốt, không bắn lại cho người vào sau (xem `Meetly.Repository.Enum.EventStatus`).
+      setScheduleConfig: (config) =>
+        set({ scheduleConfig: config, isFinalized: config.status !== 1 }),
 
       // Đổi mode = đổi Ý NGHĨA của việc tô -> xoá trắng lịch, bắt đầu tô lại
       // từ đầu để không lẫn lộn giữa "đã tô là rảnh" và "đã tô là bận".
@@ -193,7 +187,6 @@ export const useParticipantStore = create<ParticipantState>()(
           auth: null,
           currentView: 'AUTH',
           scheduleConfig: null,
-          dateMode: null,
           selectedSlotIds: new Set<string>(),
           paintMode: 'FREE',
           hasSavedOnce: false,
@@ -205,14 +198,12 @@ export const useParticipantStore = create<ParticipantState>()(
     }),
     {
       name: 'meetly-participant-session',
-      // Bản localStorage cũ (trước khi bỏ `scheduleConfig` khỏi partialize
-      // bên dưới) vẫn còn field này trong JSON đã lưu - nếu không bump
-      // version, zustand sẽ MERGE đè giá trị CŨ đó lên state mới lúc
-      // rehydrate (dù code không còn ghi field này nữa), khiến bug "vẫn thấy
-      // cấu hình cũ sau khi code đã sửa" tiếp diễn. Tăng version khiến
-      // zustand tự bỏ qua toàn bộ bản lưu cũ không khớp version, coi như
-      // phiên mới - chỉ cần làm 1 lần cho mỗi lần đổi SHAPE của phần persist.
-      version: 1,
+      // Bump version mỗi khi đổi SHAPE của phần persist (partialize bên dưới
+      // hoặc field bên trong `auth`) - zustand tự bỏ qua bản lưu cũ không khớp
+      // version thay vì MERGE đè giá trị CŨ lên state mới lúc rehydrate.
+      // v1 -> v2: bỏ `dateMode` (chỉ phục vụ demo/mock, nay BE luôn trả đúng
+      // dateMode trong `scheduleConfig`), đổi `auth.token` -> `auth.accessToken`.
+      version: 2,
       storage: createJSONStorage(() => localStorage, {
         replacer: persistReplacer,
         reviver: persistReviver,
@@ -226,15 +217,13 @@ export const useParticipantStore = create<ParticipantState>()(
       // KHÔNG lưu `scheduleConfig` (dù nó là nguyên nhân participant vào lại
       // vẫn thấy đúng lưới) - đây là dữ liệu THUỘC VỀ EVENT (admin cấu hình),
       // không phải dữ liệu của riêng participant này. Nếu cache cứng vào
-      // localStorage, mỗi khi cấu hình event đổi (admin sửa ngày/giờ, hoặc ở
-      // bản mock là mỗi khi code demo đổi), participant cũ sẽ vẫn thấy bản
-      // CŨ mãi mãi vì không bao giờ tải lại - chỉ lưu `dateMode` (rất nhẹ) để
-      // biết cần tải lại đúng biến thể nào, còn `scheduleConfig` LUÔN được
-      // tải mới lại mỗi lần app khởi động (xem ParticipantPage).
+      // localStorage, mỗi khi cấu hình event đổi (admin sửa ngày/giờ),
+      // participant cũ sẽ vẫn thấy bản CŨ mãi mãi vì không bao giờ tải lại -
+      // `scheduleConfig` LUÔN được tải mới lại mỗi lần app khởi động (xem
+      // ParticipantPage, dựa vào `shortCode` trên URL - không cần cache gì thêm).
       partialize: (state) => ({
         auth: state.auth,
         currentView: state.currentView,
-        dateMode: state.dateMode,
         selectedSlotIds: state.selectedSlotIds,
         paintMode: state.paintMode,
         hasSavedOnce: state.hasSavedOnce,

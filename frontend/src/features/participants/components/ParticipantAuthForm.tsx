@@ -1,11 +1,9 @@
-import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { CalendarClock, FlaskConical, KeyRound, User } from "lucide-react"
+import { CalendarClock, KeyRound, User } from "lucide-react"
 import { useForm } from "react-hook-form"
 
 import { useAuthParticipant } from "@/features/participants/hooks/useAuthParticipant"
 import { loginSchema, type LoginFormValues } from "@/features/participants/schema"
-import type { ScheduleDateMode } from "@/features/participants/types"
 import {
   Button,
   Card,
@@ -20,23 +18,22 @@ import {
   FormLabel,
   FormMessage,
   Input,
-  Label,
-  ToggleGroup,
-  ToggleGroupItem,
 } from "@/shared/components/ui"
+
+interface ParticipantAuthFormProps {
+  /** Route param `shortCode` (`/e/:shortCode`) - sự kiện đang tham gia */
+  shortCode: string
+}
 
 /**
  * Màn hình 1 - Định danh: Form nhập Username (bắt buộc) và Password (không bắt buộc).
  * Đăng nhập thành công -> lưu vào store -> ParticipantPage tự chuyển sang Overview.
  *
- * Kiểu lịch (SPECIFIC_DATES / DAYS_OF_WEEK) thực tế do BE trả về theo đúng
- * cấu hình event - participant không tự chọn được. Nhưng vì FE chưa có màn
- * "Tạo event" thật để tạo ra 1 event kiểu DAYS_OF_WEEK, nên toggle demo dưới
- * đây CHỈ để xem trước giao diện lưới ở cả 2 kiểu; xoá đi khi có API thật.
+ * Kiểu lịch (SPECIFIC_DATES / DAYS_OF_WEEK) do BE trả về theo đúng cấu hình
+ * event - participant không tự chọn được, nên form này không có input nào cho nó.
  */
-export function ParticipantAuthForm() {
-  const { access, isPending } = useAuthParticipant()
-  const [demoDateMode, setDemoDateMode] = useState<ScheduleDateMode>("SPECIFIC_DATES")
+export function ParticipantAuthForm({ shortCode }: ParticipantAuthFormProps) {
+  const { access, isPending } = useAuthParticipant(shortCode)
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -45,11 +42,8 @@ export function ParticipantAuthForm() {
 
   function handleSubmit(values: LoginFormValues) {
     access({
-      credentials: {
-        username: values.username,
-        password: values.password || undefined,
-      },
-      dateMode: demoDateMode,
+      username: values.username,
+      password: values.password || undefined,
     })
   }
 
@@ -108,28 +102,6 @@ export function ParticipantAuthForm() {
                   </FormItem>
                 )}
               />
-
-              <div className="space-y-1.5 border border-dashed border-border p-2.5">
-                <Label className="flex items-center gap-1.5 text-muted-foreground">
-                  <FlaskConical className="size-3.5" />
-                  Schedule type (demo)
-                </Label>
-                <ToggleGroup
-                  type="single"
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  value={demoDateMode}
-                  onValueChange={(value) => value && setDemoDateMode(value as ScheduleDateMode)}
-                >
-                  <ToggleGroupItem value="SPECIFIC_DATES" className="flex-1 text-xs">
-                    Specific Dates
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="DAYS_OF_WEEK" className="flex-1 text-xs">
-                    Days of the Week
-                  </ToggleGroupItem>
-                </ToggleGroup>
-              </div>
 
               <Button type="submit" className="w-full" size="lg" disabled={isPending}>
                 {isPending ? "Please wait..." : "Continue"}

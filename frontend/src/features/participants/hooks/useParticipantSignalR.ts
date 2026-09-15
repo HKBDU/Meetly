@@ -13,7 +13,7 @@ import type { EventFinalizedPayload } from "@/features/participants/types"
  *   import { env } from "@/lib/env"
  *
  *   const connection = new HubConnectionBuilder()
- *     .withUrl(env.signalRHubUrl, { accessTokenFactory: () => auth?.token ?? "" })
+ *     .withUrl(env.signalRHubUrl, { accessTokenFactory: () => auth?.accessToken ?? "" })
  *     .withAutomaticReconnect()
  *     .configureLogging(LogLevel.Information)
  *     .build()

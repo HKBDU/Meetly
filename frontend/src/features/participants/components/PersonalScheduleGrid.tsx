@@ -389,13 +389,14 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
                       // KHÔNG render div này -> trình duyệt tự đẩy các ô lịch của hàng
                       // đó sang đúng cột kế tiếp, không cần tính toán vị trí thủ công.
                       //
-                      // KHÔNG còn border-t/pt riêng (bỏ khung viền quanh nhãn giờ) -
-                      // `flex items-center` canh nhãn vào ĐÚNG GIỮA khung giờ thay vì
-                      // dính ở mép trên, nên nó thẳng hàng với đường kẻ nét đứt mốc
-                      // nửa giờ (isHalfHourStart) ở chính giữa khung 4 ô này.
+                      // `flex items-start` + `pt-0.5` ghim nhãn SÁT MÉP TRÊN của khối
+                      // (đúng ngay đường kẻ isHourStart, VD "09:00" nằm khớp đường kẻ
+                      // đầu khung giờ 9h) - trước đây dùng `items-center` canh nhãn
+                      // vào GIỮA khối 4 ô khiến "09:00" trông như đang ở mốc 09:30,
+                      // tạo cảm giác lưới thừa/lệch 30p ở đầu và cuối ngày (feedback).
                       <div
                         className={cn(
-                          "sticky left-0 z-10 flex items-center justify-end bg-card px-1.5",
+                          "sticky left-0 z-10 flex items-start justify-end bg-card px-1.5 pt-0.5",
                           TIME_COLUMN_DIVIDER_CLASS
                         )}
                         style={{ gridRow: `span ${slotsPerHour}` }}

@@ -5,6 +5,7 @@ import type {
   ScheduleDateMode,
   TimeSlot,
   TimeSlotRangeRequest,
+  TimeSlotRangeResponse,
 } from '@/features/participants/types';
 
 /**
@@ -117,11 +118,11 @@ function timeToMinutes(time: string): number {
   return hour * 60 + minute;
 }
 
-/** VD: 570 phút -> "09:30:00" - đúng định dạng `TimeOnly` mà BE cần (HH:mm:ss) */
-function minutesToTimeOnlyString(totalMinutes: number): string {
+/** VD: 570 phút -> "09:30" - đúng định dạng `TimeOnly` mà BE ghi ra (`TimeOnlyJsonConverter` luôn viết "HH:mm", dù đọc vào chấp nhận cả "HH:mm:ss") */
+function minutesToTimeString(totalMinutes: number): string {
   const hour = Math.floor(totalMinutes / 60);
   const minute = totalMinutes % 60;
-  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`;
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 }
 
 function buildTimeSlotRange(
@@ -130,8 +131,8 @@ function buildTimeSlotRange(
   startMinutes: number,
   endMinutes: number,
 ): TimeSlotRangeRequest {
-  const startTime = minutesToTimeOnlyString(startMinutes);
-  const endTime = minutesToTimeOnlyString(endMinutes);
+  const startTime = minutesToTimeString(startMinutes);
+  const endTime = minutesToTimeString(endMinutes);
 
   if (dateMode === 'DAYS_OF_WEEK') {
     // 0 = CN...6 = Th7, khớp enum DayOfWeek bên BE - `date` chỉ là ngày thật
@@ -150,8 +151,8 @@ function buildTimeSlotRange(
  * NHẤT; hễ đổi ngày HOẶC bị đứt quãng (có khoảng trống ở giữa) thì tách
  * thành object MỚI.
  *
- * VD: tô liền "09:00 -> 10:30" ngày A ra 1 object {startTime: "09:00:00",
- * endTime: "10:30:00"}; tô thêm rời "14:00 -> 15:00" cùng ngày A -> có thêm
+ * VD: tô liền "09:00 -> 10:30" ngày A ra 1 object {startTime: "09:00",
+ * endTime: "10:30"}; tô thêm rời "14:00 -> 15:00" cùng ngày A -> có thêm
  * 1 object nữa (KHÔNG gộp chung vì có khoảng trống giữa 10:30 và 14:00).
  */
 export function mergeFreeSlotIdsIntoRanges(
@@ -202,4 +203,40 @@ export function mergeFreeSlotIdsIntoRanges(
   closeCurrentRange();
 
   return ranges;
+}
+
+/**
+ * Chiều NGƯỢC LẠI của `mergeFreeSlotIdsIntoRanges`: bung các khoảng
+ * start-end (`TimeSlotRangeResponse`, đúng shape `ParticipantAccessResponse.TimeSlots`
+ * bên BE) thành tập slotId rời rạc mà lưới hiểu (`selectedSlotIds`) - dùng khi
+ * participant đăng nhập lại và BE trả về lịch rảnh đã lưu từ trước.
+ *
+ * `config.dates` (đã quy ra ngày thật, kể cả với DAYS_OF_WEEK - xem
+ * `resolveDaysOfWeekDates` trong services.ts) là nguồn DUY NHẤT để map
+ * `dayOfWeek`/`specificDate` của mỗi range về đúng (các) cột ngày đang hiển thị.
+ */
+export function expandTimeSlotRangesToIds(
+  ranges: TimeSlotRangeResponse[],
+  config: EventScheduleConfig,
+): string[] {
+  const slotIds: string[] = [];
+
+  for (const range of ranges) {
+    const matchingDates = config.dates.filter((date) =>
+      config.dateMode === 'DAYS_OF_WEEK'
+        ? new Date(`${date}T00:00:00`).getDay() === range.dayOfWeek
+        : date === range.specificDate,
+    );
+
+    const startMinutes = timeToMinutes(range.startTime);
+    const endMinutes = timeToMinutes(range.endTime);
+
+    for (const date of matchingDates) {
+      for (let minutes = startMinutes; minutes < endMinutes; minutes += config.slotMinutes) {
+        slotIds.push(getSlotId(date, minutesToTimeString(minutes)));
+      }
+    }
+  }
+
+  return slotIds;
 }
