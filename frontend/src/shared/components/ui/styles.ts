@@ -39,7 +39,7 @@ export const eventUi = {
   formFooter:
     'mt-2 flex justify-start gap-2.5 border-0 pt-2\n' +
     'max-[640px]:fixed max-[640px]:inset-x-0 max-[640px]:bottom-0 max-[640px]:z-[2]\n' +
-    'max-[640px]:m-0 max-[640px]:justify-stretch max-[640px]:bg-[#009b4d] max-[640px]:px-4 max-[640px]:py-2.5',
+    'max-[640px]:m-0 max-[640px]:justify-stretch max-[640px]:bg-white max-[640px]:border-t max-[640px]:border-[#edf1ed] max-[640px]:px-4 max-[640px]:py-2.5 max-[640px]:shadow-[0_-2px_10px_rgba(0,0,0,0.05)]',
   formFooterButton: 'max-[640px]:h-[38px] max-[640px]:min-w-0 max-[640px]:flex-1',
   input:
     'h-[32px] w-full rounded border border-[#6b7280] bg-[#ffffff] px-3 text-md text-[#0b1c30]\n' +

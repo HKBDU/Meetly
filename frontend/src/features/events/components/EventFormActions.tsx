@@ -12,7 +12,11 @@ export function EventFormCancelAction({ onCancel, label = 'Cancel' }: EventFormC
 
   return (
     <Button
-      className={eventUi.secondaryButton}
+      className={cn(
+        'w-full flex-1 min-w-0 sm:w-auto sm:flex-initial',
+        eventUi.secondaryButton,
+        eventUi.formFooterButton,
+      )}
       onClick={onCancel}
       type="button"
       variant="outline"
@@ -28,7 +32,11 @@ export function EventFormSubmitAction({
 }: EventFormSubmitActionProps) {
   return (
     <Button
-      className={eventUi.primaryButton}
+      className={cn(
+        'w-full flex-1 min-w-0 sm:w-auto sm:flex-initial',
+        eventUi.primaryButton,
+        eventUi.formFooterButton,
+      )}
       disabled={submitting}
       type="submit"
     >
@@ -46,12 +54,12 @@ export function EventFormActions({
   return (
     <footer
       className={cn(
-        'grid w-full grid-flow-col auto-cols-fr gap-3 sm:flex sm:w-auto sm:justify-end',
+        'flex w-full max-w-full flex-row items-center gap-2.5 box-border sm:w-auto sm:justify-end',
         eventUi.formFooter,
       )}
     >
-      <EventFormSubmitAction submitLabel={submitLabel} submitting={submitting} />
       <EventFormCancelAction label={cancelLabel} onCancel={onCancel} />
+      <EventFormSubmitAction submitLabel={submitLabel} submitting={submitting} />
     </footer>
   )
 }
