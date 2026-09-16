@@ -24,7 +24,7 @@ export function ParticipantPage() {
   const auth = useParticipantStore((s) => s.auth)
   const scheduleConfig = useParticipantStore((s) => s.scheduleConfig)
   const setScheduleConfig = useParticipantStore((s) => s.setScheduleConfig)
-  const { simulateEventFinalized } = useParticipantSignalR()
+  const { simulateEventFinalized } = useParticipantSignalR(shortCode ?? "")
 
   // Phiên cũ khôi phục từ localStorage (F5, mở lại tab) chỉ giữ `auth`,
   // KHÔNG giữ `scheduleConfig` (xem comment ở store.ts vì sao) - nên mỗi khi
