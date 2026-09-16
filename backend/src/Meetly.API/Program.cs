@@ -8,6 +8,7 @@ using Meetly.Repository.Availability;
 using Meetly.Repository.EventScheduling;
 using Meetly.Repository.SuggestionSlots;
 using Meetly.Service.Availability;
+using Meetly.Service.Email;
 using Meetly.Service.EventScheduling;
 using Meetly.Service.JwtService;
 using Meetly.Service.Realtime;
@@ -24,6 +25,11 @@ builder.Services.AddSignalR();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
+builder.Services.Configure<ResendOptions>(builder.Configuration.GetSection("Resend"));
+builder.Services.AddHttpClient<IEmailService, ResendEmailService>(client =>
+{
+    client.BaseAddress = new Uri("https://api.resend.com/");
+});
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")

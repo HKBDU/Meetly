@@ -5,12 +5,20 @@ using Meetly.Repository.Entity;
 using Meetly.Repository.Enum;
 using Meetly.Repository.EventScheduling;
 using Meetly.Service.JwtService;
+using Meetly.Service.Email;
 using Meetly.Service.Realtime;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
+using System.Text.Encodings.Web;
 
 namespace Meetly.Service.EventScheduling;
 
-public sealed class EventService(IEventRepository repository, IJwtService jwt, IEventRealtimeNotifier notifier) : IEventService
+public sealed class EventService(
+    IEventRepository repository,
+    IJwtService jwt,
+    IEventRealtimeNotifier notifier,
+    IEmailService emailService,
+    ILogger<EventService> logger) : IEventService
 {
     private const string Alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static readonly TimeSpan VietnamOffset = TimeSpan.FromHours(7);
@@ -137,6 +145,21 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt, I
                 Format(entity.FinalEndTime!.Value)),
             entity.Revision);
         await notifier.NotifyEventFinalizedAsync(shortCode, response, cancellationToken);
+
+        try
+        {
+            await emailService.SendAsync(
+                entity.Emails.Select(x => x.Email).ToArray(),
+                $"Lịch họp đã được chốt: {entity.Title}",
+                BuildFinalizedEmail(entity, response),
+                cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            // Sending mail must not undo an event that has already been finalized.
+            logger.LogError(exception, "Could not send finalized event email for {ShortCode}", shortCode);
+        }
+
         return response;
     }
 
@@ -224,6 +247,19 @@ public sealed class EventService(IEventRepository repository, IJwtService jwt, I
             entity.EventType == EventType.Weekdays ? (int?)entity.FinalDayOfWeek : null,
             Format(entity.FinalStartTime!.Value), Format(entity.FinalEndTime!.Value))
     };
+
+    private static string BuildFinalizedEmail(Events entity, FinalizeEventResponse response)
+    {
+        var title = HtmlEncoder.Default.Encode(entity.Title);
+        var url = HtmlEncoder.Default.Encode(entity.URL);
+        var schedule = response.FinalSchedule;
+        var date = schedule.SpecificDate is null ? $"Thứ {(schedule.DayOfWeek ?? 0)}" : schedule.SpecificDate;
+
+        return $"<h2>Lịch họp đã được chốt</h2>" +
+               $"<p>Sự kiện <strong>{title}</strong> đã có lịch chính thức.</p>" +
+               $"<p><strong>Thời gian:</strong> {date}, {schedule.StartTime} - {schedule.EndTime}</p>" +
+               $"<p><a href=\"{url}\">Mở sự kiện Meetly</a></p>";
+    }
 
     private static List<HeatmapCellResponse> Heatmap(Events entity)
     {
