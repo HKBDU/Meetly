@@ -4,6 +4,7 @@ import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
+import { Button } from '@/shared/components/ui/button'
 import { AdminCredentialsFields } from './AdminCredentialsFields'
 import { EventForm } from './EventForm'
 import { eventUi } from '../../../shared/components/ui/styles'
@@ -63,13 +64,13 @@ export function NewEventScreen() {
 
   if (!isOpen) {
     return (
-      <button
+      <Button
         className={eventUi.reopenButton}
         onClick={() => setIsOpen(true)}
         type="button"
       >
         Open new event
-      </button>
+      </Button>
     )
   }
 
@@ -79,14 +80,15 @@ export function NewEventScreen() {
       <div className={eventUi.mobileScreen}>
         <header className={eventUi.screenHeader}>
           <Brand />
-          <button
+          <Button
             aria-label="Close"
             className={eventUi.closeButton}
             onClick={() => setIsOpen(false)}
             type="button"
+            variant="ghost"
           >
             <X size={24} />
-          </button>
+          </Button>
         </header>
         {step === 'credentials' ? (
           <CredentialsStep
@@ -114,9 +116,9 @@ export function NewEventScreen() {
       <div className={eventUi.desktopScreen}>
         <header className={eventUi.siteHeader}>
           <Brand />
-          <button className={eventUi.joinButton} type="button">
+          <Button className={eventUi.joinButton} type="button" variant="outline">
             Join with ID
-          </button>
+          </Button>
         </header>
         <main className={eventUi.page}>
           <h1 className={eventUi.pageTitle}>
@@ -180,12 +182,12 @@ function CredentialsStep({
         <AdminCredentialsFields usernameRequired />
 
         <footer className={eventUi.formFooter}>
-          <button
+          <Button
             className={cn(eventUi.button, eventUi.formFooterButton, eventUi.primaryButton)}
             type="submit"
           >
             Continue
-          </button>
+          </Button>
         </footer>
       </form>
     </FormProvider>
@@ -299,7 +301,7 @@ function EventManagementScreen({ event, values }: EventManagementScreenProps) {
             </div>
           </dl>
           {event.isAdmin && (
-            <button
+            <Button
               className={cn(eventUi.button, eventUi.primaryButton, eventUi.managementEdit)}
               onClick={() => {
                 setUpdateError(undefined)
@@ -308,7 +310,7 @@ function EventManagementScreen({ event, values }: EventManagementScreenProps) {
               type="button"
             >
               Edit Event
-            </button>
+            </Button>
           )}
           <a
             className={cn(eventUi.button, eventUi.primaryButton, eventUi.managementLink)}
@@ -342,23 +344,25 @@ function UpdateWarning({
           Changing the event configuration may affect the availability data already entered by participants.
         </p>
         <div className={eventUi.updateWarningActions}>
-          <button
+          <Button
             className={cn(eventUi.button, eventUi.updateWarningSecondary)}
             onClick={onCancel}
             type="button"
+            variant="outline"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             className={cn(eventUi.button, eventUi.primaryButton)}
             disabled={isUpdating}
             onClick={onConfirm}
             type="button"
           >
             {isUpdating ? 'Saving...' : 'Confirm changes'}
-          </button>
+          </Button>
         </div>
       </section>
     </div>
   )
 }
+

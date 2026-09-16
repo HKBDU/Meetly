@@ -171,24 +171,26 @@ export function AvailabilitySelector({
       </div>
       <div className={eventUi.calendar}>
         <div className={eventUi.calendarMonthCaption}>
-          <button
+          <Button
             className={eventUi.calendarToolbarButton}
             disabled={isPrevDisabled}
             onClick={() => shiftMonth(-1)}
             type="button"
+            variant="ghost"
           >
             <ChevronLeft size={16} />
-          </button>
+          </Button>
           <span className={eventUi.calendarToolbarTitle}>
             {month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </span>
-          <button
+          <Button
             className={eventUi.calendarToolbarButton}
             onClick={() => shiftMonth(1)}
             type="button"
+            variant="ghost"
           >
             <ChevronRight size={16} />
-          </button>
+          </Button>
         </div>
         <Calendar
           classNames={{
@@ -216,9 +218,9 @@ export function AvailabilitySelector({
           showOutsideDays={false}
           weekStartsOn={1}
         />
-        <button className={eventUi.calendarReset} onClick={resetDates} type="button">
+        <Button className={eventUi.calendarReset} onClick={resetDates} type="button" variant="ghost">
           <RotateCcw size={13} /> Reset dates
-        </button>
+        </Button>
       </div>
       {error && <span className={eventUi.fieldError}>{error}</span>}
     </div>
