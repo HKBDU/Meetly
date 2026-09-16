@@ -5,17 +5,10 @@ import { eventUi } from '../../../shared/components/ui/styles'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Calendar } from '@/shared/components/ui/calendar'
-import type { EventType } from '../types'
 import { WEEKDAY_OPTIONS } from '../types'
+import type { AvailabilitySelectorProps } from '../types'
 import { getDateKey } from '../utils/date.utils'
 
-
-type AvailabilitySelectorProps = {
-  eventType: EventType
-  value: string[]
-  onChange: (value: string[]) => void
-  error?: string
-}
 
 export function AvailabilitySelector({
   eventType,

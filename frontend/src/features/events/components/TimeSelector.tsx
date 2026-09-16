@@ -2,13 +2,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
 import { generateTimeSlots } from '../utils/time.utils'
 import { eventUi } from '../../../shared/components/ui/styles'
-
-interface TimePickerSelectProps {
-  value: string
-  onChange: (value: string) => void
-  id?: string
-  placeholder?: string
-}
+import type { TimePickerSelectProps } from '../types'
 
 export function TimeSelector({
   value,
@@ -38,4 +32,3 @@ export function TimeSelector({
     </div>
   )
 }
-

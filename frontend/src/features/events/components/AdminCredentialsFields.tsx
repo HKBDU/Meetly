@@ -1,15 +1,6 @@
 import { useFormContext } from 'react-hook-form'
 import { eventUi } from '../../../shared/components/ui/styles'
-
-type CredentialsFormValues = {
-  adminUsername: string
-  adminPassword: string
-}
-
-type AdminCredentialsFieldsProps = {
-  usernameRequired?: boolean
-  passwordRequired?: boolean
-}
+import type { AdminCredentialsFieldsProps, CredentialsFormValues } from '../types'
 
 export function AdminCredentialsFields({
   usernameRequired = false,

@@ -1,10 +1,5 @@
 import { eventUi } from '../../../shared/components/ui/styles'
-
-type EventTitleFieldProps = {
-  value: string
-  onChange: (value: string) => void
-  error?: string
-}
+import type { EventTitleFieldProps } from '../types'
 
 export function EventTitleField({ value, onChange, error }: EventTitleFieldProps) {
   return (
@@ -23,4 +18,3 @@ export function EventTitleField({ value, onChange, error }: EventTitleFieldProps
     </div>
   )
 }
-

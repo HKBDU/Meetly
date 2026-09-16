@@ -1,13 +1,13 @@
 import { eventUi } from '../../../shared/components/ui/styles'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/lib/utils'
+import type {
+  EventFormActionsProps,
+  EventFormCancelActionProps,
+  EventFormSubmitActionProps,
+} from '../types'
 
-interface CancelActionProps {
-  onCancel?: () => void
-  label?: string
-}
-
-export function EventFormCancelAction({ onCancel, label = 'Cancel' }: CancelActionProps) {
+export function EventFormCancelAction({ onCancel, label = 'Cancel' }: EventFormCancelActionProps) {
   if (!onCancel) return null
 
   return (
@@ -22,15 +22,10 @@ export function EventFormCancelAction({ onCancel, label = 'Cancel' }: CancelActi
   )
 }
 
-interface SubmitActionProps {
-  submitting?: boolean
-  submitLabel?: string
-}
-
 export function EventFormSubmitAction({
   submitting = false,
   submitLabel = 'Create Event',
-}: SubmitActionProps) {
+}: EventFormSubmitActionProps) {
   return (
     <Button
       className={eventUi.primaryButton}
@@ -40,13 +35,6 @@ export function EventFormSubmitAction({
       {submitting ? 'Saving...' : submitLabel}
     </Button>
   )
-}
-
-interface EventFormActionsProps {
-  onCancel?: () => void
-  submitting?: boolean
-  submitLabel?: string
-  cancelLabel?: string
 }
 
 export function EventFormActions({

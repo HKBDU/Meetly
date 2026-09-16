@@ -1,11 +1,6 @@
-import type { EventType } from '../types'
 import { eventUi } from '../../../shared/components/ui/styles'
 import { cn } from '@/lib/utils'
-
-type EventTypeSelectProps = {
-  value: EventType
-  onChange: (value: EventType) => void
-}
+import type { EventTypeSelectProps } from '../types'
 
 export function EventTypeSelect({ value, onChange }: EventTypeSelectProps) {
   return (
@@ -29,4 +24,3 @@ export function EventTypeSelect({ value, onChange }: EventTypeSelectProps) {
     </div>
   )
 }
-

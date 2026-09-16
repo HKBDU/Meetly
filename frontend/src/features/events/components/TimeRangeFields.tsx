@@ -1,14 +1,7 @@
 import { TimeSelector } from './TimeSelector'
 import { eventUi } from '../../../shared/components/ui/styles'
 import { cn } from '@/lib/utils'
-
-interface TimeRangeFieldsProps {
-  start: string
-  end: string
-  onStartChange: (value: string) => void
-  onEndChange: (value: string) => void
-  error?: string
-}
+import type { TimeRangeFieldsProps } from '../types'
 
 export function TimeRangeFields({
   start,
@@ -37,4 +30,3 @@ export function TimeRangeFields({
     </div>
   )
 }
-

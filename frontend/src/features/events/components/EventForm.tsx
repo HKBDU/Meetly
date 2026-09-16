@@ -7,19 +7,8 @@ import { eventUi } from '../../../shared/components/ui/styles'
 import { cn } from '@/lib/utils'
 import { useForm, Controller, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { type EventFormValues, type EventType } from '../types'
+import type { EventFormProps, EventFormValues, EventType } from '../types'
 import { eventFormSchema } from '../schema'
-type EventFormProps = {
-  compact?: boolean
-  onCancel?: () => void
-  onSubmit?: (values: EventFormValues) => void | Promise<void>
-  adminUsername: string
-  adminPassword: string
-  submitting?: boolean
-  error?: string
-  initialValues?: Partial<EventFormValues>
-  submitLabel?: string
-}
 
 const INITIAL_VALUES: Partial<EventFormValues> = {
   title: '',

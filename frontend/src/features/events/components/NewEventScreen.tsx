@@ -9,22 +9,26 @@ import { EventForm } from './EventForm'
 import { eventUi } from '../../../shared/components/ui/styles'
 import { cn } from '@/lib/utils'
 import { createEvent, updateEvent } from '../services'
-import type { CreateEventResponse, EventFormValues } from '../types'
-
-type EventStep = 'credentials' | 'event'
+import type {
+  CreateEventResponse,
+  CredentialsFormValues,
+  CredentialsStepProps,
+  EventFormValues,
+  EventManagementScreenProps,
+  EventStep,
+  UpdateWarningProps,
+} from '../types'
 
 const credentialsSchema = z.object({
   adminUsername: z.string().min(1, 'Username is required.'),
   adminPassword: z.string(),
 })
 
-type CredentialsValues = z.infer<typeof credentialsSchema>
-
 export function NewEventScreen() {
   const [isOpen, setIsOpen] = useState(true)
   const [step, setStep] = useState<EventStep>('credentials')
 
-  const [adminCredentials, setAdminCredentials] = useState<CredentialsValues>({
+  const [adminCredentials, setAdminCredentials] = useState<CredentialsFormValues>({
     adminUsername: '',
     adminPassword: '',
   })
@@ -34,7 +38,7 @@ export function NewEventScreen() {
   const [createdEvent, setCreatedEvent] = useState<CreateEventResponse['value']>(null)
   const [createdValues, setCreatedValues] = useState<EventFormValues>()
 
-  function handleCredentialsSubmit(values: CredentialsValues) {
+  function handleCredentialsSubmit(values: CredentialsFormValues) {
     setAdminCredentials(values)
     setStep('event')
   }
@@ -152,18 +156,12 @@ function Brand() {
   )
 }
 
-type CredentialsStepProps = {
-  compact?: boolean
-  defaultValues: CredentialsValues
-  onSubmit: (values: CredentialsValues) => void
-}
-
 function CredentialsStep({
   compact = false,
   defaultValues,
   onSubmit,
 }: CredentialsStepProps) {
-  const methods = useForm<CredentialsValues>({
+  const methods = useForm<CredentialsFormValues>({
     resolver: zodResolver(credentialsSchema),
     defaultValues,
   })
@@ -194,13 +192,7 @@ function CredentialsStep({
   )
 }
 
-function EventManagementScreen({
-  event,
-  values,
-}: {
-  event: NonNullable<CreateEventResponse['value']>
-  values: EventFormValues
-}) {
+function EventManagementScreen({ event, values }: EventManagementScreenProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [pendingValues, setPendingValues] = useState<EventFormValues>()
   const [showWarning, setShowWarning] = useState(false)
@@ -334,11 +326,7 @@ function UpdateWarning({
   isUpdating,
   onCancel,
   onConfirm,
-}: {
-  isUpdating: boolean
-  onCancel: () => void
-  onConfirm: () => void
-}) {
+}: UpdateWarningProps) {
   return (
     <div className={eventUi.updateWarningBackdrop} role="presentation">
       <section

@@ -1,10 +1,5 @@
 import { eventUi } from '../../../shared/components/ui/styles'
-
-type TimezoneSelectProps = {
-  value: string
-  onChange: (value: string) => void
-  disabled?: boolean
-}
+import type { TimezoneSelectProps } from '../types'
 
 export function TimezoneSelect({ value, onChange, disabled = true }: TimezoneSelectProps) {
   return (
@@ -25,4 +20,3 @@ export function TimezoneSelect({ value, onChange, disabled = true }: TimezoneSel
     </div>
   )
 }
-
