@@ -51,7 +51,12 @@ export type CredentialsFormValues = {
 
 export type EventStep = 'credentials' | 'event'
 
-export type AdminCredentialsFieldsProps = {
+export type CredentialsFieldsProps = {
+  title?: string
+  usernameLabel?: string
+  passwordLabel?: string
+  usernameName?: string
+  passwordName?: string
   usernameRequired?: boolean
   passwordRequired?: boolean
 }

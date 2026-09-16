@@ -6,27 +6,27 @@ export const eventUi = {
   brand: 'flex items-center gap-2.5 text-sm font-semibold',
   brandIcon: 'grid size-9 place-items-center rounded bg-emerald-500 text-white',
   button: 'h-12 min-w-[132px] rounded text-base font-semibold',
-  calendar: 'rounded-lg bg-[#eff4ff] p-6 max-[640px]:-mx-2 max-[640px]:px-0 max-[640px]:py-4',
+  calendar: 'w-full max-w-full overflow-hidden rounded-lg bg-[#eff4ff] p-6 max-[640px]:px-2 max-[640px]:py-4',
   calendarDay: 'p-0 text-center',
   calendarDayButton:
-    'grid h-10 w-[100%] place-items-center rounded border-0 bg-transparent text-xs text-[#0b1c30]\n' +
-    'hover:bg-[#d9f8e9] disabled:cursor-not-allowed max-[640px]:h-8 w-full',
+    'grid h-10 w-full place-items-center rounded border-0 bg-transparent text-xs text-[#0b1c30]\n' +
+    'hover:bg-[#d9f8e9] disabled:cursor-not-allowed max-[640px]:h-8',
   calendarDayDisabled: 'opacity-50 [&>button]:cursor-not-allowed [&>button]:text-[#bbcabf]',
   calendarDayOutside: 'text-[#bbcabf]',
   calendarDaySelected: '[&>button]:bg-[#00a854] [&>button]:text-white [&>button]:hover:bg-[#00a854]',
   calendarGrid: 'w-full border-separate border-spacing-1 pt-0',
 
   calendarMonth: 'relative w-full',
-  calendarMonthCaption: 'mb-7 text-sm flex h-8 items-center justify-center text-center', 
+  calendarMonthCaption: 'mb-6 flex h-8 w-full items-center justify-between px-2 text-center text-sm', 
   calendarNav: 'absolute inset-x-0 top-0 flex h-8 items-center justify-between',
     
   calendarMonths: 'w-full',
   calendarReset: 'mt-5 inline-flex items-center gap-1.5 border-0 bg-transparent p-0 text-xs font-semibold text-[#009b4d]',
   calendarRoot: 'w-full',
   calendarToolbarButton:
-    'mx-20 grid size-8 place-items-center rounded border-0 bg-[#eff4ff] text-[#0b1c30]\n' +
+    'grid size-8 p-0 shrink-0 place-items-center rounded border-0 bg-[#eff4ff] text-[#0b1c30]\n' +
     'disabled:cursor-not-allowed disabled:opacity-[.45]',
-  calendarToolbarTitle: 'text-base',
+  calendarToolbarTitle: 'text-base font-semibold',
   calendarWeekday: 'py-1 text-center text-xs font-semibold text-[#6c7a71]',
   closeButton: 'grid place-items-center border-0 bg-transparent text-[#6c7a71]',
   desktopDialog: 'overflow-visible rounded-2xl border border-[#bbcabf]/60 bg-white shadow-[0_1px_1px_rgba(0,0,0,.05)]',

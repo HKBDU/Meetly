@@ -175,6 +175,7 @@ export function AvailabilitySelector({
             className={eventUi.calendarToolbarButton}
             disabled={isPrevDisabled}
             onClick={() => shiftMonth(-1)}
+            size="icon"
             type="button"
             variant="ghost"
           >
@@ -186,6 +187,7 @@ export function AvailabilitySelector({
           <Button
             className={eventUi.calendarToolbarButton}
             onClick={() => shiftMonth(1)}
+            size="icon"
             type="button"
             variant="ghost"
           >

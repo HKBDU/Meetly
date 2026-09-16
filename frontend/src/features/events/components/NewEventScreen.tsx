@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 import { Button } from '@/shared/components/ui/button'
-import { AdminCredentialsFields } from './AdminCredentialsFields'
+import { CredentialsFields } from './CredentialsFields'
 import { EventForm } from './EventForm'
 import { eventUi } from '../../../shared/components/ui/styles'
 import { cn } from '@/lib/utils'
@@ -174,13 +174,12 @@ function CredentialsStep({
         className={cn(eventUi.form, compact && eventUi.mobileForm)}
         onSubmit={methods.handleSubmit(onSubmit)}
       >
+
+
+        <CredentialsFields title="Admin credentials" usernameRequired />
         <div>
           <p>Enter the admin credentials for this event before continuing.</p>
         </div>
-
-        {/* Cấu hình lại để khớp với component AdminCredentialsFields dùng Context */}
-        <AdminCredentialsFields usernameRequired />
-
         <footer className={eventUi.formFooter}>
           <Button
             className={cn(eventUi.button, eventUi.formFooterButton, eventUi.primaryButton)}
