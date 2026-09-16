@@ -62,39 +62,40 @@ export function EventInfoBar({ config }: EventInfoBarProps) {
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4 pb-2 sm:px-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-xl font-bold text-foreground">{config.eventName}</h1>
+    <div className="flex flex-col gap-1 px-4 pt-4 pb-2 sm:px-6">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="truncate text-lg font-bold text-foreground sm:text-xl">{config.eventName}</h1>
 
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-          <span>{formatDateRangeLabel(config)}</span>
-          <span aria-hidden className="text-border">
-            •
-          </span>
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="flex items-center gap-1.5 transition-colors hover:text-primary"
-          >
-            <Link2 className="size-3 shrink-0" />
-            <span className="max-w-35 truncate font-mono sm:max-w-none">{shareLink}</span>
-            {copied ? (
-              <Check className="size-3 shrink-0 text-primary" />
-            ) : (
-              <Copy className="size-3 shrink-0" />
-            )}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setView("OVERVIEW")}
+          className="flex shrink-0 items-center gap-1 text-xs font-medium text-foreground transition-colors hover:text-primary sm:gap-1.5 sm:text-sm"
+        >
+          <ArrowLeft className="size-3.5 sm:size-4" />
+          <span className="hidden sm:inline">Back to Overview</span>
+          <span className="sm:hidden">Back</span>
+        </button>
       </div>
 
-      <button
-        type="button"
-        onClick={() => setView("OVERVIEW")}
-        className="flex shrink-0 items-center gap-1.5 text-sm font-medium text-foreground transition-colors hover:text-primary"
-      >
-        <ArrowLeft className="size-4" />
-        Back to Overview
-      </button>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+        <span>{formatDateRangeLabel(config)}</span>
+        <span aria-hidden className="text-border">
+          •
+        </span>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="flex items-center gap-1.5 transition-colors hover:text-primary"
+        >
+          <Link2 className="size-3 shrink-0" />
+          <span className="max-w-35 truncate font-mono sm:max-w-none">{shareLink}</span>
+          {copied ? (
+            <Check className="size-3 shrink-0 text-primary" />
+          ) : (
+            <Copy className="size-3 shrink-0" />
+          )}
+        </button>
+      </div>
     </div>
   )
 }

@@ -27,9 +27,11 @@ import {
 } from "@/shared/components/ui"
 
 /**
- * Popup chỉ hiện 1 LẦN DUY NHẤT, ngay sau lần auto-save đầu tiên thành công.
- * Trạng thái đóng/mở nằm trong store (isEmailDialogOpen) nên không cần
- * điều kiện phức tạp ở component này.
+ * Popup tự hiện 1 lần ngay sau lần auto-save đầu tiên thành công, và có thể
+ * mở lại bất cứ lúc nào qua nút "Notify me by email" ở `ScheduleActionsBar`
+ * (dành cho trường hợp lúc đó bấm Skip nhưng sau đổi ý). Trạng thái đóng/mở
+ * nằm trong store (isEmailDialogOpen) nên không cần điều kiện phức tạp ở
+ * component này.
  *
  * BE KHÔNG có endpoint đăng ký email riêng - field `email` nằm CHUNG trong
  * request lưu lịch rảnh (`SetAvailabilityRequest.Email`, xem AvailabilityController

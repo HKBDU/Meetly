@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { CloudCheck, Loader2, SlidersHorizontal } from "lucide-react"
+import { BellRing, CloudCheck, Loader2, SlidersHorizontal } from "lucide-react"
 
 import { ManualRangeDialog } from "@/features/participants/components/ManualRangeDialog"
 import { useParticipantStore } from "@/features/participants/store"
@@ -33,6 +33,8 @@ export function ScheduleActionsBar({ triggerAutoSave, isSaving }: ScheduleAction
   const setPaintMode = useParticipantStore((s) => s.setPaintMode)
   const clearAllPainted = useParticipantStore((s) => s.clearAllPainted)
   const isFinalized = useParticipantStore((s) => s.isFinalized)
+  const hasEmailSubscribed = useParticipantStore((s) => s.hasEmailSubscribed)
+  const openEmailDialog = useParticipantStore((s) => s.openEmailDialog)
   const [isManualDialogOpen, setIsManualDialogOpen] = useState(false)
 
   function handleResetDates() {
@@ -64,7 +66,21 @@ export function ScheduleActionsBar({ triggerAutoSave, isSaving }: ScheduleAction
           </Button>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
+            onClick={openEmailDialog}
+            aria-label={hasEmailSubscribed ? "Notifications on" : "Notify me by email"}
+          >
+            <BellRing className="size-4" />
+            <span className="hidden sm:inline">
+              {hasEmailSubscribed ? "Notifications on" : "Notify me by email"}
+            </span>
+          </Button>
+
           <span
             className={cn(
               "flex shrink-0 items-center gap-1 text-xs font-medium",
@@ -84,7 +100,7 @@ export function ScheduleActionsBar({ triggerAutoSave, isSaving }: ScheduleAction
             )}
           </span>
 
-          <div className="flex items-center gap-2 rounded-md bg-muted px-2 py-1.5">
+          <div className="flex h-8 items-center gap-2 rounded-md bg-muted px-2 sm:h-auto sm:py-1.5">
             <span className="text-xs font-medium text-muted-foreground">Mode</span>
             <ToggleGroup
               type="single"
@@ -99,7 +115,7 @@ export function ScheduleActionsBar({ triggerAutoSave, isSaving }: ScheduleAction
                 value="BUSY"
                 aria-label="Record busy"
                 className={cn(
-                  "w-24 border-2 text-xs",
+                  "h-8 w-24 border-2 text-xs sm:h-9",
                   "data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
                 )}
               >
@@ -109,7 +125,7 @@ export function ScheduleActionsBar({ triggerAutoSave, isSaving }: ScheduleAction
                 value="FREE"
                 aria-label="Record available"
                 className={cn(
-                  "w-24 border-2 text-xs",
+                  "h-8 w-24 border-2 text-xs sm:h-9",
                   "data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
                 )}
               >
