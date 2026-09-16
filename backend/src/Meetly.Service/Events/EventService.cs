@@ -1,15 +1,15 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text.Encodings.Web;
 using Meetly.Repository.Entity;
 using Meetly.Repository.Enum;
 using Meetly.Repository.EventScheduling;
-using Meetly.Service.JwtService;
 using Meetly.Service.Email;
+using Meetly.Service.JwtService;
 using Meetly.Service.Realtime;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
-using System.Text.Encodings.Web;
 
 namespace Meetly.Service.EventScheduling;
 
