@@ -18,19 +18,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-// TẠM THỜI cho FE local (Vite dev server) test API thật - xoá policy này khi
-// có domain FE thật + cấu hình CORS đúng theo môi trường triển khai.
-const string DevCorsPolicy = "DevCors";
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(DevCorsPolicy, policy =>
-        policy.WithOrigins(
-                  "http://localhost:5173", "http://127.0.0.1:5173",
-                  "http://localhost:5174", "http://127.0.0.1:5174")
-              .AllowAnyHeader()
-              .AllowAnyMethod());
-});
-
 builder.Services.AddControllers()
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new TimeOnlyJsonConverter()));
 builder.Services.AddSignalR();
@@ -73,8 +60,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-app.UseCors(DevCorsPolicy);
 
 app.UseAuthentication();
 app.UseAuthorization();
