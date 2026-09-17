@@ -17,8 +17,8 @@
   --popover: hsl(0 0% 100%);
   --popover-foreground: hsl(150 20% 12%);
 
-  /* Xanh lá /80 lấy trực tiếp từ palette Figma. */
-  --primary: #37a700;
+  /* Emerald-600 - đồng bộ màu chủ đạo với feat/22-build-event-heatmap. */
+  --primary: #059669;
   --primary-foreground: hsl(0 0% 100%);
 
   /* Xanh lá nhạt - dùng cho badge, chip, vùng nhấn nhẹ */
@@ -36,9 +36,9 @@
 
   --border: hsl(142 25% 88%);
   --input: hsl(142 25% 88%);
-  --ring: #37a700;
+  --ring: #059669;
 
-  --chart-1: #37a700;
+  --chart-1: #059669;
   --chart-2: hsl(142 50% 58%);
   --chart-3: hsl(142 30% 75%);
   --chart-4: hsl(45 90% 55%);
@@ -54,7 +54,7 @@
   --popover: hsl(150 16% 11%);
   --popover-foreground: hsl(140 25% 95%);
 
-  --primary: #37a700;
+  --primary: #059669;
   --primary-foreground: hsl(0 0% 100%);
 
   --secondary: hsl(150 15% 16%);
@@ -71,9 +71,9 @@
 
   --border: hsl(150 15% 20%);
   --input: hsl(150 15% 20%);
-  --ring: #37a700;
+  --ring: #059669;
 
-  --chart-1: #37a700;
+  --chart-1: #059669;
   --chart-2: hsl(142 40% 60%);
   --chart-3: hsl(142 25% 40%);
   --chart-4: hsl(45 80% 55%);

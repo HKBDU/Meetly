@@ -1,5 +1,6 @@
 import { useEffect } from "react"
 import { useParams } from "react-router-dom"
+import { toast } from "sonner"
 
 import { EmailPromptDialog } from "@/features/participants/components/EmailPromptDialog"
 import { OverviewMockup } from "@/features/participants/components/OverviewMockup"
@@ -32,7 +33,9 @@ export function ParticipantPage() {
   // đúng cấu hình lịch MỚI NHẤT của event, không dùng bản cache cũ có thể đã lỗi thời.
   useEffect(() => {
     if (shortCode && auth && !scheduleConfig) {
-      fetchEventScheduleConfig(shortCode).then(setScheduleConfig)
+      fetchEventScheduleConfig(shortCode)
+        .then(setScheduleConfig)
+        .catch(() => toast.error("Couldn't load the schedule, please try again"))
     }
   }, [shortCode, auth, scheduleConfig, setScheduleConfig])
 

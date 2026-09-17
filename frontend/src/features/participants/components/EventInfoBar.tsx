@@ -6,6 +6,7 @@ import { monthDayFormatter, monthDayYearFormatter, weekdayShortFormatter } from 
 import { formatDateLabel } from "@/features/participants/gridUtils"
 import { useParticipantStore } from "@/features/participants/store"
 import type { EventScheduleConfig } from "@/features/participants/types"
+import { Button } from "@/shared/components/ui"
 
 interface EventInfoBarProps {
   config: EventScheduleConfig
@@ -66,15 +67,17 @@ export function EventInfoBar({ config }: EventInfoBarProps) {
       <div className="flex items-center justify-between gap-3">
         <h1 className="truncate text-lg font-bold text-foreground sm:text-xl">{config.eventName}</h1>
 
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => setView("OVERVIEW")}
-          className="flex shrink-0 items-center gap-1 text-xs font-medium text-foreground transition-colors hover:text-primary sm:gap-1.5 sm:text-sm"
+          className="shrink-0 text-foreground hover:text-primary"
         >
           <ArrowLeft className="size-3.5 sm:size-4" />
           <span className="hidden sm:inline">Back to Overview</span>
           <span className="sm:hidden">Back</span>
-        </button>
+        </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
@@ -82,10 +85,12 @@ export function EventInfoBar({ config }: EventInfoBarProps) {
         <span aria-hidden className="text-border">
           •
         </span>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={handleCopy}
-          className="flex items-center gap-1.5 transition-colors hover:text-primary"
+          className="h-auto -mx-1 px-1 py-0.5 text-xs font-normal text-muted-foreground hover:text-primary"
         >
           <Link2 className="size-3 shrink-0" />
           <span className="max-w-35 truncate font-mono sm:max-w-none">{shareLink}</span>
@@ -94,7 +99,7 @@ export function EventInfoBar({ config }: EventInfoBarProps) {
           ) : (
             <Copy className="size-3 shrink-0" />
           )}
-        </button>
+        </Button>
       </div>
     </div>
   )
