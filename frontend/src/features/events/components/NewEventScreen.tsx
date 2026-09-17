@@ -79,18 +79,6 @@ export function NewEventScreen() {
     <div className={eventUi.shell}>
       {/* Mobile Screen */}
       <div className={eventUi.mobileScreen}>
-        <header className={eventUi.screenHeader}>
-          <Brand />
-          <Button
-            aria-label="Close"
-            className={eventUi.closeButton}
-            onClick={() => setIsOpen(false)}
-            type="button"
-            variant="ghost"
-          >
-            <X size={24} />
-          </Button>
-        </header>
         {step === 'credentials' ? (
           <CredentialsStep
             compact
@@ -115,12 +103,6 @@ export function NewEventScreen() {
 
       {/* Desktop Screen */}
       <div className={eventUi.desktopScreen}>
-        <header className={eventUi.siteHeader}>
-          <Brand />
-          <Button className={eventUi.joinButton} type="button" variant="outline">
-            Join with ID
-          </Button>
-        </header>
         <main className={eventUi.page}>
           <h1 className={eventUi.pageTitle}>
             {step === 'credentials' ? 'Admin credentials' : 'Create New Event'}
@@ -224,9 +206,6 @@ function EventManagementScreen({ event, values }: EventManagementScreenProps) {
     return (
       <div className={eventUi.shell}>
         <div className={eventUi.mobileScreen}>
-          <header className={eventUi.screenHeader}>
-            <Brand />
-          </header>
           <h1 className={eventUi.mobileTitle}>Edit Event</h1>
           <EventForm
             adminPassword={currentValues.adminPassword ?? ''}
@@ -279,9 +258,6 @@ function EventManagementScreen({ event, values }: EventManagementScreenProps) {
 
   return (
     <div className={eventUi.managementScreen}>
-      <header className={eventUi.siteHeader}>
-        <Brand />
-      </header>
       <main className={eventUi.page}>
         <h1 className={eventUi.pageTitle}>Manage Event</h1>
         <section className={eventUi.managementCard}>
