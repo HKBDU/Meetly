@@ -51,15 +51,8 @@ export type CredentialsFormValues = {
 
 export type EventStep = 'credentials' | 'event'
 
-export type CredentialsFieldsProps = {
-  title?: string
-  usernameLabel?: string
-  passwordLabel?: string
-  usernameName?: string
-  passwordName?: string
-  usernameRequired?: boolean
-  passwordRequired?: boolean
-}
+export type { CredentialsFieldsProps } from '@/shared/components/CredentialsFields'
+
 
 export type AvailabilitySelectorProps = {
   eventType: EventType
@@ -131,6 +124,13 @@ export type TimeRangeFieldsProps = {
   onStartChange: (value: string) => void
   onEndChange: (value: string) => void
   error?: string
+}
+
+export type TimeRangeSliderProps = {
+  start: string
+  end: string
+  onStartChange: (value: string) => void
+  onEndChange: (value: string) => void
 }
 
 export type TimePickerSelectProps = {

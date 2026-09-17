@@ -1,6 +1,15 @@
 import { useFormContext } from 'react-hook-form'
-import { eventUi } from '../../../shared/components/ui/styles'
-import type { CredentialsFieldsProps } from '../types'
+import { eventUi } from '@/shared/components/ui/styles'
+
+export type CredentialsFieldsProps = {
+  title?: string
+  usernameLabel?: string
+  passwordLabel?: string
+  usernameName?: string
+  passwordName?: string
+  usernameRequired?: boolean
+  passwordRequired?: boolean
+}
 
 export function CredentialsFields({
   title = 'Credentials',

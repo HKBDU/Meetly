@@ -9,7 +9,6 @@ import { WEEKDAY_OPTIONS } from '../types'
 import type { AvailabilitySelectorProps } from '../types'
 import { getDateKey } from '../utils/date.utils'
 
-
 export function AvailabilitySelector({
   eventType,
   value,
@@ -20,6 +19,10 @@ export function AvailabilitySelector({
   const valueRef = useRef(value)
   const dragModeRef = useRef<'add' | 'remove' | null>(null)
   const dragVisitedRef = useRef<Set<string>>(new Set())
+
+  const touchStartPosRef = useRef<{ x: number; y: number; key: string; isCalendar: boolean } | null>(null)
+  const gestureDirectionRef = useRef<'horizontal' | 'vertical' | null>(null)
+  const lastTouchTimeRef = useRef<number>(0)
 
   const firstSelectableDate = useMemo(() => {
     const date = new Date()
@@ -44,16 +47,6 @@ export function AvailabilitySelector({
     valueRef.current = value
   }, [value])
 
-  useEffect(() => {
-    function finishDrag() {
-      dragModeRef.current = null
-      dragVisitedRef.current = new Set()
-      setIsDragging(false)
-    }
-    window.addEventListener('mouseup', finishDrag)
-    return () => window.removeEventListener('mouseup', finishDrag)
-  }, [])
-
   function applyDay(dateKey: string, mode: 'add' | 'remove') {
     const current = valueRef.current
     const has = current.includes(dateKey)
@@ -68,23 +61,123 @@ export function AvailabilitySelector({
     }
   }
 
-  function startDrag(date: Date) {
-    if (date < firstSelectableDate) return
-    const dateKey = getDateKey(date)
-    const mode = valueRef.current.includes(dateKey) ? 'remove' : 'add'
-    dragModeRef.current = mode
-    dragVisitedRef.current = new Set([dateKey])
-    setIsDragging(true)
-    applyDay(dateKey, mode)
+  function extendDragByKey(key: string) {
+    const mode = dragModeRef.current
+    if (!mode) return
+    if (dragVisitedRef.current.has(key)) return
+    dragVisitedRef.current.add(key)
+    applyDay(key, mode)
   }
 
-  function extendDrag(date: Date) {
-    const mode = dragModeRef.current
-    if (!mode || date < firstSelectableDate) return
-    const dateKey = getDateKey(date)
-    if (dragVisitedRef.current.has(dateKey)) return
-    dragVisitedRef.current.add(dateKey)
-    applyDay(dateKey, mode)
+  useEffect(() => {
+    function finishMouseDrag() {
+      dragModeRef.current = null
+      dragVisitedRef.current = new Set()
+      setIsDragging(false)
+    }
+
+    function handleWindowTouchEnd() {
+      const start = touchStartPosRef.current
+      if (start && gestureDirectionRef.current === null) {
+        const mode = valueRef.current.includes(start.key) ? 'remove' : 'add'
+        applyDay(start.key, mode)
+      }
+
+      touchStartPosRef.current = null
+      gestureDirectionRef.current = null
+      dragModeRef.current = null
+      dragVisitedRef.current = new Set()
+      setIsDragging(false)
+    }
+
+    window.addEventListener('mouseup', finishMouseDrag)
+    window.addEventListener('touchend', handleWindowTouchEnd)
+    return () => {
+      window.removeEventListener('mouseup', finishMouseDrag)
+      window.removeEventListener('touchend', handleWindowTouchEnd)
+    }
+  }, [])
+
+  function handleMouseDown(key: string, dateObj: Date | null) {
+    if (Date.now() - lastTouchTimeRef.current < 500) return
+    if (dateObj && dateObj < firstSelectableDate) return
+    const mode = valueRef.current.includes(key) ? 'remove' : 'add'
+    dragModeRef.current = mode
+    dragVisitedRef.current = new Set([key])
+    setIsDragging(true)
+    applyDay(key, mode)
+  }
+
+  function handleMouseEnter(key: string, dateObj: Date | null) {
+    if (Date.now() - lastTouchTimeRef.current < 500) return
+    if (!dragModeRef.current) return
+    if (dateObj && dateObj < firstSelectableDate) return
+    extendDragByKey(key)
+  }
+
+  function handleTouchStart(key: string, dateObj: Date | null, e: React.TouchEvent, isCalendar: boolean) {
+    if (dateObj && dateObj < firstSelectableDate) return
+    const touch = e.touches[0]
+    if (!touch) return
+
+    lastTouchTimeRef.current = Date.now()
+    touchStartPosRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      key,
+      isCalendar,
+    }
+    gestureDirectionRef.current = null
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    const start = touchStartPosRef.current
+    if (!start) return
+
+    const touch = e.touches[0]
+    if (!touch) return
+
+    const dx = touch.clientX - start.x
+    const dy = touch.clientY - start.y
+    const absDx = Math.abs(dx)
+    const absDy = Math.abs(dy)
+
+    if (gestureDirectionRef.current === null) {
+      if (absDx > 6 || absDy > 6) {
+        if (absDx > absDy * 1.2) {
+          gestureDirectionRef.current = 'horizontal'
+          setIsDragging(true)
+          const mode = valueRef.current.includes(start.key) ? 'remove' : 'add'
+          dragModeRef.current = mode
+          dragVisitedRef.current = new Set([start.key])
+          applyDay(start.key, mode)
+        } else {
+          gestureDirectionRef.current = 'vertical'
+        }
+      }
+    }
+
+    if (gestureDirectionRef.current === 'horizontal') {
+      if (e.cancelable) {
+        e.preventDefault()
+      }
+      const el = document.elementFromPoint(touch.clientX, touch.clientY)
+      const attrName = start.isCalendar ? 'data-date' : 'data-weekday'
+      const targetEl = el?.closest(`[${attrName}]`)
+      if (targetEl) {
+        const key = targetEl.getAttribute(attrName)
+        if (key) {
+          if (start.isCalendar) {
+            const dateObj = new Date(`${key}T00:00:00`)
+            if (dateObj >= firstSelectableDate) {
+              extendDragByKey(key)
+            }
+          } else {
+            extendDragByKey(key)
+          }
+        }
+      }
+    }
   }
 
   function resetDates() {
@@ -99,22 +192,6 @@ export function AvailabilitySelector({
     month.getFullYear() === startMonth.getFullYear() &&
     month.getMonth() === startMonth.getMonth()
 
-  function startItemDrag(item: string) {
-    const mode = valueRef.current.includes(item) ? 'remove' : 'add'
-    dragModeRef.current = mode
-    dragVisitedRef.current = new Set([item])
-    setIsDragging(true)
-    applyDay(item, mode)
-  }
-
-  function extendItemDrag(item: string) {
-    const mode = dragModeRef.current
-    if (!mode) return
-    if (dragVisitedRef.current.has(item)) return
-    dragVisitedRef.current.add(item)
-    applyDay(item, mode)
-  }
-
   if (eventType === 2) {
     return (
       <div className={eventUi.field}>
@@ -127,16 +204,21 @@ export function AvailabilitySelector({
           </div>
           <span className={eventUi.fieldHint}>{value.length} selected</span>
         </div>
-        <div className={cn(eventUi.weekdayOptions, 'select-none')}>
+        <div
+          className={cn(eventUi.weekdayOptions, 'select-none touch-pan-y')}
+          onTouchMove={handleTouchMove}
+        >
           {WEEKDAY_OPTIONS.map((item) => (
             <Button
               className={cn(
                 eventUi.weekdayOption,
                 value.includes(item) && eventUi.weekdayOptionSelected,
               )}
+              data-weekday={item}
               key={item}
-              onMouseDown={() => startItemDrag(item)}
-              onMouseEnter={() => isDragging && extendItemDrag(item)}
+              onMouseDown={() => handleMouseDown(item, null)}
+              onMouseEnter={() => isDragging && extendDragByKey(item)}
+              onTouchStart={(e) => handleTouchStart(item, null, e, false)}
               type="button"
               variant="ghost"
             >
@@ -150,12 +232,22 @@ export function AvailabilitySelector({
   }
 
   function DragDayButton({ onMouseDown, ...props }: DayButtonProps) {
+    const dateKey = getDateKey(props.day.date)
+    const isDisabled = props.modifiers.disabled || props.day.date < firstSelectableDate
+
     return (
       <DayButton
         {...props}
+        data-date={dateKey}
         onMouseDown={(event) => {
           onMouseDown?.(event)
-          if (!props.modifiers.disabled) startDrag(props.day.date)
+          if (!isDisabled) handleMouseDown(dateKey, props.day.date)
+        }}
+        onMouseEnter={() => {
+          if (!isDisabled) handleMouseEnter(dateKey, props.day.date)
+        }}
+        onTouchStart={(e) => {
+          if (!isDisabled) handleTouchStart(dateKey, props.day.date, e, true)
         }}
       />
     )
@@ -194,32 +286,34 @@ export function AvailabilitySelector({
             <ChevronRight size={16} />
           </Button>
         </div>
-        <Calendar
-          classNames={{
-            root: eventUi.calendarRoot,
-            months: eventUi.calendarMonths,
-            month: eventUi.calendarMonth,
-            month_caption: 'hidden',
-            month_grid: eventUi.calendarGrid,
-            weekday: eventUi.calendarWeekday,
-            day: eventUi.calendarDay,
-            day_button: eventUi.calendarDayButton,
-            selected: eventUi.calendarDaySelected,
-            outside: eventUi.calendarDayOutside,
-            disabled: eventUi.calendarDayDisabled,
-          }}
-          components={{ DayButton: DragDayButton }}
-          disabled={{ before: firstSelectableDate }}
-          hideNavigation
-          mode="multiple"
-          month={month}
-          onDayMouseEnter={(date) => isDragging && extendDrag(date)}
-          onMonthChange={setMonth}
-          onSelect={() => undefined}
-          selected={selectedDates}
-          showOutsideDays={false}
-          weekStartsOn={1}
-        />
+        <div className="touch-pan-y select-none" onTouchMove={handleTouchMove}>
+          <Calendar
+            classNames={{
+              root: eventUi.calendarRoot,
+              months: eventUi.calendarMonths,
+              month: eventUi.calendarMonth,
+              month_caption: 'hidden',
+              month_grid: eventUi.calendarGrid,
+              weekday: eventUi.calendarWeekday,
+              day: eventUi.calendarDay,
+              day_button: eventUi.calendarDayButton,
+              selected: eventUi.calendarDaySelected,
+              outside: eventUi.calendarDayOutside,
+              disabled: eventUi.calendarDayDisabled,
+            }}
+            components={{ DayButton: DragDayButton }}
+            disabled={{ before: firstSelectableDate }}
+            hideNavigation
+            mode="multiple"
+            month={month}
+            onDayMouseEnter={(date) => isDragging && extendDragByKey(getDateKey(date))}
+            onMonthChange={setMonth}
+            onSelect={() => undefined}
+            selected={selectedDates}
+            showOutsideDays={false}
+            weekStartsOn={1}
+          />
+        </div>
         <Button className={eventUi.calendarReset} onClick={resetDates} type="button" variant="ghost">
           <RotateCcw size={13} /> Reset dates
         </Button>
@@ -228,3 +322,4 @@ export function AvailabilitySelector({
     </div>
   )
 }
+

@@ -5,7 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 import { Button } from '@/shared/components/ui/button'
-import { CredentialsFields } from './CredentialsFields'
+import { CredentialsFields } from '@/shared/components/CredentialsFields'
+
 import { EventForm } from './EventForm'
 import { eventUi } from '../../../shared/components/ui/styles'
 import { cn } from '@/lib/utils'

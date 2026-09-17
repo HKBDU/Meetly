@@ -71,6 +71,8 @@ const currentEventType = watch("eventType");
       <input type="hidden" {...methods.register('adminPassword')} />
       <section className={eventUi.formContent}>
         {/* Title Field */}
+
+
         <Controller
           control={control}
           name="title"

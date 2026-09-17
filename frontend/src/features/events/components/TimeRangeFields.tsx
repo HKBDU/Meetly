@@ -12,18 +12,17 @@ export function TimeRangeFields({
 }: TimeRangeFieldsProps) {
   return (
     <div className={eventUi.timeRange}>
-      <div className={eventUi.field}>
-        <label className={eventUi.label} htmlFor="daily-start-time">
-          Start time <span className={eventUi.requiredMark}>*</span>
-        </label>
-        <TimeSelector id="daily-start-time" onChange={onStartChange} value={start} />
-      </div>
-
-      <div className={eventUi.field}>
-        <label className={eventUi.label} htmlFor="daily-end-time">
-          End time <span className={eventUi.requiredMark}>*</span>
-        </label>
-        <TimeSelector id="daily-end-time" onChange={onEndChange} value={end} />
+      <div className={`${eventUi.field} col-span-2`}>
+        <div className="flex items-center justify-between">
+          <label className={eventUi.label}>Time range <span className={eventUi.requiredMark}>*</span></label>
+          <span className="text-xs text-[#6c7a71]">15-minute steps</span>
+        </div>
+        <TimeSelector
+          end={end}
+          onEndChange={onEndChange}
+          onStartChange={onStartChange}
+          start={start}
+        />
       </div>
 
       {error && <span className={cn(eventUi.fieldError, eventUi.timeRangeError)}>{error}</span>}
