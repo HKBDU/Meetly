@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-import { NewEventScreen } from '@/features/events'
-
-export default function App() {
-  return <NewEventScreen />
-=======
 import { QueryProvider, RouterProvider } from "@/app/providers"
 import { AppHeader } from "@/features/participants/components/AppHeader"
 import { Toaster } from "@/shared/components/ui"
@@ -29,5 +23,4 @@ export default function App() {
       <Toaster position="top-right" theme="light" richColors />
     </QueryProvider>
   )
->>>>>>> remotes/origin/feat/15-buil-participants-ui
 }
