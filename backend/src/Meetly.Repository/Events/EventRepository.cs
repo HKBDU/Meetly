@@ -6,7 +6,7 @@ namespace Meetly.Repository.EventScheduling;
 public sealed class EventRepository(AppDbContext db) : IEventRepository
 {
     public Task<Events?> GetAsync(string shortCode, CancellationToken cancellationToken) =>
-        db.Events.Include(x => x.AvailableDates).Include(x => x.Participants)
+        db.Events.Include(x => x.AvailableDates).Include(x => x.Emails).Include(x => x.Participants)
             .ThenInclude(x => x.TimeSlots).SingleOrDefaultAsync(x => x.ShortCode == shortCode, cancellationToken);
 
     public Task<bool> ShortCodeExistsAsync(string shortCode, CancellationToken cancellationToken) =>
