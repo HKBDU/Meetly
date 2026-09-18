@@ -1,6 +1,4 @@
-import { useState } from "react"
-import { ArrowLeft, Check, Copy, Link2 } from "lucide-react"
-import { toast } from "sonner"
+import { ArrowLeft } from "lucide-react"
 
 import { monthDayFormatter, monthDayYearFormatter, weekdayShortFormatter } from "@/lib/date-format"
 import { formatDateLabel } from "@/features/participants/gridUtils"
@@ -30,27 +28,16 @@ function formatDateRangeLabel(config: EventScheduleConfig): string {
   return `${weekdayShortFormatter.format(firstDate)}, ${monthDayFormatter.format(firstDate)} - ${weekdayShortFormatter.format(lastDate)}, ${monthDayYearFormatter.format(lastDate)}`
 }
 
-/** Tên event, khoảng ngày và link chia sẻ dạng `/e/:shortCode` */
+/** Tên event, khoảng ngày và nút quay lại Overview */
 export function EventInfoBar({ config }: EventInfoBarProps) {
   const setView = useParticipantStore((s) => s.setView)
-  const [copied, setCopied] = useState(false)
-  const shareLink = `${window.location.host}/e/${config.shortCode}`
-
-  async function handleCopy() {
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}/e/${config.shortCode}`)
-      setCopied(true)
-      toast.success("Link copied")
-      setTimeout(() => setCopied(false), 1500)
-    } catch {
-      toast.error("Couldn't copy - clipboard permission blocked")
-    }
-  }
 
   return (
-    <div className="flex flex-col gap-1 px-4 pt-4 pb-2 sm:px-6">
+    <div className="mb-6 flex flex-col gap-1">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="truncate text-lg font-bold text-foreground sm:text-xl">{config.eventName}</h1>
+        <h1 className="truncate text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+          {config.eventName}
+        </h1>
 
         <Button
           type="button"
@@ -65,27 +52,7 @@ export function EventInfoBar({ config }: EventInfoBarProps) {
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-        <span>{formatDateRangeLabel(config)}</span>
-        <span aria-hidden className="text-border">
-          •
-        </span>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={handleCopy}
-          className="h-auto -mx-1 px-1 py-0.5 text-xs font-normal text-muted-foreground hover:text-primary"
-        >
-          <Link2 className="size-3 shrink-0" />
-          <span className="max-w-35 truncate font-mono sm:max-w-none">{shareLink}</span>
-          {copied ? (
-            <Check className="size-3 shrink-0 text-primary" />
-          ) : (
-            <Copy className="size-3 shrink-0" />
-          )}
-        </Button>
-      </div>
+      <p className="text-xs text-muted-foreground">{formatDateRangeLabel(config)}</p>
     </div>
   )
 }

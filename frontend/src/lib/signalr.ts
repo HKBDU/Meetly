@@ -32,7 +32,7 @@ function getOrCreateEntry(shortCode: string, accessToken: string): HubEntry {
   const connection = new HubConnectionBuilder()
     .withUrl(env.signalRHubUrl, { accessTokenFactory: () => accessToken })
     .withAutomaticReconnect()
-    .configureLogging(LogLevel.Information)
+    .configureLogging(import.meta.env.DEV ? LogLevel.Warning : LogLevel.Error)
     .build();
 
   const entry: HubEntry = { connection, refCount: 0, listeners: new Set() };

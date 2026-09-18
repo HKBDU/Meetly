@@ -121,6 +121,7 @@ export interface HeatmapPageProps {
   onUpdateEvent?: (
     payload: UpdateEventPayload,
     currentEvent: HeatmapEvent,
+    adminPassword: string,
   ) => Promise<UpdateEventResult>;
   onOpenMySchedule?: () => void;
 }
@@ -203,7 +204,7 @@ export interface FinalizeDialogProps {
 export interface EditEventDialogProps {
   event: EditableEvent;
   disabled?: boolean;
-  onSave: (payload: UpdateEventPayload) => Promise<void>;
+  onSave: (payload: UpdateEventPayload, adminPassword: string) => Promise<void>;
 }
 
 export interface EventHeaderProps {
@@ -214,7 +215,7 @@ export interface EventHeaderProps {
   canUpdate: boolean;
   onOpenMySchedule?: () => void;
   onDurationChange: (duration: number | undefined) => void;
-  onUpdateEvent: (payload: UpdateEventPayload) => Promise<void>;
+  onUpdateEvent: (payload: UpdateEventPayload, adminPassword: string) => Promise<void>;
 }
 
 export interface AdminSuggestionControlsProps {

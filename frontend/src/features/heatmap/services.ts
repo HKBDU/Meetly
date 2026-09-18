@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import { api, getApiErrorMessage } from '@/lib/axios';
 import type {
   FinalizeResult,
@@ -67,12 +68,22 @@ export async function updateEvent(
   shortCode: string,
   payload: UpdateEventPayload,
   accessToken: string,
+  admin: { username: string; password: string },
 ): Promise<UpdateEventResult> {
   if (!accessToken) throw new Error('Sign in as the event host to edit this event.');
-  return unwrap(
-    api.put<UpdateEventResult>(eventEndpoint(shortCode), payload, {
-      headers: authHeaders(accessToken),
-    }),
-    'Unable to update the event. Please try again.',
-  );
+  try {
+    const { data } = await api.put<UpdateEventResult>(
+      eventEndpoint(shortCode),
+      { ...payload, adminUsername: admin.username, adminPassword: admin.password },
+      { headers: authHeaders(accessToken), keepSessionOn401: true },
+    );
+    return data;
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.status === 401) {
+      throw new Error('Incorrect admin password.', { cause: error });
+    }
+    throw new Error(getApiErrorMessage(error, 'Unable to update the event. Please try again.'), {
+      cause: error,
+    });
+  }
 }

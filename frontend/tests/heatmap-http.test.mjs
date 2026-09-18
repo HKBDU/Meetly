@@ -112,3 +112,63 @@ test('Heatmap services show an English message for a failed response', async () 
     await server.close();
   }
 });
+
+test('Update event sends the admin credentials and keeps the session on a wrong password', async () => {
+  const server = await createTestServer();
+  try {
+    const { api } = await server.ssrLoadModule('/src/lib/axios.ts');
+    const { updateEvent } = await server.ssrLoadModule('/src/features/heatmap/services.ts');
+    const { useParticipantStore } = await server.ssrLoadModule('/src/features/participants/store.ts');
+    const payload = {
+      title: 'Team sync',
+      eventType: 1,
+      availableDates: ['2026-09-25'],
+      availableWeekdays: [],
+      dailyStartTime: '09:00',
+      dailyEndTime: '17:00',
+    };
+    const admin = { username: 'host', password: 'secret' };
+
+    let sent;
+    api.defaults.adapter = async (config) => {
+      sent = JSON.parse(config.data);
+      return {
+        data: { isSuccess: true, code: 200, message: 'ok', value: { revision: 3 } },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config,
+      };
+    };
+    assert.deepEqual(await updateEvent('ABC', payload, 'event-token', admin), { revision: 3 });
+    assert.deepEqual(sent, { ...payload, adminUsername: 'host', adminPassword: 'secret' });
+
+    useParticipantStore.getState().login(
+      {
+        shortCode: 'ABC',
+        participantId: 'p1',
+        username: 'host',
+        isAdmin: true,
+        accessToken: 'event-token',
+      },
+      [],
+    );
+    api.defaults.adapter = async (config) => {
+      const response = {
+        data: { IsSuccess: false, Code: 401, Message: 'Password is invalid.', Value: null },
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: {},
+        config,
+      };
+      throw new AxiosError('Request failed', AxiosError.ERR_BAD_REQUEST, config, null, response);
+    };
+    await assert.rejects(
+      () => updateEvent('ABC', payload, 'event-token', { ...admin, password: 'wrong' }),
+      /Incorrect admin password/,
+    );
+    assert.equal(useParticipantStore.getState().auth?.accessToken, 'event-token');
+  } finally {
+    await server.close();
+  }
+});

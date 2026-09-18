@@ -1,5 +1,12 @@
 import axios, { isAxiosError } from 'axios';
 
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    /** 401 của request này là sai thông tin, không phải token hết hạn nên không đá về màn định danh */
+    keepSessionOn401?: boolean;
+  }
+}
+
 import { env } from '@/lib/env';
 import { useParticipantStore } from '@/features/participants/store';
 
@@ -70,7 +77,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response) error.response.data = normalizeEnvelope(error.response.data);
     // BE không có endpoint refresh token, nên 401 chỉ có thể đưa về màn định danh
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !error.config?.keepSessionOn401) {
       useParticipantStore.getState().resetSession();
     }
     return Promise.reject(error);

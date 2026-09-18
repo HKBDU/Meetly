@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatHourLabel } from '@/lib/date-time';
-import { Button } from '@/shared/components/ui';
+import { ColumnPager } from '@/shared/components/ColumnPager';
 import {
   AVAILABILITY_LEVELS,
   DESKTOP_COLUMNS_PER_PAGE,
@@ -99,33 +98,12 @@ function PaginatedHeatmap({ columns, pageSize, ...tableProps }: PaginatedHeatmap
 
   return (
     <>
-      {pageCount > 1 && (
-        <div className="mb-3 flex items-center justify-between gap-3" aria-label="Heatmap date pages">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={currentPage === 0}
-            onClick={() => setPageIndex(Math.max(0, currentPage - 1))}
-          >
-            <ChevronLeft aria-hidden="true" />
-            Previous
-          </Button>
-          <span className="text-xs font-medium text-muted-foreground">
-            {currentPage + 1} / {pageCount}
-          </span>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={currentPage === pageCount - 1}
-            onClick={() => setPageIndex(Math.min(pageCount - 1, currentPage + 1))}
-          >
-            Next
-            <ChevronRight aria-hidden="true" />
-          </Button>
-        </div>
-      )}
+      <ColumnPager
+        page={currentPage}
+        pageCount={pageCount}
+        onPageChange={setPageIndex}
+        label="Heatmap date pages"
+      />
       <HeatmapTable columns={visibleColumns} {...tableProps} />
     </>
   );

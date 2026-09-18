@@ -134,7 +134,7 @@ export function HeatmapWorkspace({
         <div className="min-w-0">
           <Heatmap
             event={event}
-            suggestions={suggestions}
+            suggestions={mode === HeatmapSelectionMode.SelectFinal ? suggestions : []}
             selected={selected}
             selecting={interactive && mode === HeatmapSelectionMode.SelectFinal}
             onInspect={showDetails}

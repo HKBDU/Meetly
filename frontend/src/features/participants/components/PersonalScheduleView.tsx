@@ -4,16 +4,21 @@ import { ScheduleActionsBar } from "@/features/participants/components/ScheduleA
 import { useAutoSaveSchedule } from "@/features/participants/hooks/useAutoSaveSchedule"
 import { useParticipantStore } from "@/features/participants/store"
 
-/** Màn lịch cá nhân; gọi `useAutoSaveSchedule` 1 lần để mọi nơi sửa lịch dùng chung 1 debounce */
+/**
+ * Màn lịch cá nhân, cùng container và bố cục hai cột với heatmap tổng; gọi
+ * `useAutoSaveSchedule` 1 lần để mọi nơi sửa lịch dùng chung 1 debounce.
+ */
 export function PersonalScheduleView() {
   const config = useParticipantStore((s) => s.scheduleConfig)
   const { triggerAutoSave, isSaving } = useAutoSaveSchedule()
 
   return (
-    <div className="flex flex-col">
+    <div className="mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-8">
       {config && <EventInfoBar config={config} />}
-      <ScheduleActionsBar triggerAutoSave={triggerAutoSave} isSaving={isSaving} />
-      <PersonalScheduleGrid triggerAutoSave={triggerAutoSave} />
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <PersonalScheduleGrid triggerAutoSave={triggerAutoSave} />
+        <ScheduleActionsBar triggerAutoSave={triggerAutoSave} isSaving={isSaving} />
+      </div>
     </div>
   )
 }

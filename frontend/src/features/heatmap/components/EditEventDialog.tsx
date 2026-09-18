@@ -38,12 +38,12 @@ export function EditEventDialog({ event, disabled = false, onSave }: EditEventDi
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
 
-  async function confirmSave() {
+  async function confirmSave(adminPassword: string) {
     if (!pendingPayload) return;
     setSaving(true);
     setError(undefined);
     try {
-      await onSave(pendingPayload);
+      await onSave(pendingPayload, adminPassword);
       setPendingPayload(undefined);
       setOpen(false);
     } catch (failure) {
@@ -73,7 +73,7 @@ export function EditEventDialog({ event, disabled = false, onSave }: EditEventDi
             Edit Event
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[760px] gap-0 overflow-y-auto rounded-2xl bg-white p-0 sm:max-w-[760px]">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[940px] gap-0 overflow-y-auto rounded-2xl bg-white p-0 sm:max-w-[940px]">
           <DialogHeader className="px-6 pt-6 pr-12">
             <DialogTitle className={eventUi.pageTitle}>Edit Event</DialogTitle>
             <DialogDescription className="sr-only">
@@ -81,6 +81,7 @@ export function EditEventDialog({ event, disabled = false, onSave }: EditEventDi
             </DialogDescription>
           </DialogHeader>
           <EventForm
+            layout="split"
             adminUsername=""
             adminPassword=""
             error={error}
@@ -96,7 +97,7 @@ export function EditEventDialog({ event, disabled = false, onSave }: EditEventDi
         open={Boolean(pendingPayload)}
         isUpdating={saving}
         onCancel={() => setPendingPayload(undefined)}
-        onConfirm={() => void confirmSave()}
+        onConfirm={(adminPassword) => void confirmSave(adminPassword)}
       />
     </>
   );
