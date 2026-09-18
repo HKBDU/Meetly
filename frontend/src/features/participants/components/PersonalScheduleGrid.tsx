@@ -14,6 +14,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/shared/components/ui"
 import { cn } from "@/lib/utils"
 import { formatDate, formatHourLabel } from "@/lib/date-time"
 
+/** Độ rộng cột như bản trước: cột ngày 75-139px, cột giờ 44px; ít ngày thì lưới thu hẹp và canh giữa */
+const TIME_COLUMN_WIDTH = 44
+const MIN_DAY_COLUMN_WIDTH = 75
+const MAX_DAY_COLUMN_WIDTH = 139
+
 /** Cùng breakpoint `md` với heatmap tổng để hai lưới đổi bố cục cùng lúc */
 const MOBILE_BREAKPOINT_QUERY = "(max-width: 767px)"
 
@@ -135,13 +140,21 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
         label="Schedule date pages"
       />
 
-      <div className="w-full overflow-hidden border border-slate-300 bg-white">
+      <div className="overflow-x-auto">
+        <div
+          className="mx-auto border border-slate-300 bg-white"
+          style={{
+            minWidth: TIME_COLUMN_WIDTH + visibleDates.length * MIN_DAY_COLUMN_WIDTH,
+            maxWidth: TIME_COLUMN_WIDTH + visibleDates.length * MAX_DAY_COLUMN_WIDTH,
+          }}
+        >
         <table className="w-full table-fixed border-collapse select-none">
           <thead className="bg-white">
             <tr>
               <th
                 scope="col"
-                className="w-14 border-b border-r border-slate-200 p-2 text-xs text-slate-500 sm:w-20"
+                style={{ width: TIME_COLUMN_WIDTH }}
+                className="border-b border-r border-slate-200 p-1 text-xs text-slate-500"
               >
                 Time
               </th>
@@ -175,7 +188,7 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
                     scope="row"
                     aria-label={time}
                     className={cn(
-                      "w-14 border-r border-slate-200 bg-white px-1 text-left text-xs font-medium text-slate-500 sm:w-20 sm:px-2",
+                      "border-r border-slate-200 bg-white px-1 text-left text-xs font-medium text-slate-500",
                       isHourStart
                         ? "border-t border-t-slate-300 align-top pt-1"
                         : "border-t border-t-transparent"
@@ -203,6 +216,7 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
             })}
           </tbody>
         </table>
+        </div>
       </div>
     </section>
   )

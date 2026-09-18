@@ -18,14 +18,8 @@ const INITIAL_VALUES: Partial<EventFormValues> = {
   dailyEndTime: '17:00',
 }
 
-/** Cột trái: tên, loại, giờ; cột phải: lịch chọn ngày, cao bằng cả 3 hàng bên trái */
-const SPLIT_LAYOUT =
-  'md:grid-cols-2 md:gap-x-8 md:[&>*]:col-start-1 md:[&>*:nth-child(3)]:col-start-2 ' +
-  'md:[&>*:nth-child(3)]:row-start-1 md:[&>*:nth-child(3)]:row-span-4'
-
 export function EventForm({
   compact = false,
-  layout = 'stacked',
   onCancel,
   onSubmit,
   adminUsername,
@@ -75,7 +69,7 @@ const currentEventType = watch("eventType");
     >
       <input type="hidden" {...methods.register('adminUsername')} />
       <input type="hidden" {...methods.register('adminPassword')} />
-      <section className={cn(eventUi.formContent, layout === 'split' && SPLIT_LAYOUT)}>
+      <section className={eventUi.formContent}>
         {/* Title Field */}
 
 

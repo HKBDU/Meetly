@@ -51,8 +51,6 @@ export type AvailabilitySelectorProps = {
 
 export type EventFormProps = {
   compact?: boolean
-  /** `split`: hai cột (lịch ở bên phải) để form vừa trong dialog */
-  layout?: 'stacked' | 'split'
   onCancel?: () => void
   onSubmit?: (values: EventFormValues) => void | Promise<void>
   adminUsername: string

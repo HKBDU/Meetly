@@ -73,7 +73,7 @@ export function EditEventDialog({ event, disabled = false, onSave }: EditEventDi
             Edit Event
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[940px] gap-0 overflow-y-auto rounded-2xl bg-white p-0 sm:max-w-[940px]">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[760px] gap-0 overflow-y-auto rounded-2xl bg-white p-0 sm:max-w-[760px]">
           <DialogHeader className="px-6 pt-6 pr-12">
             <DialogTitle className={eventUi.pageTitle}>Edit Event</DialogTitle>
             <DialogDescription className="sr-only">
@@ -81,7 +81,6 @@ export function EditEventDialog({ event, disabled = false, onSave }: EditEventDi
             </DialogDescription>
           </DialogHeader>
           <EventForm
-            layout="split"
             adminUsername=""
             adminPassword=""
             error={error}
