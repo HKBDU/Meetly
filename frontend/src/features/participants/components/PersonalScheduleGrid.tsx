@@ -7,8 +7,8 @@ import { useParticipantStore } from "@/features/participants/store"
 import { Alert, AlertDescription, AlertTitle, Button } from "@/shared/components/ui"
 import { cn } from "@/lib/utils"
 
-/** Chiều cao 1 ô - 4 ô/giờ (15p) cộng lại vẫn bằng đúng 1 khung giờ "gọn" như bản 30p/2-ô cũ */
-const CELL_HEIGHT_CLASS = "h-3"
+/** Chiều cao 1 ô - khớp với `HeatmapCell` (feat/22-build-event-heatmap) để 2 nơi đồng bộ */
+const CELL_HEIGHT_CLASS = "h-5"
 
 /** Độ rộng cột nhãn giờ bên trái (cột đầu tiên của grid) */
 const TIME_LABEL_COLUMN_WIDTH = 44
@@ -39,7 +39,7 @@ const GAP_WIDTH_PX = 1
  * đã kiểm chứng trực tiếp bằng cách patch style live trên DOM trước khi đưa
  * vào code.
  */
-const TIME_COLUMN_DIVIDER_CLASS = "border-r border-border shadow-[1px_0_0_0_var(--card)]"
+const TIME_COLUMN_DIVIDER_CLASS = "border-r border-slate-300 shadow-[1px_0_0_0_var(--card)]"
 
 /**
  * Làm tròn độ rộng cột ngày về dạng `4k - 1` (39, 43, 47, 51...) - LỆCH 1px
@@ -130,13 +130,13 @@ const ScheduleCell = memo(function ScheduleCell({
         // KIỂU nét: liền ở đầu mỗi khung giờ tròn (09:00, 10:00...), đứt nét
         // ở mốc nửa giờ (09:30...). Không kẻ gì ở các mốc phút lẻ còn lại
         // (15p, 45p) - giữ 4 ô trong 1 giờ nhìn liền khối.
-        isHourStart && "border-t border-black",
-        isHalfHourStart && "border-t border-dashed border-black",
+        isHourStart && "border-t border-solid border-slate-300",
+        isHalfHourStart && "border-t border-dashed border-slate-200/70",
         isFinalized
-          ? cn("cursor-not-allowed", isPainted ? "bg-primary/50" : "bg-muted")
+          ? cn("cursor-not-allowed", isPainted ? "bg-[#00a844]/50" : "bg-muted")
           : cn(
               "cursor-pointer",
-              isPainted ? "bg-primary hover:bg-primary/90" : "bg-white hover:bg-accent"
+              isPainted ? "bg-[#00a844] hover:brightness-95" : "bg-white hover:bg-accent"
             )
       )}
     />
@@ -307,7 +307,7 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
          * để khi lưới dài hơn 1 màn hình thì CẢ TRANG tự cuộn (xem App.tsx)
          * thay vì tạo thanh cuộn dọc riêng bên trong.
          */}
-        <div className="mx-auto w-fit max-w-full overflow-hidden rounded-md border border-border bg-card shadow-sm">
+        <div className="mx-auto w-fit max-w-full overflow-hidden border border-slate-300 bg-white">
           <div className="overflow-x-auto">
             <div
               // gap-x-px + bg-black: khe hở 1px giữa các cột để lộ ra nền đen
@@ -329,7 +329,7 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
               // track cố định bằng px nên min-content = max-content = đúng
               // tổng độ rộng này, `w-fit` không thể ép nó nhỏ hơn được, chỉ có
               // thể tràn ra ngoài rồi cuộn - xem comment ở card cha).
-              className={cn("grid select-none gap-x-px bg-black", dayColumnWidth ? "w-fit" : "w-full")}
+              className={cn("grid select-none gap-x-px bg-slate-300", dayColumnWidth ? "w-fit" : "w-full")}
               style={{
                 gridTemplateColumns: dayColumnWidth
                   ? `${TIME_LABEL_COLUMN_WIDTH}px repeat(${visibleDateCount}, ${dayColumnWidth}px)`
@@ -350,7 +350,7 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
                   trống lạc lõng. */}
               <div
                 className={cn(
-                  "sticky top-0 left-0 z-20 flex items-center justify-end bg-card px-1.5",
+                  "sticky top-0 left-0 z-20 flex items-center justify-end bg-white px-1.5",
                   TIME_COLUMN_DIVIDER_CLASS
                 )}
               >
@@ -363,7 +363,7 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
                 return (
                   <div
                     key={date}
-                    className="sticky top-0 z-10 bg-muted py-1 text-center sm:py-1.5"
+                    className="sticky top-0 z-10 bg-white py-1 text-center sm:py-1.5"
                   >
                     <div className="text-[10px] font-medium tracking-wide text-muted-foreground">
                       {weekdayShort}
@@ -396,7 +396,7 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
                       // tạo cảm giác lưới thừa/lệch 30p ở đầu và cuối ngày (feedback).
                       <div
                         className={cn(
-                          "sticky left-0 z-10 flex items-start justify-end bg-card px-1.5 pt-0.5",
+                          "sticky left-0 z-10 flex items-start justify-end bg-white px-1.5 pt-0.5",
                           TIME_COLUMN_DIVIDER_CLASS
                         )}
                         style={{ gridRow: `span ${slotsPerHour}` }}
