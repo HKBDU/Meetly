@@ -1,13 +1,17 @@
 import { createBrowserRouter } from "react-router-dom"
-import { ParticipantPage } from "@/features/participants"
+
+import { RootLayout } from "@/app/RootLayout"
 import { HomePage, NewEventScreen } from "@/features/events"
+import { ParticipantPage } from "@/features/participants"
 
 export const router = createBrowserRouter([
-  { path: "/", element: <HomePage /> },
-  { path: "/create", element: <NewEventScreen /> },
-  { path: "/e/:shortCode", element: <ParticipantPage /> },
   {
-    path: "*",
-    element: <HomePage />,
+    element: <RootLayout />,
+    children: [
+      { path: "/", element: <HomePage /> },
+      { path: "/create", element: <NewEventScreen /> },
+      { path: "/e/:shortCode", element: <ParticipantPage /> },
+      { path: "*", element: <HomePage /> },
+    ],
   },
 ])

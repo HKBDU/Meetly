@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query"
 
 import { HeatmapPage } from "@/features/heatmap"
-import { finalizeEvent, getEvent, getSuggestions, updateEvent } from "@/features/heatmap/services"
+import { finalizeEvent, getEvent, updateEvent } from "@/features/heatmap/services"
+import { findBestSlots } from "@/features/heatmap/suggestions"
 import { useParticipantStore } from "@/features/participants/store"
 
 interface OverviewViewProps {
@@ -35,7 +36,7 @@ export function OverviewView({ shortCode }: OverviewViewProps) {
       initialEvent={data}
       accessToken={accessToken}
       isAdmin={auth?.isAdmin ?? false}
-      onSuggestions={(params) => getSuggestions(shortCode, params, accessToken)}
+      onSuggestions={async (params, currentEvent) => findBestSlots(currentEvent, params)}
       onFinalize={(slot) => finalizeEvent(shortCode, slot, accessToken)}
       onUpdateEvent={(payload) => updateEvent(shortCode, payload, accessToken)}
       onOpenMySchedule={() => setView("PERSONAL")}

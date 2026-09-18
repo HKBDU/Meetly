@@ -29,6 +29,7 @@ function normalizeEnvelope(data: unknown): unknown {
 /** Câu lỗi tiếng Anh theo mã HTTP, không hiển thị message của BE */
 const ERROR_MESSAGE_BY_STATUS: Record<number, string> = {
   400: 'Invalid information, please check and try again',
+  422: 'Invalid information, please check and try again',
   401: 'Your session has expired, please join again',
   403: "You don't have permission to do this",
   404: 'Event not found',

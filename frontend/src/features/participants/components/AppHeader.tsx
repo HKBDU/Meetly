@@ -1,4 +1,5 @@
 import { CalendarDays } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 
 import { useParticipantStore } from '@/features/participants/store';
 import { Button } from '@/shared/components/ui';
@@ -7,6 +8,8 @@ import { Button } from '@/shared/components/ui';
 export function AppHeader() {
   const auth = useParticipantStore((s) => s.auth);
   const resetSession = useParticipantStore((s) => s.resetSession);
+  const { pathname } = useLocation();
+  const showJoinWithId = Boolean(auth) && pathname.startsWith('/e/');
 
   return (
     <header className="flex shrink-0 items-center justify-between px-4 py-4 sm:px-8">
@@ -17,7 +20,7 @@ export function AppHeader() {
         Meetly
       </a>
 
-      {auth && (
+      {showJoinWithId && (
         <Button variant="outline" size="sm" onClick={resetSession}>
           Join with ID
         </Button>

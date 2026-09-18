@@ -6,20 +6,16 @@ export type EventType = 1 | 2
 
 export const WEEKDAY_OPTIONS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-export type CreateEventResponse = {
-  isSuccess: boolean
-  code: number
-  message: string
-  value: {
-    shortCode: string
-    url: string
-    participantId: string
-    isAdmin: boolean
-    accessToken: string
-    expiresAt: string
-    status: number
-    revision: number
-  } | null
+/** Kết quả tạo event; `accessToken` là token admin của người tạo */
+export type CreatedEvent = {
+  shortCode: string
+  url: string
+  participantId: string
+  isAdmin: boolean
+  accessToken: string
+  expiresAt: string
+  status: number
+  revision: number
 }
 
 export type CreateEventRequest = {
@@ -33,14 +29,6 @@ export type CreateEventRequest = {
 }
 
 export type UpdateEventRequest = Omit<CreateEventRequest, 'admin'>
-
-export type UpdateEventResponse = {
-  isSuccess: boolean
-  code: number
-  message: string
-  value: { revision: number }
-}
-
 
 export type EventFormValues = z.infer<typeof eventFormSchema>
 
@@ -107,16 +95,6 @@ export type CredentialsStepProps = {
   onSubmit: (values: CredentialsFormValues) => void
 }
 
-export type EventManagementScreenProps = {
-  event: NonNullable<CreateEventResponse['value']>
-  values: EventFormValues
-}
-
-export type UpdateWarningProps = {
-  isUpdating: boolean
-  onCancel: () => void
-  onConfirm: () => void
-}
 
 export type TimeRangeFieldsProps = {
   start: string

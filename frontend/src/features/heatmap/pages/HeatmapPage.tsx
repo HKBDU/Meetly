@@ -64,7 +64,7 @@ function EventOverview({
       setSuggestionsLoaded(false);
       setSuggestionsUpdating(true);
 
-      void onSuggestions(params)
+      void onSuggestions(params, event)
         .then((result) => {
           if (!active.current || suggestionRequest.current !== requestId) return;
           setSuggestions(result);

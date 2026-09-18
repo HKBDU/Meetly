@@ -1,24 +1,22 @@
 import { useState } from 'react'
-import { CalendarDays } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 import { Button } from '@/shared/components/ui/button'
 import { CredentialsFields } from '@/shared/components/CredentialsFields'
+import { useParticipantStore } from '@/features/participants/store'
 
 import { EventForm } from './EventForm'
 import { eventUi } from '../../../shared/components/ui/styles'
 import { cn } from '@/lib/utils'
-import { createEvent, updateEvent } from '../services'
+import { createEvent } from '../services'
 import type {
-  CreateEventResponse,
   CredentialsFormValues,
   CredentialsStepProps,
   EventFormValues,
-  EventManagementScreenProps,
   EventStep,
-  UpdateWarningProps,
 } from '../types'
 
 const credentialsSchema = z.object({
@@ -27,6 +25,7 @@ const credentialsSchema = z.object({
 })
 
 export function NewEventScreen() {
+  const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(true)
   const [step, setStep] = useState<EventStep>('credentials')
 
@@ -37,30 +36,35 @@ export function NewEventScreen() {
 
   const [createError, setCreateError] = useState<string>()
   const [isCreating, setIsCreating] = useState(false)
-  const [createdEvent, setCreatedEvent] = useState<CreateEventResponse['value']>(null)
-  const [createdValues, setCreatedValues] = useState<EventFormValues>()
 
   function handleCredentialsSubmit(values: CredentialsFormValues) {
     setAdminCredentials(values)
     setStep('event')
   }
 
-  async function submitEvent(values: Parameters<typeof createEvent>[0]) {
+  /** Tạo xong thì đăng nhập admin và vào thẳng heatmap của event */
+  async function submitEvent(values: EventFormValues) {
     setCreateError(undefined)
     setIsCreating(true)
     try {
-      const response = await createEvent(values)
-      setCreatedEvent(response.value)
-      setCreatedValues(values)
+      const created = await createEvent(values)
+      const { resetSession, login } = useParticipantStore.getState()
+      resetSession()
+      login(
+        {
+          shortCode: created.shortCode,
+          participantId: created.participantId,
+          username: values.adminUsername?.trim() ?? adminCredentials.adminUsername,
+          isAdmin: created.isAdmin,
+          accessToken: created.accessToken,
+        },
+        [],
+      )
+      navigate(`/e/${created.shortCode}`)
     } catch (error) {
       setCreateError(error instanceof Error ? error.message : 'Unable to create event.')
-    } finally {
       setIsCreating(false)
     }
-  }
-
-  if (createdEvent && createdValues) {
-    return <EventManagementScreen event={createdEvent} values={createdValues} />
   }
 
   if (!isOpen) {
@@ -77,7 +81,6 @@ export function NewEventScreen() {
 
   return (
     <div className={eventUi.shell}>
-      {/* Mobile Screen */}
       <div className={eventUi.mobileScreen}>
         {step === 'credentials' ? (
           <CredentialsStep
@@ -101,7 +104,6 @@ export function NewEventScreen() {
         )}
       </div>
 
-      {/* Desktop Screen */}
       <div className={eventUi.desktopScreen}>
         <main className={eventUi.page}>
           <h1 className={eventUi.pageTitle}>
@@ -130,17 +132,6 @@ export function NewEventScreen() {
   )
 }
 
-function Brand() {
-  return (
-    <div className={eventUi.brand}>
-      <span className={eventUi.brandIcon}>
-        <CalendarDays size={18} />
-      </span>
-      <span>Meetly</span>
-    </div>
-  )
-}
-
 function CredentialsStep({
   compact = false,
   defaultValues,
@@ -157,8 +148,6 @@ function CredentialsStep({
         className={cn(eventUi.form, compact && eventUi.mobileForm)}
         onSubmit={methods.handleSubmit(onSubmit)}
       >
-
-
         <CredentialsFields title="Admin credentials" usernameRequired />
         <div>
           <p>Enter the admin credentials for this event before continuing.</p>
@@ -173,171 +162,5 @@ function CredentialsStep({
         </footer>
       </form>
     </FormProvider>
-  )
-}
-
-function EventManagementScreen({ event, values }: EventManagementScreenProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [pendingValues, setPendingValues] = useState<EventFormValues>()
-  const [showWarning, setShowWarning] = useState(false)
-  const [isUpdating, setIsUpdating] = useState(false)
-  const [currentValues, setCurrentValues] = useState(values)
-  const [currentRevision, setCurrentRevision] = useState(event.revision)
-  const [updateError, setUpdateError] = useState<string>()
-
-  async function confirmUpdate() {
-    if (!pendingValues || !event.isAdmin || !event.accessToken) return
-    setIsUpdating(true)
-    setUpdateError(undefined)
-    try {
-      const response = await updateEvent(event.shortCode, pendingValues, event.accessToken)
-      setCurrentValues(pendingValues)
-      setCurrentRevision(response.revision)
-      setShowWarning(false)
-      setIsEditing(false)
-    } catch (error) {
-      setUpdateError(error instanceof Error ? error.message : 'Unable to update event.')
-    } finally {
-      setIsUpdating(false)
-    }
-  }
-
-  if (isEditing) {
-    return (
-      <div className={eventUi.shell}>
-        <div className={eventUi.mobileScreen}>
-          <h1 className={eventUi.mobileTitle}>Edit Event</h1>
-          <EventForm
-            adminPassword={currentValues.adminPassword ?? ''}
-            adminUsername={currentValues.adminUsername ?? ''}
-            compact
-            error={updateError}
-            initialValues={currentValues}
-            onCancel={() => setIsEditing(false)}
-            onSubmit={(nextValues) => {
-              setPendingValues(nextValues)
-              setShowWarning(true)
-            }}
-            submitLabel="Save Changes"
-            submitting={isUpdating}
-          />
-        </div>
-        <div className={eventUi.desktopScreen}>
-          <header className={eventUi.siteHeader}>
-            <Brand />
-          </header>
-          <main className={eventUi.page}>
-            <h1 className={eventUi.pageTitle}>Edit Event</h1>
-            <div className={eventUi.desktopDialog}>
-              <EventForm
-                adminPassword={currentValues.adminPassword ?? ''}
-                adminUsername={currentValues.adminUsername ?? ''}
-                error={updateError}
-                initialValues={currentValues}
-                onCancel={() => setIsEditing(false)}
-                onSubmit={(nextValues) => {
-                  setPendingValues(nextValues)
-                  setShowWarning(true)
-                }}
-                submitLabel="Save Changes"
-                submitting={isUpdating}
-              />
-            </div>
-          </main>
-        </div>
-        {showWarning && (
-          <UpdateWarning
-            isUpdating={isUpdating}
-            onCancel={() => setShowWarning(false)}
-            onConfirm={confirmUpdate}
-          />
-        )}
-      </div>
-    )
-  }
-
-  return (
-    <div className={eventUi.managementScreen}>
-      <main className={eventUi.page}>
-        <h1 className={eventUi.pageTitle}>Manage Event</h1>
-        <section className={eventUi.managementCard}>
-          <p className={eventUi.managementSuccess}>Event created successfully.</p>
-          <dl className={eventUi.managementDetails}>
-            <div className={eventUi.managementDetail}>
-              <dt className={eventUi.managementDt}>Event name</dt>
-              <dd className={eventUi.managementDd}>{currentValues.title}</dd>
-            </div>
-            <div className={eventUi.managementDetail}>
-              <dt className={eventUi.managementDt}>Event ID</dt>
-              <dd className={eventUi.managementDd}>{event.shortCode}</dd>
-            </div>
-            <div className={eventUi.managementDetail}>
-              <dt className={eventUi.managementDt}>Revision</dt>
-              <dd className={eventUi.managementDd}>{currentRevision}</dd>
-            </div>
-          </dl>
-          {event.isAdmin && (
-            <Button
-              className={cn(eventUi.button, eventUi.primaryButton, eventUi.managementEdit)}
-              onClick={() => {
-                setUpdateError(undefined)
-                setIsEditing(true)
-              }}
-              type="button"
-            >
-              Edit Event
-            </Button>
-          )}
-          <a
-            className={cn(eventUi.button, eventUi.primaryButton, eventUi.managementLink)}
-            href={event.url}
-          >
-            Open event
-          </a>
-        </section>
-      </main>
-    </div>
-  )
-}
-
-function UpdateWarning({
-  isUpdating,
-  onCancel,
-  onConfirm,
-}: UpdateWarningProps) {
-  return (
-    <div className={eventUi.updateWarningBackdrop} role="presentation">
-      <section
-        aria-labelledby="update-warning-title"
-        aria-modal="true"
-        className={eventUi.updateWarning}
-        role="dialog"
-      >
-        <h2 className={eventUi.updateWarningTitle} id="update-warning-title">
-          Save event changes?
-        </h2>
-        <p className={eventUi.updateWarningDescription}>
-          Changing the event configuration may affect the availability data already entered by participants.
-        </p>
-        <div className={eventUi.updateWarningActions}>
-          <Button
-            className={cn(eventUi.button, eventUi.updateWarningSecondary)}
-            onClick={onCancel}
-            type="button"
-            variant="outline"
-          >
-            Cancel
-          </Button>
-          <Button
-            className={cn(eventUi.button, eventUi.primaryButton)}
-            disabled={isUpdating}
-            onClick={onConfirm}
-            type="button"
-          >
-            {isUpdating ? 'Saving...' : 'Confirm changes'}
-          </Button>
-        </div>
-      </section>
-    </div>
   )
 }

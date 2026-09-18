@@ -30,11 +30,3 @@ export function minutesToTime(minutes: number): string {
     .toString()
     .padStart(2, '0')}`;
 }
-
-export function timesToMinuteRange(startTime: string, endTime: string): [number, number] {
-  return [timeToMinutes(startTime), timeToMinutes(endTime)];
-}
-
-export function minuteRangeToTimes([start, end]: readonly [number, number]): [string, string] {
-  return [minutesToTime(start), minutesToTime(end)];
-}

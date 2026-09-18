@@ -1,14 +1,11 @@
-import axios from 'axios'
+import { api, getApiErrorMessage } from '@/lib/axios'
 
 import type {
   CreateEventRequest,
-  CreateEventResponse,
+  CreatedEvent,
   EventFormValues,
   UpdateEventRequest,
-  UpdateEventResponse,
 } from './types'
-
-export type CreateEventPayload = CreateEventRequest
 
 const WEEKDAY_CODES: Record<string, number> = {
   Sun: 0,
@@ -19,9 +16,8 @@ const WEEKDAY_CODES: Record<string, number> = {
   Fri: 5,
   Sat: 6,
 }
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? import.meta.env.VITE_API_BASE_URL ?? ''
 
-export function toCreateEventPayload(values: EventFormValues): CreateEventPayload {
+function toEventFields(values: EventFormValues): UpdateEventRequest {
   return {
     title: values.title.trim(),
     eventType: values.eventType,
@@ -34,6 +30,14 @@ export function toCreateEventPayload(values: EventFormValues): CreateEventPayloa
         : [],
     dailyStartTime: values.dailyStartTime,
     dailyEndTime: values.dailyEndTime,
+  }
+}
+
+export const toUpdateEventPayload = toEventFields
+
+export function toCreateEventPayload(values: EventFormValues): CreateEventRequest {
+  return {
+    ...toEventFields(values),
     admin: {
       username: values.adminUsername?.trim() ?? '',
       password: values.adminPassword || null,
@@ -41,53 +45,13 @@ export function toCreateEventPayload(values: EventFormValues): CreateEventPayloa
   }
 }
 
-export async function createEvent(values: EventFormValues): Promise<CreateEventResponse> {
-  const response = await axios.post<CreateEventResponse>(`${API_BASE_URL}/api/v1/events`, toCreateEventPayload(values), {
-    headers: { 'Content-Type': 'application/json' },
-    validateStatus: () => true,
-  })
-  const body = response.data
-  if (response.status !== 201 || !body?.isSuccess || !body.value) {
-    throw new Error(body?.message || `Unable to create event (${response.status}).`)
+export async function createEvent(values: EventFormValues): Promise<CreatedEvent> {
+  try {
+    const { data } = await api.post<CreatedEvent>('/events', toCreateEventPayload(values))
+    return data
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error, 'Unable to create the event. Please try again.'), {
+      cause: error,
+    })
   }
-  return body
-}
-
-export function toUpdateEventPayload(values: EventFormValues): UpdateEventRequest {
-  return {
-    title: values.title.trim(),
-    eventType: values.eventType,
-    availableDates: values.eventType === 1 ? values.availableDates : [],
-    availableWeekdays:
-      values.eventType === 2
-        ? values.availableDates
-            .map((day) => WEEKDAY_CODES[day])
-            .filter((day) => day !== undefined)
-        : [],
-    dailyStartTime: values.dailyStartTime,
-    dailyEndTime: values.dailyEndTime,
-  }
-}
-
-export async function updateEvent(
-  shortCode: string,
-  values: EventFormValues,
-  accessToken: string,
-): Promise<UpdateEventResponse['value']> {
-  const response = await axios.put<UpdateEventResponse>(
-    `${API_BASE_URL}/api/v1/events/${encodeURIComponent(shortCode)}`,
-    toUpdateEventPayload(values),
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      validateStatus: () => true,
-    },
-  )
-  const body = response.data
-  if (response.status !== 200 || !body?.isSuccess || body.code !== 200 || !body.value) {
-    throw new Error(body?.message || `Unable to update event (${response.status}).`)
-  }
-  return body.value
 }

@@ -116,7 +116,7 @@ export interface HeatmapPageProps {
   isAdmin?: boolean;
   loading?: boolean;
   loadError?: string;
-  onSuggestions?: (params: SuggestionParams) => Promise<SuggestedSlot[]>;
+  onSuggestions?: (params: SuggestionParams, event: HeatmapEvent) => Promise<SuggestedSlot[]>;
   onFinalize?: (slot: FinalSchedule) => Promise<FinalizeResult>;
   onUpdateEvent?: (
     payload: UpdateEventPayload,
