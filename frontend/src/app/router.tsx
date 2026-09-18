@@ -1,16 +1,13 @@
 import { createBrowserRouter } from "react-router-dom"
-
 import { ParticipantPage } from "@/features/participants"
+import { HomePage, NewEventScreen } from "@/features/events"
 
-/** Router của app; header/footer chung nằm ở `App.tsx` */
 export const router = createBrowserRouter([
+  { path: "/", element: <HomePage /> },
+  { path: "/create", element: <NewEventScreen /> },
   { path: "/e/:shortCode", element: <ParticipantPage /> },
   {
     path: "*",
-    element: (
-      <div className="flex items-center justify-center p-4 text-center text-sm text-muted-foreground">
-        Open your event link (e.g. meetly.app/e/ABC123) to join a schedule.
-      </div>
-    ),
+    element: <HomePage />,
   },
 ])
