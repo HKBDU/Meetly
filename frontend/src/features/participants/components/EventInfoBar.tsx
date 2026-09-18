@@ -1,0 +1,91 @@
+import { useState } from "react"
+import { ArrowLeft, Check, Copy, Link2 } from "lucide-react"
+import { toast } from "sonner"
+
+import { monthDayFormatter, monthDayYearFormatter, weekdayShortFormatter } from "@/lib/date-format"
+import { formatDateLabel } from "@/features/participants/gridUtils"
+import { useParticipantStore } from "@/features/participants/store"
+import type { EventScheduleConfig } from "@/features/participants/types"
+import { Button } from "@/shared/components/ui"
+
+interface EventInfoBarProps {
+  config: EventScheduleConfig
+}
+
+/** "2026-09-09".."2026-09-11" -> "Wed, Sep 9 - Fri, Sep 11, 2026" (SPECIFIC_DATES) or "Monday - Friday" (DAYS_OF_WEEK) */
+function formatDateRangeLabel(config: EventScheduleConfig): string {
+  const dates = config.dates
+
+  if (config.dateMode === "DAYS_OF_WEEK") {
+    const first = formatDateLabel(dates[0]).weekday
+    const last = formatDateLabel(dates[dates.length - 1]).weekday
+    return dates.length === 1 ? first : `${first} - ${last}`
+  }
+
+  const firstDate = new Date(`${dates[0]}T00:00:00`)
+  const lastDate = new Date(`${dates[dates.length - 1]}T00:00:00`)
+  if (dates.length === 1) {
+    return `${weekdayShortFormatter.format(firstDate)}, ${monthDayYearFormatter.format(firstDate)}`
+  }
+  return `${weekdayShortFormatter.format(firstDate)}, ${monthDayFormatter.format(firstDate)} - ${weekdayShortFormatter.format(lastDate)}, ${monthDayYearFormatter.format(lastDate)}`
+}
+
+/** Tên event, khoảng ngày và link chia sẻ dạng `/e/:shortCode` */
+export function EventInfoBar({ config }: EventInfoBarProps) {
+  const setView = useParticipantStore((s) => s.setView)
+  const [copied, setCopied] = useState(false)
+  const shareLink = `${window.location.host}/e/${config.shortCode}`
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/e/${config.shortCode}`)
+      setCopied(true)
+      toast.success("Link copied")
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      toast.error("Couldn't copy - clipboard permission blocked")
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1 px-4 pt-4 pb-2 sm:px-6">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="truncate text-lg font-bold text-foreground sm:text-xl">{config.eventName}</h1>
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setView("OVERVIEW")}
+          className="shrink-0 text-foreground hover:text-primary"
+        >
+          <ArrowLeft className="size-3.5 sm:size-4" />
+          <span className="hidden sm:inline">Back to Overview</span>
+          <span className="sm:hidden">Back</span>
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+        <span>{formatDateRangeLabel(config)}</span>
+        <span aria-hidden className="text-border">
+          •
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={handleCopy}
+          className="h-auto -mx-1 px-1 py-0.5 text-xs font-normal text-muted-foreground hover:text-primary"
+        >
+          <Link2 className="size-3 shrink-0" />
+          <span className="max-w-35 truncate font-mono sm:max-w-none">{shareLink}</span>
+          {copied ? (
+            <Check className="size-3 shrink-0 text-primary" />
+          ) : (
+            <Copy className="size-3 shrink-0" />
+          )}
+        </Button>
+      </div>
+    </div>
+  )
+}

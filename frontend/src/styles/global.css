@@ -1,1 +1,147 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Gần như vuông theo ảnh mẫu, bo nhẹ (~10%) theo yêu cầu mới nhất - 5%
+     trước đó (0.2rem) quá nhẹ, gần như không thấy được */
+  --radius: 0.4rem;
+
+  /* Nền trang có sắc xanh lá rất nhạt, card giữ trắng để nổi bật */
+  --background: hsl(140 40% 98%);
+  --foreground: hsl(150 20% 12%);
+
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(150 20% 12%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(150 20% 12%);
+
+  /* Emerald-600 - đồng bộ màu chủ đạo với feat/22-build-event-heatmap. */
+  --primary: #059669;
+  --primary-foreground: hsl(0 0% 100%);
+
+  /* Xanh lá nhạt - dùng cho badge, chip, vùng nhấn nhẹ */
+  --secondary: hsl(120 32% 93%);
+  --secondary-foreground: hsl(120 70% 18%);
+
+  --muted: hsl(140 25% 95%);
+  --muted-foreground: hsl(150 12% 42%);
+
+  --accent: hsl(120 38% 90%);
+  --accent-foreground: hsl(120 70% 18%);
+
+  --destructive: hsl(0 72% 51%);
+  --destructive-foreground: hsl(0 0% 100%);
+
+  --border: hsl(142 25% 88%);
+  --input: hsl(142 25% 88%);
+  --ring: #059669;
+
+  --chart-1: #059669;
+  --chart-2: hsl(142 50% 58%);
+  --chart-3: hsl(142 30% 75%);
+  --chart-4: hsl(45 90% 55%);
+  --chart-5: hsl(0 72% 51%);
+}
+
+.dark {
+  --background: hsl(150 18% 8%);
+  --foreground: hsl(140 25% 95%);
+
+  --card: hsl(150 16% 11%);
+  --card-foreground: hsl(140 25% 95%);
+  --popover: hsl(150 16% 11%);
+  --popover-foreground: hsl(140 25% 95%);
+
+  --primary: #059669;
+  --primary-foreground: hsl(0 0% 100%);
+
+  --secondary: hsl(150 15% 16%);
+  --secondary-foreground: hsl(140 30% 90%);
+
+  --muted: hsl(150 15% 16%);
+  --muted-foreground: hsl(140 12% 65%);
+
+  --accent: hsl(150 20% 20%);
+  --accent-foreground: hsl(140 30% 92%);
+
+  --destructive: hsl(0 65% 55%);
+  --destructive-foreground: hsl(0 0% 100%);
+
+  --border: hsl(150 15% 20%);
+  --input: hsl(150 15% 20%);
+  --ring: #059669;
+
+  --chart-1: #059669;
+  --chart-2: hsl(142 40% 60%);
+  --chart-3: hsl(142 25% 40%);
+  --chart-4: hsl(45 80% 55%);
+  --chart-5: hsl(0 65% 55%);
+}
+
+@theme inline {
+  /* Roboto - đúng font family dùng trong Figma design (xem ma-mau-reference.png) */
+  --font-sans: "Roboto", ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Đúng class màu ô lịch từ feat/22-build-event-heatmap (không dùng bg-[#..] rời rạc nữa,
+   để 2 nơi CHIA SẺ đúng 1 định nghĩa màu, đổi 1 chỗ là khớp cả 2). Grid cá nhân ở đây chỉ
+   có 1 người tô (không có "count") nên chỉ dùng level-0 (chưa tô) và level-5 (đã tô). */
+.availability-level-0 { background-color: #ffffff; }
+.availability-level-1 { background-color: #d8f0e1; }
+.availability-level-2 { background-color: #b7e4c7; }
+.availability-level-3 { background-color: #8fd3a8; }
+.availability-level-4 { background-color: #55bd7c; }
+.availability-level-5 { background-color: #00a844; }
+
+/* Nền hoạ tiết mờ (lưới kẻ + đốm sáng xanh nhạt) từ feat/22-build-event-heatmap
+   (`.app-event-background`, xem `AppBackground`) - copy nguyên, KHÔNG chỉnh gì
+   để khớp 100% với heatmap. Dùng thay cho `bg-background` phẳng ở khung ngoài App.tsx. */
+.app-event-background {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(151, 190, 146, .35), transparent 27rem),
+    linear-gradient(rgba(16, 67, 48, .055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 67, 48, .055) 1px, transparent 1px),
+    #eef1e7;
+  background-size: auto, 42px 42px, 42px 42px, auto;
+}
