@@ -33,9 +33,9 @@ export function EventInfoBar({ config }: EventInfoBarProps) {
   const setView = useParticipantStore((s) => s.setView)
 
   return (
-    <div className="mb-6 flex flex-col gap-1">
+    <div className="flex flex-col gap-1 px-4 pt-4 pb-2 sm:px-6">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="truncate text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+        <h1 className="truncate text-lg font-bold text-foreground sm:text-xl">
           {config.eventName}
         </h1>
 

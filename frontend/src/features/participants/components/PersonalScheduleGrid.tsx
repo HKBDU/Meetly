@@ -122,7 +122,7 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
   }
 
   return (
-    <section className="min-w-0" aria-label="My schedule">
+    <section className="p-3 sm:p-4" aria-label="My schedule">
       {isFinalized && (
         <Alert className="mb-3 border-primary/30 bg-primary/5">
           <Lock className="size-4 text-primary" />
