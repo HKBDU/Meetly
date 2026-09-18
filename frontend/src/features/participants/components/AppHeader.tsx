@@ -10,12 +10,12 @@ export function AppHeader() {
 
   return (
     <header className="flex shrink-0 items-center justify-between px-4 py-4 sm:px-8">
-      <span className="flex items-center gap-2 text-xl font-bold text-slate-900">
+      <a href="/" className="flex items-center gap-2 text-xl font-bold text-slate-900">
         <span className="rounded-lg bg-emerald-600 p-2 text-white">
           <CalendarDays size={21} aria-hidden="true" />
         </span>
         Meetly
-      </span>
+      </a>
 
       {auth && (
         <Button variant="outline" size="sm" onClick={resetSession}>

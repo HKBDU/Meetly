@@ -25,6 +25,7 @@ export function useAuthParticipant(shortCode: string) {
       const freeSlotIds = expandTimeSlotRangesToIds(authResult.timeSlots, scheduleConfig);
       login(
         {
+          shortCode,
           participantId: authResult.participantId,
           username: authResult.username,
           isAdmin: authResult.isAdmin,

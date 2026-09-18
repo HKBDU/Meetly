@@ -21,5 +21,5 @@ export function useEventHubConnection(shortCode: string, accessToken: string | u
     [shortCode, accessToken],
   );
 
-  return useSyncExternalStore(subscribe, getSnapshot);
+  return useSyncExternalStore(subscribe, getSnapshot, () => null);
 }

@@ -142,7 +142,7 @@ export const useParticipantStore = create<ParticipantState>()(
     {
       name: 'meetly-participant-session',
       // Tăng version khi đổi shape của phần persist để bỏ bản lưu cũ không khớp
-      version: 3,
+      version: 4,
       storage: createJSONStorage(() => localStorage, {
         replacer: persistReplacer,
         reviver: persistReviver,

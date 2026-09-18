@@ -28,7 +28,7 @@ test('Admin suggestions have no manual trigger button', async () => {
     const { DEFAULT_MEETING_DURATION } = await server.ssrLoadModule(
       '/src/features/heatmap/constants.ts',
     );
-    const { mockDatesEvent } = await server.ssrLoadModule('/src/features/heatmap/mock.ts');
+    const { mockDatesEvent } = await server.ssrLoadModule('/tests/fixtures/heatmapEvent.ts');
     const html = renderToStaticMarkup(
       createElement(HeatmapPage, {
         initialEvent: mockDatesEvent,

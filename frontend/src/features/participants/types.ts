@@ -40,6 +40,8 @@ export interface ParticipantResponse {
 }
 
 export interface ParticipantAuthInfo {
+  /** Event mà token này thuộc về */
+  shortCode: string;
   participantId: string;
   username: string;
   isAdmin: boolean;

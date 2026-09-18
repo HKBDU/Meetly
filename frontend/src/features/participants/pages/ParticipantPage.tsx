@@ -17,7 +17,13 @@ export function ParticipantPage() {
   const auth = useParticipantStore((s) => s.auth)
   const scheduleConfig = useParticipantStore((s) => s.scheduleConfig)
   const setScheduleConfig = useParticipantStore((s) => s.setScheduleConfig)
+  const resetSession = useParticipantStore((s) => s.resetSession)
   useParticipantSignalR(shortCode ?? "")
+
+  // Phiên đã lưu thuộc event khác thì bỏ, tránh dùng nhầm token
+  useEffect(() => {
+    if (shortCode && auth && auth.shortCode.toUpperCase() !== shortCode.toUpperCase()) resetSession()
+  }, [shortCode, auth, resetSession])
 
   // `scheduleConfig` không được persist, nên phiên khôi phục phải tải lại
   useEffect(() => {

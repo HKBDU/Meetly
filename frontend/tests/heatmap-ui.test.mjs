@@ -216,7 +216,7 @@ test('historical event dates remain paginated and selectable in the Heatmap', as
     const { HeatmapCell } = await server.ssrLoadModule(
       '/src/features/heatmap/components/HeatmapCell.tsx',
     );
-    const { mockDatesEvent } = await server.ssrLoadModule('/src/features/heatmap/mock.ts');
+    const { mockDatesEvent } = await server.ssrLoadModule('/tests/fixtures/heatmapEvent.ts');
     const { buildRows, getColumnPage, getColumns } = await server.ssrLoadModule(
       '/src/features/heatmap/time.ts',
     );
@@ -330,7 +330,7 @@ test('inspected cell details can be shown by hover or tap and dismissed after le
     const { HeatmapCell } = await server.ssrLoadModule(
       '/src/features/heatmap/components/HeatmapCell.tsx',
     );
-    const { mockDatesEvent } = await server.ssrLoadModule('/src/features/heatmap/mock.ts');
+    const { mockDatesEvent } = await server.ssrLoadModule('/tests/fixtures/heatmapEvent.ts');
     const { buildRows, getColumns } = await server.ssrLoadModule(
       '/src/features/heatmap/time.ts',
     );
@@ -423,7 +423,7 @@ test('finalized schedule keeps the blue range on the Heatmap', async () => {
     const { Heatmap } = await server.ssrLoadModule(
       '/src/features/heatmap/components/Heatmap.tsx',
     );
-    const { mockDatesEvent } = await server.ssrLoadModule('/src/features/heatmap/mock.ts');
+    const { mockDatesEvent } = await server.ssrLoadModule('/tests/fixtures/heatmapEvent.ts');
     const finalSchedule = {
       specificDate: mockDatesEvent.availableDates[0],
       dayOfWeek: null,
@@ -444,7 +444,7 @@ test('finalized schedule keeps the blue range on the Heatmap', async () => {
       }),
     );
 
-    assert.equal((html.match(/border-blue-700/g) ?? []).length, 8);
+    assert.equal((html.match(/border-blue-700/g) ?? []).length, 4);
     assert.equal((html.match(/border-red-500/g) ?? []).length, 0);
   } finally {
     await server.close();
