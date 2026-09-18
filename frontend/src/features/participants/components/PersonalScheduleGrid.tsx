@@ -81,8 +81,8 @@ interface ScheduleCellProps {
   isHourStart: boolean
   /** true nếu đây là ô đầu tiên của mốc nửa giờ (VD: đúng 09:30, 10:30...) */
   isHalfHourStart: boolean
-  onMouseDown: (event: React.MouseEvent<HTMLDivElement>) => void
-  onMouseEnter: (event: React.MouseEvent<HTMLDivElement>) => void
+  onPointerDown: (event: React.PointerEvent<HTMLDivElement>) => void
+  onPointerEnter: (event: React.PointerEvent<HTMLDivElement>) => void
 }
 
 /**
@@ -100,8 +100,8 @@ const ScheduleCell = memo(function ScheduleCell({
   row,
   isHourStart,
   isHalfHourStart,
-  onMouseDown,
-  onMouseEnter,
+  onPointerDown,
+  onPointerEnter,
 }: ScheduleCellProps) {
   // isPainted = ô đang được tô, KHÔNG có nghĩa cố định là "rảnh":
   // ý nghĩa thật (rảnh/bận) chỉ được diễn giải lúc lưu, xem useAutoSaveSchedule.
@@ -113,11 +113,16 @@ const ScheduleCell = memo(function ScheduleCell({
       data-slot-id={slotId}
       data-date={date}
       data-row={row}
-      onMouseDown={isFinalized ? undefined : onMouseDown}
-      onMouseEnter={isFinalized ? undefined : onMouseEnter}
+      onPointerDown={isFinalized ? undefined : onPointerDown}
+      onPointerEnter={isFinalized ? undefined : onPointerEnter}
       className={cn(
         CELL_HEIGHT_CLASS,
         "w-full transition-colors duration-75",
+        // `touch-none` (touch-action: none) - THIẾU dòng này thì trên mobile,
+        // chạm-kéo ngang qua các ô sẽ bị trình duyệt hiểu thành cử chỉ CUỘN
+        // TRANG mặc định, không bao giờ bắn tới `onPointerEnter` của ô kế
+        // tiếp. Tham khảo đúng kỹ thuật của `HeatmapCell` (feature heatmap).
+        !isFinalized && "touch-none select-none",
         // Đường kẻ DỌC phân cách cột ngày KHÔNG dùng border nữa (xem
         // container `.grid` ở dưới - dùng column-gap + nền đen lộ qua khe hở
         // để vẽ 1 đường LIỀN DUY NHẤT suốt chiều cao lưới). Border-right vẽ
@@ -133,10 +138,12 @@ const ScheduleCell = memo(function ScheduleCell({
         isHourStart && "border-t border-solid border-slate-300",
         isHalfHourStart && "border-t border-dashed border-slate-200/70",
         isFinalized
-          ? cn("cursor-not-allowed", isPainted ? "bg-[#00a844]/50" : "bg-muted")
+          ? cn("cursor-not-allowed", isPainted ? "availability-level-5 opacity-50" : "bg-muted")
           : cn(
               "cursor-pointer",
-              isPainted ? "bg-[#00a844] hover:brightness-95" : "bg-white hover:bg-accent"
+              isPainted
+                ? "availability-level-5 hover:brightness-95"
+                : "availability-level-0 hover:bg-accent"
             )
       )}
     />
@@ -160,7 +167,7 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
   const isFinalized = useParticipantStore((s) => s.isFinalized)
   const finalizedMessage = useParticipantStore((s) => s.finalizedMessage)
 
-  const { handleCellMouseDown, handleCellMouseEnter } = useOptimizedDrag({
+  const { handleCellPointerDown, handleCellPointerEnter } = useOptimizedDrag({
     onDragEnd: triggerAutoSave,
   })
 
@@ -414,8 +421,8 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
                           row={rowIndex}
                           isHourStart={isHourStart}
                           isHalfHourStart={isHalfHourStart}
-                          onMouseDown={handleCellMouseDown}
-                          onMouseEnter={handleCellMouseEnter}
+                          onPointerDown={handleCellPointerDown}
+                          onPointerEnter={handleCellPointerEnter}
                         />
                       )
                     })}

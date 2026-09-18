@@ -37,16 +37,24 @@ interface LastCell {
  *    nhất cho mọi ô chạm phải trong suốt lượt kéo đó - giống When2Meet
  *    (kéo qua vùng đã tô để xoá, kéo qua vùng trống để tô), tránh việc
  *    tô/xoá lẫn lộn từng ô một cách khó đoán khi kéo qua vùng hỗn hợp.
- * 6. Khi chuột di chuyển nhanh hơn tần suất sự kiện mouseenter (trình
+ * 6. Khi con trỏ di chuyển nhanh hơn tần suất sự kiện pointerenter (trình
  *    duyệt "nhảy cóc" qua vài ô), hook tự lấp đầy các ô bị bỏ sót trong
  *    cùng 1 cột ngày dựa vào data-row, để không bao giờ bị sót ô dù kéo
  *    rất nhanh.
+ * 7. Dùng Pointer Events (không phải mouse events) - tham khảo đúng kỹ
+ *    thuật của `HeatmapCell` bên feature heatmap (feat/22-build-event-heatmap):
+ *    mouseenter KHÔNG bắn liên tục khi kéo bằng cảm ứng (touch) trên mobile,
+ *    nên bản mouse-only cũ không kéo-tô được trên điện thoại. Pointer Events
+ *    gộp chung mouse/touch/pen nên cùng 1 code chạy đúng trên cả 2. Phải tự
+ *    `releasePointerCapture` ngay lúc pointerdown - nếu không, trình duyệt
+ *    tự khoá (capture) mọi sự kiện pointer tiếp theo vào đúng ô bấm đầu tiên,
+ *    khiến pointerenter không bao giờ bắn sang các ô khác khi rê qua.
  */
 export function useOptimizedDrag({ onDragEnd }: UseOptimizedDragOptions) {
   const [isDragging, setIsDragging] = useState(false)
   const isDraggingRef = useRef(false)
   const lastCellRef = useRef<LastCell | null>(null)
-  // true = lượt kéo hiện tại đang TÔ, false = đang XOÁ - chốt lúc mousedown, xem điểm 5 ở trên.
+  // true = lượt kéo hiện tại đang TÔ, false = đang XOÁ - chốt lúc pointerdown, xem điểm 5 ở trên.
   const dragPaintValueRef = useRef(true)
 
   const { paintSlot, paintRowRange } = usePaintSlots()
@@ -59,12 +67,17 @@ export function useOptimizedDrag({ onDragEnd }: UseOptimizedDragOptions) {
     onDragEnd()
   }, [onDragEnd])
 
-  const handleCellMouseDown = useCallback(
-    (event: React.MouseEvent<HTMLElement>) => {
+  const handleCellPointerDown = useCallback(
+    (event: React.PointerEvent<HTMLElement>) => {
       const { isFinalized, selectedSlotIds } = useParticipantStore.getState()
-      if (isFinalized) return
+      if (isFinalized || event.button !== 0) return
       const { slotId, date, row } = event.currentTarget.dataset
       if (!slotId || !date || row === undefined) return
+
+      event.preventDefault()
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId)
+      }
 
       // Ô đang trống -> lượt này TÔ; ô đã tô sẵn -> lượt này XOÁ.
       const paintValue = !selectedSlotIds.has(slotId)
@@ -78,12 +91,13 @@ export function useOptimizedDrag({ onDragEnd }: UseOptimizedDragOptions) {
     [paintSlot]
   )
 
-  const handleCellMouseEnter = useCallback(
-    (event: React.MouseEvent<HTMLElement>) => {
+  const handleCellPointerEnter = useCallback(
+    (event: React.PointerEvent<HTMLElement>) => {
       if (!isDraggingRef.current) return
 
-      // Phòng trường hợp người dùng nhả chuột ngoài cửa sổ trình duyệt:
-      // nút chuột trái (buttons bit 1) không còn được giữ -> tự kết thúc kéo.
+      // Phòng trường hợp người dùng nhả chuột/nhấc tay ngoài cửa sổ trình
+      // duyệt: nút chuột trái/lực chạm (buttons bit 1) không còn được giữ ->
+      // tự kết thúc kéo.
       if (event.buttons !== 1) {
         endDrag()
         return
@@ -99,7 +113,7 @@ export function useOptimizedDrag({ onDragEnd }: UseOptimizedDragOptions) {
       const paintValue = dragPaintValueRef.current
       if (last && last.date === date) {
         // Cùng cột ngày: lấp đầy mọi ô giữa vị trí cũ và vị trí mới (nếu có
-        // ô bị nhảy cóc do chuột di chuyển nhanh).
+        // ô bị nhảy cóc do con trỏ di chuyển nhanh).
         paintRowRange(date, last.row, rowIndex, paintValue)
       } else {
         paintSlot(slotId, paintValue)
@@ -110,16 +124,21 @@ export function useOptimizedDrag({ onDragEnd }: UseOptimizedDragOptions) {
     [paintSlot, paintRowRange, endDrag]
   )
 
-  // Lưới an toàn: bắt sự kiện mouseup trên toàn window để không bị "kẹt"
-  // trạng thái đang kéo khi người dùng nhả chuột ngoài phạm vi lưới.
+  // Lưới an toàn: bắt sự kiện pointerup/pointercancel trên toàn window để
+  // không bị "kẹt" trạng thái đang kéo khi người dùng nhả chuột/nhấc tay
+  // ngoài phạm vi lưới.
   useEffect(() => {
-    window.addEventListener("mouseup", endDrag)
-    return () => window.removeEventListener("mouseup", endDrag)
+    window.addEventListener("pointerup", endDrag)
+    window.addEventListener("pointercancel", endDrag)
+    return () => {
+      window.removeEventListener("pointerup", endDrag)
+      window.removeEventListener("pointercancel", endDrag)
+    }
   }, [endDrag])
 
   return {
     isDragging,
-    handleCellMouseDown,
-    handleCellMouseEnter,
+    handleCellPointerDown,
+    handleCellPointerEnter,
   }
 }

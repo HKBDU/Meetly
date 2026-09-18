@@ -24,7 +24,7 @@ export function PersonalScheduleView() {
   const { triggerAutoSave, isSaving } = useAutoSaveSchedule()
 
   return (
-    <div className="flex flex-col bg-background">
+    <div className="flex flex-col">
       {config && <EventInfoBar config={config} />}
       <ScheduleActionsBar triggerAutoSave={triggerAutoSave} isSaving={isSaving} />
       <PersonalScheduleGrid triggerAutoSave={triggerAutoSave} />

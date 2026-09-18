@@ -13,7 +13,7 @@ export default function App() {
           dung thật sự rất ngắn (VD màn Join). Khi nội dung dài hơn 1 màn hình (VD:
           lưới lịch nhiều giờ) thì `main` tự giãn tiếp theo nội dung, cả trang cuộn
           bình thường thay vì tạo thanh cuộn riêng bên trong. */}
-      <div className="flex flex-col bg-background">
+      <div className="app-event-background flex flex-col">
         <AppHeader />
         <main className="min-h-dvh">
           <RouterProvider />
