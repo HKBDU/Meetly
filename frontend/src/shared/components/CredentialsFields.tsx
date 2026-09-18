@@ -46,9 +46,9 @@ export function CredentialsFields({
             className={eventUi.input}
             id={usernameName}
             {...register(usernameName)}
-            required={usernameRequired}
+            required={false}
           />
-          {usernameError && (
+          {(usernameError || passwordError) && (
             <span className={eventUi.fieldError}>{usernameError}</span>
           )}
         </div>
@@ -64,7 +64,7 @@ export function CredentialsFields({
             {...register(passwordName)}
             required={passwordRequired}
           />
-          {passwordError && (
+          {(passwordError || usernameError)  &&   (
             <span className={eventUi.fieldError}>{passwordError}</span>
           )}
         </div>

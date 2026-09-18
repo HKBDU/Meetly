@@ -32,7 +32,7 @@ export const eventUi = {
   desktopDialog: 'overflow-visible rounded-2xl border border-[#bbcabf]/60 bg-white shadow-[0_1px_1px_rgba(0,0,0,.05)]',
   desktopScreen: 'min-h-screen bg-[#f8f9ff] max-[640px]:hidden',
   field: 'grid gap-2',
-  fieldError: 'text-[11px] text-[#ba1a1a]',
+  fieldError: 'text-[11px] h-[12px] text-[#ba1a1a]',
   fieldHint: 'text-xs font-semibold text-[#009b4d]',
   form: 'p-[25px]',
   formContent: 'grid max-w-none gap-4 max-[640px]:gap-3',
