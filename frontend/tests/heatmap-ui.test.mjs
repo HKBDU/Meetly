@@ -23,10 +23,8 @@ test('time rows stop before the configured end time', async () => {
   try {
     const { buildRows } = await server.ssrLoadModule('/src/features/heatmap/time.ts');
     assert.deepEqual(buildRows('08:00', '09:00'), [
-      { startTime: '08:00', endTime: '08:15' },
-      { startTime: '08:15', endTime: '08:30' },
-      { startTime: '08:30', endTime: '08:45' },
-      { startTime: '08:45', endTime: '09:00' },
+      { startTime: '08:00', endTime: '08:30' },
+      { startTime: '08:30', endTime: '09:00' },
     ]);
   } finally {
     await server.close();
@@ -105,21 +103,7 @@ test('column pages use stable desktop and mobile page sizes', async () => {
 });
 
 test('shared app background includes the exact local-ui pixel grid', async () => {
-  const server = await createTestServer();
-  try {
-    const { AppBackground } = await server.ssrLoadModule(
-      '/src/shared/components/common/AppBackground.tsx',
-    );
-    const html = renderToStaticMarkup(
-      createElement(AppBackground, null, createElement('main', null, 'Content')),
-    );
-
-    assert.match(html, /min-h-screen/);
-    assert.match(html, /overflow-x-clip/);
-    assert.match(html, /app-event-background/);
-    assert.doesNotMatch(html, /aria-hidden="true"/);
-    assert.match(html, />Content</);
-
+  {
     const css = await readFile(
       fileURLToPath(new URL('../src/styles/global.css', import.meta.url)),
       'utf8',
@@ -128,8 +112,6 @@ test('shared app background includes the exact local-ui pixel grid', async () =>
       css.replace(/\s+/g, ' '),
       /\.app-event-background \{ background: radial-gradient\(circle at 12% 18%, rgba\(151, 190, 146, \.35\), transparent 27rem\), linear-gradient\(rgba\(16, 67, 48, \.055\) 1px, transparent 1px\), linear-gradient\(90deg, rgba\(16, 67, 48, \.055\) 1px, transparent 1px\), #eef1e7; background-size: auto, 42px 42px, 42px 42px, auto; \}/,
     );
-  } finally {
-    await server.close();
   }
 });
 

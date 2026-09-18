@@ -24,7 +24,7 @@ function HeatmapTable({ columns, rows, event, compactHeaders = false, ...interac
     <div className="w-full overflow-hidden border border-slate-300 bg-white">
       <table className="w-full table-fixed border-collapse">
         <caption className="sr-only">
-          Availability grid with 15-minute slots. Hover, tap, or use Tab to view details.
+          Availability grid with 30-minute slots. Hover, tap, or use Tab to view details.
         </caption>
         <thead className="bg-white">
           <tr>

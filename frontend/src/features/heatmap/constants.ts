@@ -1,6 +1,7 @@
 import type { DayOfWeek } from './types';
 
-export const SLOT_MINUTES = 15;
+/** BE tổng hợp heatmap theo ô 30 phút */
+export const SLOT_MINUTES = 30;
 export const DEFAULT_MEETING_DURATION = 60;
 export const MOBILE_COLUMNS_PER_PAGE = 3;
 export const DESKTOP_COLUMNS_PER_PAGE = 5;
