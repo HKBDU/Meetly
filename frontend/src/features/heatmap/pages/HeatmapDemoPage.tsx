@@ -1,4 +1,5 @@
 import { CalendarDays } from 'lucide-react';
+import { AppBackground } from '@/shared/components/common';
 import { HeatmapPage } from './HeatmapPage';
 import { MeetlyFooter } from '../components/MeetlyFooter';
 import {
@@ -12,7 +13,7 @@ import {
 export default function HeatmapDemoPage() {
   const { event, isAdmin } = getMockScenario(new URLSearchParams(window.location.search));
   return (
-    <div className="flex min-h-screen flex-col bg-white font-sans">
+    <AppBackground className="font-sans">
       <header className="border-b border-slate-200 px-4 py-4 sm:px-8">
         <div className="mx-auto flex max-w-[1376px] items-center justify-between gap-4">
           <span className="flex items-center gap-2 text-xl font-bold text-slate-900">
@@ -33,6 +34,6 @@ export default function HeatmapDemoPage() {
         />
       </div>
       <MeetlyFooter />
-    </div>
+    </AppBackground>
   );
 }

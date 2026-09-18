@@ -1,40 +1,137 @@
-import type {
-  CellDetails,
-  FinalSchedule,
-  HeatmapEvent,
-  SelectedCell,
-  SuggestedSlot,
-} from '../types';
-import { buildRows, getColumns } from '../time';
+import { useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { formatHourLabel } from '@/lib/date-time';
+import { Button } from '@/shared/components/ui';
+import {
+  AVAILABILITY_LEVELS,
+  DESKTOP_COLUMNS_PER_PAGE,
+  MOBILE_COLUMNS_PER_PAGE,
+} from '../constants';
+import { getAvailabilityLevelClass } from '../availability';
+import type { HeatmapProps, TimeColumn, TimeRow } from '../types';
+import { buildRows, getColumnPage, getColumns, getPageCount } from '../time';
 import { HeatmapCell } from './HeatmapCell';
 
-interface Props {
-  event: HeatmapEvent;
-  suggestions: SuggestedSlot[];
-  selected: FinalSchedule | null;
-  selecting: boolean;
-  onInspect: (details: CellDetails) => void;
-  onStart: (point: SelectedCell) => void;
-  onExtend: (point: SelectedCell) => void;
-  onKeyboardSelect: (point: SelectedCell, extendRange?: boolean) => void;
+interface HeatmapTableProps extends Omit<HeatmapProps, 'event'> {
+  columns: TimeColumn[];
+  rows: TimeRow[];
+  event: HeatmapProps['event'];
+  compactHeaders?: boolean;
 }
 
-const legendColors = [
-  'bg-white',
-  'bg-[#d8f0e1]',
-  'bg-[#b7e4c7]',
-  'bg-[#8fd3a8]',
-  'bg-[#55bd7c]',
-  'bg-[#00a844]',
-];
-
-function formatHourLabel(time: string): string {
-  const hour = Number(time.slice(0, 2));
-  const displayHour = hour % 12 || 12;
-  return `${displayHour} ${hour < 12 ? 'AM' : 'PM'}`;
+function HeatmapTable({ columns, rows, event, compactHeaders = false, ...interaction }: HeatmapTableProps) {
+  return (
+    <div className="w-full overflow-hidden border border-slate-300 bg-white">
+      <table className="w-full table-fixed border-collapse">
+        <caption className="sr-only">
+          Availability grid with 15-minute slots. Hover, tap, or use Tab to view details.
+        </caption>
+        <thead className="bg-white">
+          <tr>
+            <th
+              scope="col"
+              className="w-14 border-b border-r border-slate-200 p-2 text-xs text-slate-500 sm:w-20"
+            >
+              Time
+            </th>
+            {columns.map((column) => (
+              <th
+                scope="col"
+                key={column.key}
+                title={`${column.label} ${column.detail}`}
+                className="border-b border-r border-slate-200 px-1 py-2 text-xs font-semibold last:border-r-0 sm:py-3 sm:text-sm"
+              >
+                {compactHeaders ? column.label.slice(0, 3) : column.label}
+                <span className="mt-1 block truncate text-[10px] font-normal text-slate-500 sm:text-xs">
+                  {column.detail}
+                </span>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => {
+            const hourBoundary = row.startTime.endsWith(':00');
+            return (
+              <tr key={row.startTime}>
+                <th
+                  scope="row"
+                  aria-label={row.startTime}
+                  className={`w-14 border-r border-slate-200 bg-white px-1 text-left text-xs font-medium text-slate-500 sm:w-20 sm:px-2 ${hourBoundary ? 'border-t border-t-slate-300 align-top pt-1' : 'border-t border-t-transparent'}`}
+                >
+                  {hourBoundary ? formatHourLabel(row.startTime) : null}
+                </th>
+                {columns.map((column) => {
+                  const cell = event.heatmapGrid.find(
+                    (candidate) =>
+                      candidate.startTime === row.startTime &&
+                      candidate.specificDate === column.specificDate &&
+                      candidate.dayOfWeek === column.dayOfWeek,
+                  );
+                  return (
+                    <HeatmapCell
+                      key={column.key}
+                      point={{ column, row }}
+                      cell={cell}
+                      total={event.participants.length}
+                      {...interaction}
+                    />
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
-export function Heatmap({ event, ...interaction }: Props) {
+interface PaginatedHeatmapProps extends HeatmapTableProps {
+  pageSize: number;
+}
+
+function PaginatedHeatmap({ columns, pageSize, ...tableProps }: PaginatedHeatmapProps) {
+  const [pageIndex, setPageIndex] = useState(0);
+  const pageCount = getPageCount(columns.length, pageSize);
+  const currentPage = Math.min(pageIndex, pageCount - 1);
+  const visibleColumns = getColumnPage(columns, currentPage, pageSize);
+
+  return (
+    <>
+      {pageCount > 1 && (
+        <div className="mb-3 flex items-center justify-between gap-3" aria-label="Heatmap date pages">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={currentPage === 0}
+            onClick={() => setPageIndex(Math.max(0, currentPage - 1))}
+          >
+            <ChevronLeft aria-hidden="true" />
+            Previous
+          </Button>
+          <span className="text-xs font-medium text-muted-foreground">
+            {currentPage + 1} / {pageCount}
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={currentPage === pageCount - 1}
+            onClick={() => setPageIndex(Math.min(pageCount - 1, currentPage + 1))}
+          >
+            Next
+            <ChevronRight aria-hidden="true" />
+          </Button>
+        </div>
+      )}
+      <HeatmapTable columns={visibleColumns} {...tableProps} />
+    </>
+  );
+}
+
+export function Heatmap({ event, ...interaction }: HeatmapProps) {
   const columns = getColumns(event);
   const rows = buildRows(event.dailyStartTime, event.dailyEndTime);
 
@@ -63,8 +160,8 @@ export function Heatmap({ event, ...interaction }: Props) {
           aria-label="Availability scale from fewer to more participants"
         >
           <span className="mr-1">Less</span>
-          {legendColors.map((color) => (
-            <span key={color} className={`h-4 w-4 rounded-sm ${color}`} />
+          {AVAILABILITY_LEVELS.map((level) => (
+            <span key={level} className={`h-4 w-4 rounded-sm ${getAvailabilityLevelClass(level)}`} />
           ))}
           <span className="ml-1">More</span>
         </div>
@@ -75,67 +172,26 @@ export function Heatmap({ event, ...interaction }: Props) {
       {event.heatmapGrid.length === 0 && (
         <p className="mb-3 text-sm text-slate-500">No availability data yet.</p>
       )}
-      <div className="w-full overflow-hidden border border-slate-300 bg-white">
-        <table className="w-full table-fixed border-collapse">
-          <caption className="sr-only">
-            Availability grid with 15-minute slots. Hover, tap, or use Tab to view details.
-          </caption>
-          <thead className="bg-white">
-            <tr>
-              <th
-                scope="col"
-                className="w-16 border-b border-r border-slate-200 p-2 text-xs text-slate-500 sm:w-20"
-              >
-                Time
-              </th>
-              {columns.map((column) => (
-                <th
-                  scope="col"
-                  key={column.key}
-                  className="border-b border-r border-slate-200 px-1 py-3 text-xs font-semibold last:border-r-0 sm:text-sm"
-                >
-                  {column.label}
-                  <span className="mt-1 block text-xs font-normal text-slate-500">
-                    {column.detail}
-                  </span>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => {
-              const hourBoundary = row.startTime.endsWith(':00');
-              return (
-                <tr key={row.startTime}>
-                  <th
-                    scope="row"
-                    aria-label={row.startTime}
-                    className={`w-16 border-r border-slate-200 bg-white px-1 text-left text-xs font-medium text-slate-500 sm:w-20 sm:px-2 ${hourBoundary ? 'border-t border-t-slate-300 align-top pt-1' : 'border-t border-t-transparent'}`}
-                  >
-                    {hourBoundary ? formatHourLabel(row.startTime) : null}
-                  </th>
-                  {columns.map((column) => {
-                    const cell = event.heatmapGrid.find(
-                      (cell) =>
-                        cell.startTime === row.startTime &&
-                        cell.specificDate === column.specificDate &&
-                        cell.dayOfWeek === column.dayOfWeek,
-                    );
-                    return (
-                      <HeatmapCell
-                        key={column.key}
-                        point={{ column, row }}
-                        cell={cell}
-                        total={event.participants.length}
-                        {...interaction}
-                      />
-                    );
-                  })}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <div className="md:hidden">
+        <PaginatedHeatmap
+          key={`mobile:${columns.map((column) => column.key).join('|')}`}
+          columns={columns}
+          rows={rows}
+          event={event}
+          pageSize={MOBILE_COLUMNS_PER_PAGE}
+          compactHeaders
+          {...interaction}
+        />
+      </div>
+      <div className="hidden md:block">
+        <PaginatedHeatmap
+          key={`desktop:${columns.map((column) => column.key).join('|')}`}
+          columns={columns}
+          rows={rows}
+          event={event}
+          pageSize={DESKTOP_COLUMNS_PER_PAGE}
+          {...interaction}
+        />
       </div>
     </section>
   );

@@ -1,34 +1,6 @@
-import type {
-  CellDetails,
-  FinalSchedule,
-  HeatmapCellData,
-  SelectedCell,
-  SuggestedSlot,
-} from '../types';
+import { getAvailabilityClass } from '../availability';
+import type { HeatmapCellProps } from '../types';
 import { containsCell, formatDay } from '../time';
-
-interface Props {
-  point: SelectedCell;
-  cell: HeatmapCellData | undefined;
-  total: number;
-  suggestions: SuggestedSlot[];
-  selected: FinalSchedule | null;
-  selecting: boolean;
-  onInspect: (details: CellDetails) => void;
-  onStart: (point: SelectedCell) => void;
-  onExtend: (point: SelectedCell) => void;
-  onKeyboardSelect: (point: SelectedCell, extendRange?: boolean) => void;
-}
-
-function availabilityClass(count: number, total: number): string {
-  const ratio = total === 0 ? 0 : count / total;
-  if (ratio === 0) return 'bg-white';
-  if (ratio <= 0.25) return 'bg-[#d8f0e1]';
-  if (ratio <= 0.5) return 'bg-[#b7e4c7]';
-  if (ratio <= 0.75) return 'bg-[#8fd3a8]';
-  if (ratio < 1) return 'bg-[#55bd7c]';
-  return 'bg-[#00a844]';
-}
 
 export function HeatmapCell({
   point,
@@ -38,10 +10,11 @@ export function HeatmapCell({
   selected,
   selecting,
   onInspect,
+  onInspectEnd,
   onStart,
   onExtend,
   onKeyboardSelect,
-}: Props) {
+}: HeatmapCellProps) {
   const count = total === 0 ? 0 : (cell?.count ?? 0);
   const { column, row } = point;
   const matchingSuggestions = suggestions.filter((slot) => containsCell(slot, column, row));
@@ -68,7 +41,7 @@ export function HeatmapCell({
 
   return (
     <td
-      className={`relative border-r border-slate-300/60 p-0 ${availabilityClass(count, total)} ${timeBoundaryClass}`}
+      className={`relative border-r border-slate-300/60 p-0 ${getAvailabilityClass(count, total)} ${timeBoundaryClass}`}
     >
       <button
         type="button"
@@ -78,7 +51,9 @@ export function HeatmapCell({
         aria-pressed={isSelected}
         aria-controls="availability-details"
         onMouseEnter={inspect}
+        onMouseLeave={onInspectEnd}
         onFocus={inspect}
+        onBlur={onInspectEnd}
         onPointerDown={(event) => {
           if (!selecting || event.button !== 0) return;
           event.preventDefault();

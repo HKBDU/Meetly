@@ -1,41 +1,28 @@
 import { useRef } from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
-import type { FinalSchedule } from '../types';
+import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui';
+import type { FinalizeDialogProps } from '../types';
 import { formatDay } from '../time';
-
-interface Props {
-  open: boolean;
-  selected: FinalSchedule | null;
-  timezone: string;
-  pending: boolean;
-  error: string | null;
-  onClose: () => void;
-  onConfirm: () => void;
-}
 
 export function FinalizeDialog({
   open,
   selected,
   timezone,
   pending,
-  error,
   onClose,
   onConfirm,
-}: Props) {
+}: FinalizeDialogProps) {
   const cancelButton = useRef<HTMLButtonElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
 
   return (
-    <Dialog.Root
+    <Dialog
       open={open && selected !== null}
       onOpenChange={(next) => {
         if (!next && !pending) onClose();
       }}
     >
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
-        <Dialog.Content
-          className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[calc(100%_-_2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-auto rounded-xl border border-slate-200 bg-white p-6 text-slate-900 shadow-xl"
+        <DialogContent
+          showCloseButton={false}
           onOpenAutoFocus={(event) => {
             event.preventDefault();
             returnFocus.current =
@@ -54,11 +41,13 @@ export function FinalizeDialog({
             if (pending) event.preventDefault();
           }}
         >
-          <Dialog.Title className="text-xl font-semibold">Finalize this meeting?</Dialog.Title>
-          <Dialog.Description className="mt-3 text-sm leading-6 text-slate-600">
+          <DialogHeader>
+          <DialogTitle>Finalize this meeting?</DialogTitle>
+          <DialogDescription className="leading-6 text-slate-600">
             Confirming will lock this event. Participants will no longer be able to edit their
             availability.
-          </Dialog.Description>
+          </DialogDescription>
+          </DialogHeader>
           {selected && (
             <div className="my-5 rounded-lg bg-emerald-50 p-4">
               <p className="font-medium">{formatDay(selected)}</p>
@@ -68,32 +57,23 @@ export function FinalizeDialog({
               <p className="mt-2 text-xs text-slate-600">{timezone}</p>
             </div>
           )}
-          {error && (
-            <p role="alert" className="mb-4 text-sm text-rose-700">
-              {error}
-            </p>
-          )}
-          <div className="flex justify-end gap-3">
-            <button
+          <DialogFooter>
+            <Button
               ref={cancelButton}
-              type="button"
+              variant="outline"
               disabled={pending}
               onClick={onClose}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm disabled:opacity-50"
             >
               Cancel
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
               disabled={pending}
               onClick={onConfirm}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
             >
               {pending ? 'Confirming…' : 'Confirm Final Time'}
-            </button>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+    </Dialog>
   );
 }

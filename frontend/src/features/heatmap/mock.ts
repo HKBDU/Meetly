@@ -1,3 +1,4 @@
+import { minutesToTime, timeToMinutes } from '@/lib/date-time';
 import type {
   FinalizeResult,
   FinalSchedule,
@@ -7,14 +8,14 @@ import type {
   UpdateEventPayload,
   UpdateEventResult,
 } from './types.ts'
-import { buildRows, formatTime, getColumns, isValidSchedule, toMinutes } from './time.ts'
+import { buildRows, getColumns, isValidSchedule } from './time.ts'
 
 const participants = ['Dương', 'An', 'Bình', 'Chi', 'Duy', 'Huyền', 'Khoa', 'Linh'].map(username => ({ username }))
 
 const baseEvent: HeatmapEvent = {
   title: 'Meetly Team Meeting', shortCode: 'DEMO26', url: 'https://meetly.example/DEMO26',
   eventType: 1, timezone: 'Asia/Ho_Chi_Minh',
-  availableDates: ['2026-09-10', '2026-09-11', '2026-09-12'], availableWeekdays: [],
+  availableDates: ['2026-09-10', '2026-09-11', '2026-09-12','2026-09-13', '2026-09-14', '2026-09-15', '2026-09-10', '2026-09-11', '2026-09-12','2026-09-13', '2026-09-14', '2026-09-15' ], availableWeekdays: [],
   dailyStartTime: '08:00', dailyEndTime: '14:00', status: 1, revision: 12,
   participants, heatmapGrid: [], finalSchedule: null,
 }
@@ -53,7 +54,7 @@ export async function getMockSuggestions(event: HeatmapEvent, params: Suggestion
   // A fixed sample, not the production suggestion algorithm.
   return [{
     specificDate: firstDay.specificDate, dayOfWeek: firstDay.dayOfWeek,
-    startTime: '10:00', endTime: formatTime(toMinutes('10:00') + duration),
+    startTime: '10:00', endTime: minutesToTime(timeToMinutes('10:00') + duration),
     participantCount: 8, totalParticipants: 8,
   }]
 }
@@ -74,7 +75,7 @@ export async function updateMockEvent(
 ): Promise<UpdateEventResult> {
   if (event.status !== 1) throw new Error('This event is locked and cannot be edited.');
   if (!payload.title.trim()) throw new Error('Event name is required.');
-  if (toMinutes(payload.dailyStartTime) >= toMinutes(payload.dailyEndTime))
+  if (timeToMinutes(payload.dailyStartTime) >= timeToMinutes(payload.dailyEndTime))
     throw new Error('Start time must be earlier than end time.');
   if (payload.eventType === 1 && payload.availableDates.length === 0)
     throw new Error('Select at least one date.');
