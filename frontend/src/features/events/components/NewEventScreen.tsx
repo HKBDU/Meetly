@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CalendarDays, X } from 'lucide-react'
+import { CalendarDays } from 'lucide-react'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -341,4 +341,3 @@ function UpdateWarning({
     </div>
   )
 }
-

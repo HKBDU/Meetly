@@ -1,3 +1,5 @@
+import axios from 'axios'
+
 import type {
   CreateEventRequest,
   CreateEventResponse,
@@ -40,12 +42,11 @@ export function toCreateEventPayload(values: EventFormValues): CreateEventPayloa
 }
 
 export async function createEvent(values: EventFormValues): Promise<CreateEventResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/events`, {
-    method: 'POST',
+  const response = await axios.post<CreateEventResponse>(`${API_BASE_URL}/api/v1/events`, toCreateEventPayload(values), {
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(toCreateEventPayload(values)),
+    validateStatus: () => true,
   })
-  const body = (await response.json().catch(() => undefined)) as CreateEventResponse | undefined
+  const body = response.data
   if (response.status !== 201 || !body?.isSuccess || !body.value) {
     throw new Error(body?.message || `Unable to create event (${response.status}).`)
   }
@@ -73,18 +74,20 @@ export async function updateEvent(
   values: EventFormValues,
   accessToken: string,
 ): Promise<UpdateEventResponse['value']> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/events/${encodeURIComponent(shortCode)}`, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
+  const response = await axios.put<UpdateEventResponse>(
+    `${API_BASE_URL}/api/v1/events/${encodeURIComponent(shortCode)}`,
+    toUpdateEventPayload(values),
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      validateStatus: () => true,
     },
-    body: JSON.stringify(toUpdateEventPayload(values)),
-  })
-  const body = (await response.json().catch(() => undefined)) as UpdateEventResponse | undefined
+  )
+  const body = response.data
   if (response.status !== 200 || !body?.isSuccess || body.code !== 200 || !body.value) {
     throw new Error(body?.message || `Unable to update event (${response.status}).`)
   }
   return body.value
 }
-
