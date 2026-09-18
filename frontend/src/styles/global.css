@@ -136,7 +136,7 @@
 .availability-level-5 { background-color: #00a844; }
 
 /* Nền hoạ tiết mờ (lưới kẻ + đốm sáng xanh nhạt) từ feat/22-build-event-heatmap
-   (`.app-event-background`, xem `AppBackground`) - copy nguyên, KHÔNG chỉnh gì
+   (`.app-event-background`) - copy nguyên, KHÔNG chỉnh gì
    để khớp 100% với heatmap. Dùng thay cho `bg-background` phẳng ở khung ngoài App.tsx. */
 .app-event-background {
   background:
@@ -145,4 +145,28 @@
     linear-gradient(90deg, rgba(16, 67, 48, .055) 1px, transparent 1px),
     #eef1e7;
   background-size: auto, 42px 42px, 42px 42px, auto;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #10b981 #f8fafc;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #10b981;
+  border: 2px solid #f8fafc;
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #059669;
 }

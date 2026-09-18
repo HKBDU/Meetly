@@ -1,11 +1,12 @@
 function requireEnv(key: string, value: string | undefined): string {
-  if (!value) {
+  const url = value?.trim().replace(/\/+$/, '')
+  if (!url) {
     throw new Error(
       `Missing environment variable: ${key}\n` +
         `Create frontend/.env (copy from frontend/.env.example) and set ${key}=...`
     )
   }
-  return value
+  return url
 }
 
 /** Điểm đọc duy nhất các biến `VITE_*` */

@@ -42,6 +42,7 @@ export interface ParticipantResponse {
 export interface ParticipantAuthInfo {
   participantId: string;
   username: string;
+  isAdmin: boolean;
   accessToken: string;
 }
 

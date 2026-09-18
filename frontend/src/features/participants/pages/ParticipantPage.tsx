@@ -33,7 +33,7 @@ export function ParticipantPage() {
   return (
     <>
       {currentView === "AUTH" && <ParticipantAuthForm shortCode={shortCode} />}
-      {currentView === "OVERVIEW" && <OverviewView />}
+      {currentView === "OVERVIEW" && <OverviewView shortCode={shortCode} />}
       {currentView === "PERSONAL" && <PersonalScheduleView />}
       <EmailPromptDialog />
     </>

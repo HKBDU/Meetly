@@ -27,6 +27,7 @@ export function useAuthParticipant(shortCode: string) {
         {
           participantId: authResult.participantId,
           username: authResult.username,
+          isAdmin: authResult.isAdmin,
           accessToken: authResult.accessToken,
         },
         freeSlotIds,

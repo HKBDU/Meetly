@@ -1,42 +1,44 @@
-import { CalendarRange, Lock } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
 
+import { HeatmapPage } from "@/features/heatmap"
+import { finalizeEvent, getEvent, getSuggestions, updateEvent } from "@/features/heatmap/services"
 import { useParticipantStore } from "@/features/participants/store"
-import { Badge, Button } from "@/shared/components/ui"
 
-export function OverviewView() {
+interface OverviewViewProps {
+  shortCode: string
+}
+
+export function OverviewView({ shortCode }: OverviewViewProps) {
   const auth = useParticipantStore((s) => s.auth)
-  const config = useParticipantStore((s) => s.scheduleConfig)
-  const isFinalized = useParticipantStore((s) => s.isFinalized)
   const setView = useParticipantStore((s) => s.setView)
+  const accessToken = auth?.accessToken ?? ""
+
+  const { data, isPending, error } = useQuery({
+    queryKey: ["event", shortCode],
+    queryFn: () => getEvent(shortCode),
+    gcTime: 0,
+    refetchOnMount: "always",
+  })
+
+  if (isPending || error || !data) {
+    return (
+      <HeatmapPage
+        initialEvent={null}
+        loading={isPending}
+        loadError={error ? error.message : undefined}
+      />
+    )
+  }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 p-4 sm:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-foreground">
-            {config?.eventName ?? "Meetly Event"}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Welcome, <span className="font-medium text-foreground">{auth?.username}</span>
-          </p>
-        </div>
-        {isFinalized && (
-          <Badge className="gap-1.5 bg-primary text-primary-foreground">
-            <Lock className="size-3" />
-            Finalized
-          </Badge>
-        )}
-      </div>
-
-      <div className="flex flex-col items-center gap-3 py-4 text-center">
-        <Button size="lg" className="gap-2 px-8" onClick={() => setView("PERSONAL")}>
-          <CalendarRange className="size-4" />
-          My Schedule
-        </Button>
-        <p className="max-w-xs text-xs text-muted-foreground">
-          Fill in your availability so it can be combined into the group heatmap
-        </p>
-      </div>
-    </div>
+    <HeatmapPage
+      initialEvent={data}
+      accessToken={accessToken}
+      isAdmin={auth?.isAdmin ?? false}
+      onSuggestions={(params) => getSuggestions(shortCode, params, accessToken)}
+      onFinalize={(slot) => finalizeEvent(shortCode, slot, accessToken)}
+      onUpdateEvent={(payload) => updateEvent(shortCode, payload, accessToken)}
+      onOpenMySchedule={() => setView("PERSONAL")}
+    />
   )
 }

@@ -1,4 +1,4 @@
-import { CalendarClock } from 'lucide-react';
+import { CalendarDays } from 'lucide-react';
 
 import { useParticipantStore } from '@/features/participants/store';
 import { Button } from '@/shared/components/ui';
@@ -9,13 +9,13 @@ export function AppHeader() {
   const resetSession = useParticipantStore((s) => s.resetSession);
 
   return (
-    <header className="flex shrink-0 items-center justify-between border-b border-border bg-card px-4 py-2 sm:px-6">
-      <div className="flex items-center gap-2">
-        <div className="flex size-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <CalendarClock className="size-5" />
-        </div>
-        <span className="text-lg font-bold text-foreground">meetly</span>
-      </div>
+    <header className="flex shrink-0 items-center justify-between px-4 py-4 sm:px-8">
+      <span className="flex items-center gap-2 text-xl font-bold text-slate-900">
+        <span className="rounded-lg bg-emerald-600 p-2 text-white">
+          <CalendarDays size={21} aria-hidden="true" />
+        </span>
+        Meetly
+      </span>
 
       {auth && (
         <Button variant="outline" size="sm" onClick={resetSession}>
