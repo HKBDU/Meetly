@@ -71,12 +71,8 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
@@ -86,5 +82,10 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<EventHub>("/hubs/events");
+
+app.MapGet("/", () => Results.Ok(new
+{
+    message = "Meetly API is running"
+}));
 
 app.Run();
