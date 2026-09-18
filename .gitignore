@@ -4,6 +4,7 @@
 !.env.example
 appsettings.Development.json
 appsettings.Local.json
+appsettings.json
 secrets.json
 # Editors and operating systems
 .idea/
