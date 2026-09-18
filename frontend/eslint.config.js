@@ -19,4 +19,13 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // Các primitive do shadcn/ui CLI sinh ra thường export kèm hàm biến thể
+    // (VD: buttonVariants) cùng file với component - đây là pattern chuẩn
+    // của shadcn, không phải lỗi cần sửa.
+    files: ['src/shared/components/ui/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])
