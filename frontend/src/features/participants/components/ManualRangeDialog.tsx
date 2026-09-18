@@ -35,38 +35,22 @@ import {
 interface ManualRangeDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** "Save" cũng làm thay đổi lịch như kéo chuột - phải tự lưu lên server */
   triggerAutoSave: () => void
 }
 
-/** "2026-09-14" -> "Mon, Sep 14" (SPECIFIC_DATES) hoặc "Monday" (DAYS_OF_WEEK) - nhãn cho dropdown chọn ngày */
+/** "2026-09-14" -> "Mon, Sep 14" hoặc "Monday" (DAYS_OF_WEEK) */
 function formatDateOptionLabel(dateISO: string, isSpecificDates: boolean): string {
   const { weekday, dayMonth } = formatDateLabel(dateISO)
   return isSpecificDates ? `${weekday}, ${dayMonth}` : weekday
 }
 
-/**
- * "Manual Range Entry": chọn 1 ngày + kéo Slider (2 tay cầm) để chọn khoảng
- * giờ bắt đầu-kết thúc, thay vì kéo chuột trên lưới - tiện cho khoảng thời
- * gian dài hoặc khi cần độ chính xác cao. Chỉ có Save/Cancel - không còn nút
- * "Add Range"/"Clear" riêng như bản cũ: Save áp dụng LUÔN khoảng đang chọn
- * trên slider rồi đóng dialog; mở lại ("Select Manual") luôn bắt đầu từ
- * khoảng mặc định mới (xem `useEffect` reset theo `open` bên dưới), không
- * giữ lại lựa chọn của lần mở trước.
- *
- * Tô LUÔN theo `paintMode` hiện tại (nếu đang Record Available thì khoảng
- * này được đánh dấu rảnh, đang Record Busy thì đánh dấu bận) - giữ đúng 1
- * cách diễn giải duy nhất với việc kéo chuột trên lưới (xem useAutoSaveSchedule).
- */
+/** Chọn 1 ngày và khoảng giờ bằng slider để tô hàng loạt, theo `paintMode` hiện tại */
 export function ManualRangeDialog({ open, onOpenChange, triggerAutoSave }: ManualRangeDialogProps) {
   const config = useParticipantStore((s) => s.scheduleConfig)
   const paintMode = useParticipantStore((s) => s.paintMode)
   const addPaintedSlots = useParticipantStore((s) => s.addPaintedSlots)
 
-  // Mảng MỐC GIỜ (không phải slot) - N ô giờ có N+1 mốc biên, VD 09:00..21:00
-  // mỗi 15p ra ["09:00", "09:15", ..., "20:45", "21:00"]. Slider chọn 1 CẶP
-  // CHỈ SỐ vào mảng này (start < end được `minStepsBetweenThumbs` đảm bảo),
-  // rồi map ngược lại thành "HH:mm" để gọi buildSlotIdsInRange.
+  // Mốc giờ biên (N ô có N+1 mốc); slider chọn cặp chỉ số vào mảng này
   const boundaries = useMemo(() => {
     if (!config) return []
     const startTimes = getGridTimes(config)
@@ -79,9 +63,7 @@ export function ManualRangeDialog({ open, onOpenChange, triggerAutoSave }: Manua
     defaultValues: { date: "", range: [0, 0] },
   })
 
-  // Reset về mặc định (ngày đầu tiên, chọn TRỌN cả khung giờ) mỗi lần dialog
-  // được mở - "Select Manual" luôn là 1 lượt chọn MỚI, không kế thừa lần
-  // trước (yêu cầu review: đóng xong là xong, muốn chọn tiếp phải bấm lại).
+  // Mỗi lần mở là một lượt chọn mới: ngày đầu tiên, trọn khung giờ
   useEffect(() => {
     if (open && config && boundaries.length > 0) {
       form.reset({ date: config.dates[0], range: [0, boundaries.length - 1] })

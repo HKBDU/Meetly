@@ -4,6 +4,8 @@ import { Mail } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 
+import { getApiErrorMessage } from "@/lib/axios"
+
 import { mergeFreeSlotIdsIntoRanges, resolveFreeSlotIds } from "@/features/participants/gridUtils"
 import { emailSchema, type EmailFormValues } from "@/features/participants/schema"
 import { saveAvailability } from "@/features/participants/services"
@@ -27,18 +29,8 @@ import {
 } from "@/shared/components/ui"
 
 /**
- * Popup tự hiện 1 lần ngay sau lần auto-save đầu tiên thành công, và có thể
- * mở lại bất cứ lúc nào qua nút "Notify me by email" ở `ScheduleActionsBar`
- * (dành cho trường hợp lúc đó bấm Skip nhưng sau đổi ý). Trạng thái đóng/mở
- * nằm trong store (isEmailDialogOpen) nên không cần điều kiện phức tạp ở
- * component này.
- *
- * BE KHÔNG có endpoint đăng ký email riêng - field `email` nằm CHUNG trong
- * request lưu lịch rảnh (`SetAvailabilityRequest.Email`, xem AvailabilityController
- * bên BE). Vì popup này hiện SAU khi lần lưu đầu tiên đã gửi đi rồi (lúc đó
- * chưa có email), nên lúc đăng ký phải GỬI LẠI request lưu lịch - với đúng
- * lịch hiện tại + email lần này. BE dùng REPLACE (ghi đè toàn bộ theo lần gửi
- * gần nhất) nên gửi lại y hệt lịch cũ + email không có tác dụng phụ.
+ * Hiện sau lần auto-save đầu tiên và mở lại được từ `ScheduleActionsBar`. BE không có
+ * endpoint email riêng nên gửi lại lịch hiện tại kèm email (BE REPLACE nên không có tác dụng phụ).
  */
 export function EmailPromptDialog() {
   const isOpen = useParticipantStore((s) => s.isEmailDialogOpen)
@@ -63,8 +55,8 @@ export function EmailPromptDialog() {
       toast.success("You'll be notified by email")
       markEmailSubscribed()
     },
-    onError: () => {
-      toast.error("Failed to save, please try again")
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Failed to save, please try again"))
     },
   })
 

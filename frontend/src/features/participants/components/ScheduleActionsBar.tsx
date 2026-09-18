@@ -8,26 +8,11 @@ import { Button, ToggleGroup, ToggleGroupItem } from "@/shared/components/ui"
 import { cn } from "@/lib/utils"
 
 interface ScheduleActionsBarProps {
-  /** "Reset dates"/"Select Manual" cũng làm thay đổi lịch như kéo chuột - phải tự lưu lên server */
   triggerAutoSave: () => void
   isSaving: boolean
 }
 
-/**
- * Hàng điều khiển NGANG HÀNG với "Synced" - đặt TRÊN grid lịch (không phải
- * dưới như bản cũ) để dù lưới có dài cỡ nào, người dùng vẫn thấy và bấm được
- * ngay mà không cần cuộn xuống. Gộp "Chọn thủ công" + "Xoá hết" (trái) với
- * chỉ báo Đang lưu/Đã đồng bộ + cặp Record Busy/Record Available (phải).
- * Toggle Busy/Available thu hẹp lại theo đúng nội dung (không còn ép rộng
- * `w-2/5` như bản cũ) theo feedback "width nó đang dài quá".
- *
- * KHÔNG đặt `bg-card` (trắng) như EventInfoBar phía trên - để lộ nền
- * `bg-background` (xám nhạt) của chính khối cha (PersonalScheduleView), tức
- * hàng này giờ nằm CHUNG 1 vùng nền với khung lưới bên dưới nó, tách biệt
- * hẳn với khối "tiêu đề sự kiện" màu trắng ở trên - ranh giới giữa 2 khối là
- * chính sự chuyển màu nền (trắng -> xám), không cần thêm đường kẻ hay border
- * nào (feedback: quá nhiều đường kẻ đen dồn ở khu vực đầu trang, rối mắt).
- */
+/** Hàng điều khiển phía trên lưới: Chọn thủ công, Xoá hết, trạng thái lưu và chế độ Busy/Available */
 export function ScheduleActionsBar({ triggerAutoSave, isSaving }: ScheduleActionsBarProps) {
   const paintMode = useParticipantStore((s) => s.paintMode)
   const setPaintMode = useParticipantStore((s) => s.setPaintMode)

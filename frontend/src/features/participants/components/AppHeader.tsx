@@ -3,14 +3,7 @@ import { CalendarClock } from 'lucide-react';
 import { useParticipantStore } from '@/features/participants/store';
 import { Button } from '@/shared/components/ui';
 
-/**
- * Header cố định đầu trang - hiển thị xuyên suốt cả 3 màn Auth/Overview/Personal.
- * Chiều cao THẤP theo đúng ảnh mẫu (chỉ padding, không set height cố định) -
- * bản trước dùng h-14 (56px) cao hơn hẳn ảnh mẫu (~40px).
- * Nút bên phải CHỈ hiện khi đã định danh (auth != null) - dùng để rời sự
- * kiện hiện tại, tham gia sự kiện khác bằng mã/ID khác (xem `resetSession`
- * trong store, không phải "log out" thật).
- */
+/** Header chung cho cả 3 màn; nút rời event chỉ hiện khi đã định danh */
 export function AppHeader() {
   const auth = useParticipantStore((s) => s.auth);
   const resetSession = useParticipantStore((s) => s.resetSession);

@@ -1,16 +1,14 @@
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+import { getApiErrorMessage } from '@/lib/axios';
+
 import { expandTimeSlotRangesToIds } from '@/features/participants/gridUtils';
 import { accessParticipant, fetchEventScheduleConfig } from '@/features/participants/services';
 import { useParticipantStore } from '@/features/participants/store';
 import type { ParticipantRequest } from '@/features/participants/types';
 
-/**
- * Xử lý đăng nhập định danh (Màn hình 1).
- * Sau khi định danh thành công, tải luôn cấu hình lưới của sự kiện rồi
- * lưu tất cả vào store và điều hướng sang Overview.
- */
+/** Định danh participant, tải cấu hình lưới rồi chuyển sang màn Overview */
 export function useAuthParticipant(shortCode: string) {
   const login = useParticipantStore((s) => s.login);
   const setScheduleConfig = useParticipantStore((s) => s.setScheduleConfig);
@@ -24,9 +22,6 @@ export function useAuthParticipant(shortCode: string) {
       return { authResult, scheduleConfig };
     },
     onSuccess: ({ authResult, scheduleConfig }) => {
-      // `timeSlots` BE trả về là các KHOẢNG start-end đã lưu từ trước - bung
-      // ngược thành tập slotId rời rạc mà lưới hiểu, dựa vào `scheduleConfig`
-      // vừa tải cùng lúc (xem `expandTimeSlotRangesToIds`).
       const freeSlotIds = expandTimeSlotRangesToIds(authResult.timeSlots, scheduleConfig);
       login(
         {
@@ -39,8 +34,8 @@ export function useAuthParticipant(shortCode: string) {
       setScheduleConfig(scheduleConfig);
       toast.success(`Welcome, ${authResult.username}!`);
     },
-    onError: () => {
-      toast.error('Could not join, please try again');
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, 'Could not join, please try again'));
     },
   });
 

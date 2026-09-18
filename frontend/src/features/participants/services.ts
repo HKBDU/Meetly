@@ -8,14 +8,6 @@ import type {
   ScheduleDateMode,
 } from '@/features/participants/types';
 
-/**
- * SERVICE LAYER - gọi API thật qua `@/lib/axios` (đã gắn sẵn Bearer token +
- * bóc `ApiResponse<T>.value`, xem interceptor ở đó). Chỉ chứa các hàm gọi API
- * + map response BE về đúng shape FE cần (`EventScheduleConfig`,
- * `ParticipantResponse`) - hàm xử lý lưới thời gian (không gọi API) nằm ở
- * `./gridUtils.ts`.
- */
-
 function formatDateISO(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -23,27 +15,18 @@ function formatDateISO(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-/**
- * `Events.EventType` bên BE (Dates=1, Weekdays=2) - đọc GHI CHÚ ở
- * `EventScheduleConfig.dateMode` để hiểu vì sao participant không tự chọn được.
- */
+/** `Events.EventType` bên BE: Dates=1, Weekdays=2 */
 const EVENT_TYPE_TO_DATE_MODE: Record<number, ScheduleDateMode> = {
   1: 'SPECIFIC_DATES',
   2: 'DAYS_OF_WEEK',
 };
 
-/** "09:15" hoặc "09:15:30" -> 9 - BE luôn trả `dailyStartTime`/`dailyEndTime` tròn giờ nên chỉ cần lấy phần giờ */
+/** "09:15" hoặc "09:15:30" -> 9; BE luôn trả giờ tròn */
 function parseHour(hhmm: string): number {
   return Number(hhmm.slice(0, 2));
 }
 
-/**
- * Quy các thứ (0 = CN...6 = Th7) admin đã chọn thành ngày thật của TUẦN HIỆN
- * TẠI, theo đúng thứ tự Thứ 2 -> CN - lịch DAYS_OF_WEEK lặp lại hàng tuần nên
- * tuần cụ thể nào không quan trọng; vẫn cần ngày thật (không chỉ số thứ) để
- * tái dùng chung logic sinh slot id với SPECIFIC_DATES (xem comment ở
- * `EventScheduleConfig.dates`).
- */
+/** Quy các thứ (0 = CN...6 = Th7) thành ngày thật của tuần hiện tại, xếp Th2 -> CN */
 function resolveDaysOfWeekDates(weekdays: number[]): string[] {
   const today = new Date();
   const currentWeekday = today.getDay(); // 0 = CN, 1 = Th2, ..., 6 = Th7
@@ -62,7 +45,7 @@ function resolveDaysOfWeekDates(weekdays: number[]): string[] {
     });
 }
 
-/** Response thô của `GET /events/{shortCode}` - CHỈ khai báo field feature này thật sự dùng (heatmap/participants list thuộc scope khác) */
+/** Chỉ các field của `GET /events/{shortCode}` mà feature này dùng */
 interface EventApiResponse {
   title: string;
   shortCode: string;
@@ -74,7 +57,7 @@ interface EventApiResponse {
   status: number;
 }
 
-/** Độ dài mỗi ô lưới hiển thị - lựa chọn UX của FE, BE không ràng buộc granularity của availability */
+/** Độ dài mỗi ô lưới (phút), do FE chọn */
 const SLOT_MINUTES = 15;
 
 function toScheduleConfig(response: EventApiResponse): EventScheduleConfig {
@@ -94,9 +77,6 @@ function toScheduleConfig(response: EventApiResponse): EventScheduleConfig {
   };
 }
 
-/* ------------------------------------------------------------------ */
-/* 1. Access - đăng nhập định danh participant                        */
-/* ------------------------------------------------------------------ */
 export async function accessParticipant(
   shortCode: string,
   payload: ParticipantRequest,
@@ -108,21 +88,11 @@ export async function accessParticipant(
   return data;
 }
 
-/* ------------------------------------------------------------------ */
-/* 2. Lấy cấu hình lưới thời gian của sự kiện                         */
-/* ------------------------------------------------------------------ */
 export async function fetchEventScheduleConfig(shortCode: string): Promise<EventScheduleConfig> {
   const { data } = await api.get<EventApiResponse>(`/events/${shortCode}`);
   return toScheduleConfig(data);
 }
 
-/* ------------------------------------------------------------------ */
-/* 3. Lưu lịch rảnh (auto-save khi nhả chuột)                         */
-/* ------------------------------------------------------------------ */
-/**
- * @param eventShortCode Route param `shortCode` của BE (VD: /events/{shortCode}/...) -
- * KHÔNG phải GUID eventId. participantId không truyền ở đây vì BE lấy từ JWT.
- */
 export async function saveAvailability(
   eventShortCode: string,
   payload: SaveAvailabilityRequest,
@@ -134,8 +104,3 @@ export async function saveAvailability(
   return data;
 }
 
-/*
- * Heatmap tổng của cả nhóm (nằm sẵn trong `GET /events/{shortCode}`) KHÔNG thuộc scope
- * của feature này - do phần khác trong team đảm nhận (xem OverviewMockup),
- * nên không gọi ở đây nữa.
- */

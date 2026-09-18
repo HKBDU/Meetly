@@ -21,17 +21,10 @@ import {
 } from "@/shared/components/ui"
 
 interface ParticipantAuthFormProps {
-  /** Route param `shortCode` (`/e/:shortCode`) - sự kiện đang tham gia */
   shortCode: string
 }
 
-/**
- * Màn hình 1 - Định danh: Form nhập Username (bắt buộc) và Password (không bắt buộc).
- * Đăng nhập thành công -> lưu vào store -> ParticipantPage tự chuyển sang Overview.
- *
- * Kiểu lịch (SPECIFIC_DATES / DAYS_OF_WEEK) do BE trả về theo đúng cấu hình
- * event - participant không tự chọn được, nên form này không có input nào cho nó.
- */
+/** Form định danh: username bắt buộc, password tuỳ chọn */
 export function ParticipantAuthForm({ shortCode }: ParticipantAuthFormProps) {
   const { access, isPending } = useAuthParticipant(shortCode)
 

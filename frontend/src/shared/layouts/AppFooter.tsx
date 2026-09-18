@@ -8,8 +8,7 @@ import {
   XIcon,
 } from "@/shared/layouts/SocialIcons"
 
-// TODO: điền đúng link mạng xã hội thật của dự án - "#" chỉ là placeholder
-// hiển thị đúng icon theo ảnh mẫu, KHÔNG trỏ tới trang thật nào.
+// TODO: thay các href "#" bằng link mạng xã hội thật
 const SOCIAL_LINKS = [
   { label: "X", href: "#", Icon: XIcon },
   { label: "GitHub", href: "https://github.com/HKBDU/Meetly", Icon: GithubIcon },
@@ -18,7 +17,6 @@ const SOCIAL_LINKS = [
   { label: "Discord", href: "#", Icon: DiscordIcon },
 ] as const
 
-/** Footer cố định cuối trang - hiển thị xuyên suốt cả 3 màn Auth/Overview/Personal */
 export function AppFooter() {
   return (
     <footer className="flex flex-col gap-3 bg-primary px-4 py-5 text-primary-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">

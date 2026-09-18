@@ -1,9 +1,4 @@
-/**
- * Icon mạng xã hội dùng cho footer. lucide-react bản đang dùng (v1.x) đã bỏ
- * hẳn các icon thương hiệu (Github/Twitter/Linkedin...) nên phải tự vẽ SVG
- * đơn giản (path chính thức, tối giản, đơn sắc) - không có thư viện icon nào
- * trong dự án cung cấp sẵn các icon này.
- */
+/** lucide-react v1.x đã bỏ icon thương hiệu nên các icon này được vẽ tay */
 type IconProps = { className?: string }
 
 export function XIcon({ className }: IconProps) {

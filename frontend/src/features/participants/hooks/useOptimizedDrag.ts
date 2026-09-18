@@ -4,7 +4,7 @@ import { usePaintSlots } from "@/features/participants/hooks/usePaintSlots"
 import { useParticipantStore } from "@/features/participants/store"
 
 interface UseOptimizedDragOptions {
-  /** Gọi khi 1 lượt kéo thả kết thúc (nhả chuột) - dùng để trigger auto-save */
+  /** Gọi khi nhả chuột để trigger auto-save */
   onDragEnd: () => void
 }
 
@@ -15,46 +15,19 @@ interface LastCell {
 }
 
 /**
- * Hook xử lý kéo thả tô lịch, tối ưu để KHÔNG re-render toàn bộ lưới.
- * ---------------------------------------------------------------------
- * Nguyên lý:
- * 1. Trạng thái "đang kéo" (dragging) nằm trong useRef, không phải
- *    useState -> di chuyển chuột qua từng ô không kích hoạt render.
- * 2. Mỗi ô tự subscribe vào đúng 1 giá trị boolean của riêng nó trong
- *    Zustand store (freeSlotIds.has(slotId)) -> khi tô 1 ô, chỉ ô đó
- *    (và ô trước đó nếu có) re-render, các ô còn lại đứng yên.
- * 3. Các handler trả về ở đây có tham chiếu (reference) không đổi giữa
- *    các lần render (useCallback, deps rỗng) nên có thể gắn thẳng cho
- *    hàng trăm ô mà không phá vỡ React.memo của ScheduleCell.
- * 4. Việc ĐỌC/GHI store khi tô ô (`paintSlot`/`paintRowRange`, gồm cả đọc
- *    isFinalized bằng store.getState() ngay tại thời điểm sự kiện xảy ra)
- *    nằm ở `usePaintSlots` riêng - hook này chỉ lo theo dõi CỬ CHỈ kéo thả
- *    (mousedown/mouseenter/mouseup), không cần biết gì về store.
- * 5. TÔ hay XOÁ trong 1 lượt kéo được quyết định NGAY LÚC MOUSEDOWN, dựa
- *    vào trạng thái của ô đầu tiên được nhấn: nếu ô đó đang RỖNG -> cả
- *    lượt kéo này sẽ TÔ; nếu ô đó đang ĐƯỢC TÔ SẴN -> cả lượt kéo này sẽ
- *    XOÁ. Giá trị này được chốt lại (dragPaintValueRef) và áp dụng thống
- *    nhất cho mọi ô chạm phải trong suốt lượt kéo đó - giống When2Meet
- *    (kéo qua vùng đã tô để xoá, kéo qua vùng trống để tô), tránh việc
- *    tô/xoá lẫn lộn từng ô một cách khó đoán khi kéo qua vùng hỗn hợp.
- * 6. Khi con trỏ di chuyển nhanh hơn tần suất sự kiện pointerenter (trình
- *    duyệt "nhảy cóc" qua vài ô), hook tự lấp đầy các ô bị bỏ sót trong
- *    cùng 1 cột ngày dựa vào data-row, để không bao giờ bị sót ô dù kéo
- *    rất nhanh.
- * 7. Dùng Pointer Events (không phải mouse events) - tham khảo đúng kỹ
- *    thuật của `HeatmapCell` bên feature heatmap (feat/22-build-event-heatmap):
- *    mouseenter KHÔNG bắn liên tục khi kéo bằng cảm ứng (touch) trên mobile,
- *    nên bản mouse-only cũ không kéo-tô được trên điện thoại. Pointer Events
- *    gộp chung mouse/touch/pen nên cùng 1 code chạy đúng trên cả 2. Phải tự
- *    `releasePointerCapture` ngay lúc pointerdown - nếu không, trình duyệt
- *    tự khoá (capture) mọi sự kiện pointer tiếp theo vào đúng ô bấm đầu tiên,
- *    khiến pointerenter không bao giờ bắn sang các ô khác khi rê qua.
+ * Xử lý kéo thả tô lịch mà không re-render cả lưới: trạng thái kéo nằm trong
+ * ref, handler có tham chiếu ổn định, mỗi ô tự subscribe boolean của mình.
+ *
+ * - Tô hay xoá cả lượt kéo được chốt lúc pointerdown theo trạng thái ô đầu tiên.
+ * - Khi con trỏ nhảy cóc, tự lấp đầy các ô bị bỏ sót cùng cột ngày.
+ * - Dùng Pointer Events để chạy được cả cảm ứng; phải `releasePointerCapture`
+ *   ngay pointerdown, nếu không `pointerenter` không bắn sang ô khác.
  */
 export function useOptimizedDrag({ onDragEnd }: UseOptimizedDragOptions) {
   const [isDragging, setIsDragging] = useState(false)
   const isDraggingRef = useRef(false)
   const lastCellRef = useRef<LastCell | null>(null)
-  // true = lượt kéo hiện tại đang TÔ, false = đang XOÁ - chốt lúc pointerdown, xem điểm 5 ở trên.
+  /** true = lượt kéo đang tô, false = đang xoá */
   const dragPaintValueRef = useRef(true)
 
   const { paintSlot, paintRowRange } = usePaintSlots()
@@ -79,7 +52,6 @@ export function useOptimizedDrag({ onDragEnd }: UseOptimizedDragOptions) {
         event.currentTarget.releasePointerCapture(event.pointerId)
       }
 
-      // Ô đang trống -> lượt này TÔ; ô đã tô sẵn -> lượt này XOÁ.
       const paintValue = !selectedSlotIds.has(slotId)
       dragPaintValueRef.current = paintValue
 
@@ -95,9 +67,7 @@ export function useOptimizedDrag({ onDragEnd }: UseOptimizedDragOptions) {
     (event: React.PointerEvent<HTMLElement>) => {
       if (!isDraggingRef.current) return
 
-      // Phòng trường hợp người dùng nhả chuột/nhấc tay ngoài cửa sổ trình
-      // duyệt: nút chuột trái/lực chạm (buttons bit 1) không còn được giữ ->
-      // tự kết thúc kéo.
+      // Nhả chuột/nhấc tay ngoài cửa sổ thì kết thúc kéo
       if (event.buttons !== 1) {
         endDrag()
         return
@@ -112,8 +82,6 @@ export function useOptimizedDrag({ onDragEnd }: UseOptimizedDragOptions) {
       const last = lastCellRef.current
       const paintValue = dragPaintValueRef.current
       if (last && last.date === date) {
-        // Cùng cột ngày: lấp đầy mọi ô giữa vị trí cũ và vị trí mới (nếu có
-        // ô bị nhảy cóc do con trỏ di chuyển nhanh).
         paintRowRange(date, last.row, rowIndex, paintValue)
       } else {
         paintSlot(slotId, paintValue)
@@ -124,9 +92,7 @@ export function useOptimizedDrag({ onDragEnd }: UseOptimizedDragOptions) {
     [paintSlot, paintRowRange, endDrag]
   )
 
-  // Lưới an toàn: bắt sự kiện pointerup/pointercancel trên toàn window để
-  // không bị "kẹt" trạng thái đang kéo khi người dùng nhả chuột/nhấc tay
-  // ngoài phạm vi lưới.
+  // Bắt trên window để không kẹt trạng thái kéo khi nhả ngoài lưới
   useEffect(() => {
     window.addEventListener("pointerup", endDrag)
     window.addEventListener("pointercancel", endDrag)

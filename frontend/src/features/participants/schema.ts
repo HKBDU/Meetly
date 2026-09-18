@@ -21,8 +21,7 @@ export const emailSchema = z.object({
 
 export type EmailFormValues = z.infer<typeof emailSchema>;
 
-// Manual Range Entry - Slider tự đảm bảo startIndex < endIndex bằng
-// `minStepsBetweenThumbs`, nên không cần refine thêm ở đây.
+// Slider đã đảm bảo start < end nhờ `minStepsBetweenThumbs`
 export const manualRangeSchema = z.object({
   date: z.string().min(1, 'Please select a date'),
   range: z.tuple([z.number(), z.number()]),

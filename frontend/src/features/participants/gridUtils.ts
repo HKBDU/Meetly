@@ -8,12 +8,7 @@ import type {
   TimeSlotRangeResponse,
 } from '@/features/participants/types';
 
-/**
- * Hàm thuần (pure function) thao tác trên lưới thời gian - KHÔNG gọi API.
- * Tách riêng khỏi services.ts để file đó chỉ còn các hàm gọi API.
- */
-
-/** Danh sách nhãn giờ trong 1 ngày, VD: ["09:00", "09:30", ..., "20:30"] */
+/** Nhãn giờ bắt đầu của các ô trong 1 ngày, VD: ["09:00", "09:15", ...] */
 export function getGridTimes(config: EventScheduleConfig): string[] {
   const times: string[] = [];
   const totalMinutes = (config.endHour - config.startHour) * 60;
@@ -29,7 +24,7 @@ export function getSlotId(date: string, time: string): string {
   return `${date}T${time}`;
 }
 
-/** "2026-09-14" -> { weekday: "Monday", weekdayShort: "Mon", dayMonth: "Sep 14" } - dùng cho header cột lưới */
+/** "2026-09-14" -> { weekday: "Monday", weekdayShort: "MON", dayMonth: "Sep 14" } */
 export function formatDateLabel(
   dateISO: string,
 ): { weekday: string; weekdayShort: string; dayMonth: string } {
@@ -41,7 +36,6 @@ export function formatDateLabel(
   };
 }
 
-/** Bung cấu hình lưới thành danh sách phẳng tất cả các slot (ngày x giờ) */
 export function buildTimeSlots(config: EventScheduleConfig): TimeSlot[] {
   const times = getGridTimes(config);
   const slots: TimeSlot[] = [];
@@ -53,12 +47,7 @@ export function buildTimeSlots(config: EventScheduleConfig): TimeSlot[] {
   return slots;
 }
 
-/**
- * Diễn giải `selectedSlotIds` (tập ô đang TÔ, chưa chắc là "rảnh") thành
- * danh sách slotId RẢNH thật theo `paintMode` - dùng chung cho cả auto-save
- * (useAutoSaveSchedule) và lúc đăng ký email (EmailPromptDialog, xem comment
- * ở đó vì sao phải tính lại danh sách này khi gửi email).
- */
+/** Đổi tập ô đang tô thành danh sách slotId RẢNH: FREE lấy thẳng, BUSY lấy phần bù */
 export function resolveFreeSlotIds(
   selectedSlotIds: Set<string>,
   paintMode: PaintMode,
@@ -71,29 +60,14 @@ export function resolveFreeSlotIds(
         .filter((slotId) => !selectedSlotIds.has(slotId));
 }
 
-// luôn được gọi trước khi lưu, bất kể paintMode nào — mode FREE lấy thẳng
-// tập đã tô, mode BUSY lấy phần bù (toàn bộ slot trừ đi tập đã tô). Cả useAutoSaveSchedule
-// lẫn EmailPromptDialog đều đi qua đúng 1 hàm này trước khi gọi mergeFreeSlotIdsIntoRanges
-// → BE luôn chỉ nhận đúng danh sách RẢNH, dù đang tô ở mode nào.
-
-/**
- * Danh sách mốc giờ KẾT THÚC hợp lệ cho "Chọn thủ công" - lệch với danh sách
- * giờ BẮT ĐẦU (`getGridTimes`) đúng 1 slot: VD slotMinutes=15, bắt đầu có thể
- * là 09:00..20:45, thì kết thúc phải là 09:15..21:00 (mốc cuối cùng luôn là
- * endHour:00, không nằm trong getGridTimes vì đó là điểm ĐÓNG của lưới).
- */
+/** Mốc giờ kết thúc hợp lệ, lệch 1 slot so với `getGridTimes` và kết thúc ở `endHour:00` */
 export function getManualRangeEndTimeOptions(config: EventScheduleConfig): string[] {
   const startTimes = getGridTimes(config)
   const closingTime = `${String(config.endHour).padStart(2, "0")}:00`
   return [...startTimes.slice(1), closingTime]
 }
 
-/**
- * Sinh danh sách slotId cho 1 ngày, từ `startTime` (bao gồm) tới `endTime`
- * (không bao gồm) - dùng cho "Chọn thủ công": người dùng nhập 1 ngày + giờ
- * bắt đầu/kết thúc, hàm này trả về đúng các slotId 15 phút tương ứng để tô
- * lên lưới (xem `addPaintedSlots` trong store).
- */
+/** Các slotId của 1 ngày từ `startTime` (gồm) tới `endTime` (không gồm) */
 export function buildSlotIdsInRange(
   date: string,
   startTime: string,
@@ -118,7 +92,7 @@ function timeToMinutes(time: string): number {
   return hour * 60 + minute;
 }
 
-/** VD: 570 phút -> "09:30" - đúng định dạng `TimeOnly` mà BE ghi ra (`TimeOnlyJsonConverter` luôn viết "HH:mm", dù đọc vào chấp nhận cả "HH:mm:ss") */
+/** 570 -> "09:30" */
 function minutesToTimeString(totalMinutes: number): string {
   const hour = Math.floor(totalMinutes / 60);
   const minute = totalMinutes % 60;
@@ -135,8 +109,6 @@ function buildTimeSlotRange(
   const endTime = minutesToTimeString(endMinutes);
 
   if (dateMode === 'DAYS_OF_WEEK') {
-    // 0 = CN...6 = Th7, khớp enum DayOfWeek bên BE - `date` chỉ là ngày thật
-    // "mượn tạm" để tính lưới (xem comment ở EventScheduleConfig.dates).
     const dayOfWeek = new Date(`${date}T00:00:00`).getDay();
     return { dayOfWeek, startTime, endTime };
   }
@@ -144,25 +116,13 @@ function buildTimeSlotRange(
   return { specificDate: date, startTime, endTime };
 }
 
-/**
- * Gộp các slotId RỜI RẠC (dạng "date+T+time", từ `getSlotId`) thành các
- * `TimeSlotRangeRequest` đúng hình dạng BE cần: mỗi KHOẢNG LIÊN TỤC (cùng
- * ngày/thứ, các ô nối tiếp nhau không hở) gộp thành 1 object start-end DUY
- * NHẤT; hễ đổi ngày HOẶC bị đứt quãng (có khoảng trống ở giữa) thì tách
- * thành object MỚI.
- *
- * VD: tô liền "09:00 -> 10:30" ngày A ra 1 object {startTime: "09:00",
- * endTime: "10:30"}; tô thêm rời "14:00 -> 15:00" cùng ngày A -> có thêm
- * 1 object nữa (KHÔNG gộp chung vì có khoảng trống giữa 10:30 và 14:00).
- */
+/** Gộp các ô liền kề cùng ngày thành 1 khoảng start-end; đổi ngày hoặc hở thì tách khoảng mới */
 export function mergeFreeSlotIdsIntoRanges(
   freeSlotIds: string[],
   config: EventScheduleConfig,
 ): TimeSlotRangeRequest[] {
   if (freeSlotIds.length === 0) return [];
 
-  // Sort tăng dần theo ngày rồi theo giờ, để bước gộp bên dưới chỉ cần so
-  // sánh với phần tử ngay trước đó (không cần tìm kiếm/group riêng).
   const sortedSlots = freeSlotIds
     .map((slotId) => {
       const [date, time] = slotId.split('T');
@@ -205,16 +165,7 @@ export function mergeFreeSlotIdsIntoRanges(
   return ranges;
 }
 
-/**
- * Chiều NGƯỢC LẠI của `mergeFreeSlotIdsIntoRanges`: bung các khoảng
- * start-end (`TimeSlotRangeResponse`, đúng shape `ParticipantAccessResponse.TimeSlots`
- * bên BE) thành tập slotId rời rạc mà lưới hiểu (`selectedSlotIds`) - dùng khi
- * participant đăng nhập lại và BE trả về lịch rảnh đã lưu từ trước.
- *
- * `config.dates` (đã quy ra ngày thật, kể cả với DAYS_OF_WEEK - xem
- * `resolveDaysOfWeekDates` trong services.ts) là nguồn DUY NHẤT để map
- * `dayOfWeek`/`specificDate` của mỗi range về đúng (các) cột ngày đang hiển thị.
- */
+/** Chiều ngược của `mergeFreeSlotIdsIntoRanges`: bung khoảng BE trả về thành slotId trên lưới */
 export function expandTimeSlotRangesToIds(
   ranges: TimeSlotRangeResponse[],
   config: EventScheduleConfig,

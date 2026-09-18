@@ -2,14 +2,7 @@ import { createBrowserRouter } from "react-router-dom"
 
 import { ParticipantPage } from "@/features/participants"
 
-/**
- * Router thật DUY NHẤT của app. Hiện chỉ có luồng participant
- * (`/e/:shortCode`, khớp `shareLink` hiển thị ở EventInfoBar và endpoint
- * `GET/POST /events/{shortCode}/...` bên BE) - các luồng khác (tạo event,
- * heatmap tổng) sẽ có route riêng khi merge vào. Header/footer chung cho mọi
- * route nằm ở `App.tsx` (bọc quanh `RouterProvider`), không phải layout route
- * ở đây - vì hiện chỉ có 1 kiểu layout duy nhất cho toàn app.
- */
+/** Router của app; header/footer chung nằm ở `App.tsx` */
 export const router = createBrowserRouter([
   { path: "/e/:shortCode", element: <ParticipantPage /> },
   {

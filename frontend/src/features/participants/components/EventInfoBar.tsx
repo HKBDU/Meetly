@@ -30,22 +30,7 @@ function formatDateRangeLabel(config: EventScheduleConfig): string {
   return `${weekdayShortFormatter.format(firstDate)}, ${monthDayFormatter.format(firstDate)} - ${weekdayShortFormatter.format(lastDate)}, ${monthDayYearFormatter.format(lastDate)}`
 }
 
-/**
- * Tên sự kiện (dòng lớn, cùng hàng với "Back to Overview") + khoảng ngày và
- * link chia sẻ (dòng nhỏ, meta - KHÔNG còn là 1 nút bo viền/nền riêng như bản
- * cũ, chỉ là text link cùng cỡ/màu với khoảng ngày để đỡ tranh chỗ với tiêu
- * đề). Không có border-bottom riêng (ranh giới với lưới bên dưới là viền của
- * chính khung lưới, không phải thêm 1 đường kẻ ngang nữa).
- *
- * KHÔNG đặt `bg-card` (trắng) - để lộ nền `bg-background` từ khối cha
- * (PersonalScheduleView), GIỐNG HỆT với ScheduleActionsBar/grid bên dưới -
- * feedback: tách 2 màu trắng/xám giữa tiêu đề và lưới nhìn còn xấu hơn, thôi
- * gộp lại 1 màu nền DUY NHẤT cho toàn bộ phần nội dung dưới header.
- *
- * Link chia sẻ dựng từ chính domain đang chạy (`window.location.origin`) +
- * `shortCode` thật của event, khớp route `/e/:shortCode` (xem app/router.tsx) -
- * ai mở link này cũng vào thẳng đúng màn Join của event đó.
- */
+/** Tên event, khoảng ngày và link chia sẻ dạng `/e/:shortCode` */
 export function EventInfoBar({ config }: EventInfoBarProps) {
   const setView = useParticipantStore((s) => s.setView)
   const [copied, setCopied] = useState(false)
