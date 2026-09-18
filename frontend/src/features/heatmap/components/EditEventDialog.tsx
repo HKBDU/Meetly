@@ -73,13 +73,14 @@ export function EditEventDialog({ event, disabled = false, onSave }: EditEventDi
             Edit Event
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[760px] gap-0 overflow-y-auto rounded-2xl bg-white p-0 sm:max-w-[760px]">
-          <DialogHeader className="px-6 pt-6 pr-12">
+        <DialogContent className="flex max-h-[calc(100dvh-5rem)] w-[calc(100vw-2rem)] max-w-[760px] flex-col gap-0 overflow-hidden rounded-2xl bg-white p-0 sm:max-w-[760px]">
+          <DialogHeader className="shrink-0 px-6 pt-6 pr-12">
             <DialogTitle className={eventUi.pageTitle}>Edit Event</DialogTitle>
             <DialogDescription className="sr-only">
               Update the event name, dates and daily time range.
             </DialogDescription>
           </DialogHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <EventForm
             adminUsername=""
             adminPassword=""
@@ -90,6 +91,7 @@ export function EditEventDialog({ event, disabled = false, onSave }: EditEventDi
             submitLabel="Save Changes"
             submitting={saving}
           />
+          </div>
         </DialogContent>
       </Dialog>
       <UpdateWarning
