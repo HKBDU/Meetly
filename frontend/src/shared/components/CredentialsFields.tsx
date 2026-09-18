@@ -1,4 +1,4 @@
-import { useFormContext } from 'react-hook-form'
+import { useFormContext, type FieldValues } from 'react-hook-form'
 import { eventUi } from '@/shared/components/ui/styles'
 
 export type CredentialsFieldsProps = {
@@ -23,7 +23,7 @@ export function CredentialsFields({
   const {
     register,
     formState: { errors },
-  } = useFormContext<Record<string, any>>()
+  } = useFormContext<FieldValues>()
 
   const usernameError = errors[usernameName]?.message as string | undefined
   const passwordError = errors[passwordName]?.message as string | undefined

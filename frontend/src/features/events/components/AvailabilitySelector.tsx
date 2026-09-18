@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo, useState } from 'react'
+import { useCallback, useEffect, useRef, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
 import { DayButton, type DayButtonProps } from 'react-day-picker'
 import { eventUi } from '../../../shared/components/ui/styles'
@@ -8,6 +8,8 @@ import { Calendar } from '@/shared/components/ui/calendar'
 import { WEEKDAY_OPTIONS } from '../types'
 import type { AvailabilitySelectorProps } from '../types'
 import { getDateKey } from '../utils/date.utils'
+
+const getCurrentTime = () => Date.now()
 
 export function AvailabilitySelector({
   eventType,
@@ -47,7 +49,7 @@ export function AvailabilitySelector({
     valueRef.current = value
   }, [value])
 
-  function applyDay(dateKey: string, mode: 'add' | 'remove') {
+  const applyDay = useCallback((dateKey: string, mode: 'add' | 'remove') => {
     const current = valueRef.current
     const has = current.includes(dateKey)
     if (mode === 'add' && !has) {
@@ -59,7 +61,7 @@ export function AvailabilitySelector({
       valueRef.current = next
       onChange(next)
     }
-  }
+  }, [onChange])
 
   function extendDragByKey(key: string) {
     const mode = dragModeRef.current
@@ -96,10 +98,10 @@ export function AvailabilitySelector({
       window.removeEventListener('mouseup', finishMouseDrag)
       window.removeEventListener('touchend', handleWindowTouchEnd)
     }
-  }, [])
+  }, [applyDay])
 
   function handleMouseDown(key: string, dateObj: Date | null) {
-    if (Date.now() - lastTouchTimeRef.current < 500) return
+    if (getCurrentTime() - lastTouchTimeRef.current < 500) return
     if (dateObj && dateObj < firstSelectableDate) return
     const mode = valueRef.current.includes(key) ? 'remove' : 'add'
     dragModeRef.current = mode
@@ -109,7 +111,7 @@ export function AvailabilitySelector({
   }
 
   function handleMouseEnter(key: string, dateObj: Date | null) {
-    if (Date.now() - lastTouchTimeRef.current < 500) return
+    if (getCurrentTime() - lastTouchTimeRef.current < 500) return
     if (!dragModeRef.current) return
     if (dateObj && dateObj < firstSelectableDate) return
     extendDragByKey(key)
@@ -120,7 +122,7 @@ export function AvailabilitySelector({
     const touch = e.touches[0]
     if (!touch) return
 
-    lastTouchTimeRef.current = Date.now()
+    lastTouchTimeRef.current = getCurrentTime()
     touchStartPosRef.current = {
       x: touch.clientX,
       y: touch.clientY,
@@ -322,4 +324,3 @@ export function AvailabilitySelector({
     </div>
   )
 }
-
