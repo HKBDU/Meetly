@@ -34,4 +34,3 @@ public sealed class EventRepository(AppDbContext db) : IEventRepository
 
     public Task SaveChangesAsync(CancellationToken cancellationToken) => db.SaveChangesAsync(cancellationToken);
 }
-//
