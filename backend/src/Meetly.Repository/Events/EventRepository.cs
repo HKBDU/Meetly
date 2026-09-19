@@ -29,6 +29,7 @@ public sealed class EventRepository(AppDbContext db) : IEventRepository
     {
         db.EventAvailableDates.RemoveRange(eventEntity.AvailableDates);
         eventEntity.AvailableDates = dates;
+        db.EventAvailableDates.AddRange(dates);
     }
 
     public Task SaveChangesAsync(CancellationToken cancellationToken) => db.SaveChangesAsync(cancellationToken);
