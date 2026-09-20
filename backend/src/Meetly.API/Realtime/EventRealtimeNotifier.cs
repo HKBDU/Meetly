@@ -59,9 +59,9 @@ public sealed class EventRealtimeNotifier(
         var cells = new List<object>();
         foreach (var available in entity.AvailableDates)
         {
-            for (var start = entity.DailyStartTime; start < entity.DailyEndTime; start = start.AddMinutes(30))
+            for (var start = entity.DailyStartTime; start < entity.DailyEndTime; start = start.AddMinutes(15))
             {
-                var end = start.AddMinutes(30) > entity.DailyEndTime ? entity.DailyEndTime : start.AddMinutes(30);
+                var end = start.AddMinutes(15) > entity.DailyEndTime ? entity.DailyEndTime : start.AddMinutes(15);
                 var participants = entity.Participants
                     .Where(p => p.TimeSlots.Any(slot =>
                         slot.SpecificDate == available.SpecificDate &&
