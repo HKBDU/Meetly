@@ -10,10 +10,15 @@ import { cn } from "@/lib/utils"
 interface ScheduleActionsBarProps {
   triggerAutoSave: () => void
   isSaving: boolean
+  onManualRangeApplied: (date: string) => void
 }
 
 /** Hàng điều khiển phía trên lưới: Chọn thủ công, Xoá hết, trạng thái lưu và chế độ Busy/Available */
-export function ScheduleActionsBar({ triggerAutoSave, isSaving }: ScheduleActionsBarProps) {
+export function ScheduleActionsBar({
+  triggerAutoSave,
+  isSaving,
+  onManualRangeApplied,
+}: ScheduleActionsBarProps) {
   const paintMode = useParticipantStore((s) => s.paintMode)
   const setPaintMode = useParticipantStore((s) => s.setPaintMode)
   const clearAllPainted = useParticipantStore((s) => s.clearAllPainted)
@@ -125,6 +130,7 @@ export function ScheduleActionsBar({ triggerAutoSave, isSaving }: ScheduleAction
         open={isManualDialogOpen}
         onOpenChange={setIsManualDialogOpen}
         triggerAutoSave={triggerAutoSave}
+        onRangeApplied={onManualRangeApplied}
       />
     </>
   )

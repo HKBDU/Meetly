@@ -45,14 +45,17 @@ export function ParticipantAuthForm({ shortCode }: ParticipantAuthFormProps) {
 
   return (
     <div className="flex min-h-dvh items-center justify-center p-4">
-      <Card className="w-full max-w-sm border-border/80 shadow-lg shadow-green-900/5">
-        <CardHeader className="items-center text-center">
-          <img
-            src={meetlyLogo}
-            alt=""
-            aria-hidden="true"
-            className="mb-2 h-12 w-16 object-contain"
-          />
+        <Card className="w-full max-w-sm border-border/80 shadow-lg shadow-green-900/5">
+          <CardHeader className="items-center text-center">
+          <div className="mb-2 flex items-center gap-2">
+            <img
+              src={meetlyLogo}
+              alt=""
+              aria-hidden="true"
+              className="h-8 w-10 object-contain"
+            />
+            <span className="text-xl font-bold tracking-tight text-foreground">meetly</span>
+          </div>
           <CardTitle className="text-xl">Join the Event</CardTitle>
           <CardDescription>Enter your name to start filling in your availability</CardDescription>
         </CardHeader>

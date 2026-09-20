@@ -36,6 +36,7 @@ interface ManualRangeDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   triggerAutoSave: () => void
+  onRangeApplied: (date: string) => void
 }
 
 /** "2026-09-14" -> "Mon, Sep 14" hoặc "Monday" (DAYS_OF_WEEK) */
@@ -45,7 +46,12 @@ function formatDateOptionLabel(dateISO: string, isSpecificDates: boolean): strin
 }
 
 /** Chọn 1 ngày và khoảng giờ bằng slider để tô hàng loạt, theo `paintMode` hiện tại */
-export function ManualRangeDialog({ open, onOpenChange, triggerAutoSave }: ManualRangeDialogProps) {
+export function ManualRangeDialog({
+  open,
+  onOpenChange,
+  triggerAutoSave,
+  onRangeApplied,
+}: ManualRangeDialogProps) {
   const config = useParticipantStore((s) => s.scheduleConfig)
   const paintMode = useParticipantStore((s) => s.paintMode)
   const addPaintedSlots = useParticipantStore((s) => s.addPaintedSlots)
@@ -78,6 +84,7 @@ export function ManualRangeDialog({ open, onOpenChange, triggerAutoSave }: Manua
     addPaintedSlots(
       buildSlotIdsInRange(values.date, boundaries[startIndex], boundaries[endIndex], config!)
     )
+    onRangeApplied(values.date)
     triggerAutoSave()
     onOpenChange(false)
   }

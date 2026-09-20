@@ -1,3 +1,5 @@
+import { useState } from "react"
+
 import { EventInfoBar } from "@/features/participants/components/EventInfoBar"
 import { PersonalScheduleGrid } from "@/features/participants/components/PersonalScheduleGrid"
 import { ScheduleActionsBar } from "@/features/participants/components/ScheduleActionsBar"
@@ -8,12 +10,26 @@ import { useParticipantStore } from "@/features/participants/store"
 export function PersonalScheduleView() {
   const config = useParticipantStore((s) => s.scheduleConfig)
   const { triggerAutoSave, isSaving } = useAutoSaveSchedule()
+  const [manualSelection, setManualSelection] = useState<{ date: string; requestId: number } | null>(
+    null
+  )
+
+  function revealManualSelection(date: string) {
+    setManualSelection((current) => ({ date, requestId: (current?.requestId ?? 0) + 1 }))
+  }
 
   return (
     <div className="flex flex-col">
       {config && <EventInfoBar config={config} />}
-      <ScheduleActionsBar triggerAutoSave={triggerAutoSave} isSaving={isSaving} />
-      <PersonalScheduleGrid triggerAutoSave={triggerAutoSave} />
+      <ScheduleActionsBar
+        triggerAutoSave={triggerAutoSave}
+        isSaving={isSaving}
+        onManualRangeApplied={revealManualSelection}
+      />
+      <PersonalScheduleGrid
+        triggerAutoSave={triggerAutoSave}
+        manualSelection={manualSelection}
+      />
     </div>
   )
 }

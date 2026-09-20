@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Lock } from "lucide-react"
 
 import { monthDayFormatter, monthDayYearFormatter, weekdayShortFormatter } from "@/lib/date-format"
 import { formatDateLabel } from "@/features/participants/gridUtils"
@@ -31,13 +31,27 @@ function formatDateRangeLabel(config: EventScheduleConfig): string {
 /** Tên event, khoảng ngày và nút quay lại Overview */
 export function EventInfoBar({ config }: EventInfoBarProps) {
   const setView = useParticipantStore((s) => s.setView)
+  const isFinalized = useParticipantStore((s) => s.isFinalized)
+  const finalizedMessage = useParticipantStore((s) => s.finalizedMessage)
 
   return (
     <div className="flex flex-col gap-1 px-4 pt-4 pb-2 sm:px-6">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="truncate text-lg font-bold text-foreground sm:text-xl">
-          {config.eventName}
-        </h1>
+        <div className="flex min-w-0 items-center gap-2">
+          <h1 className="truncate text-lg font-bold text-foreground sm:text-xl">
+            {config.eventName}
+          </h1>
+          {isFinalized && (
+            <span
+              title={finalizedMessage ?? "This event has been finalized. The schedule can no longer be edited."}
+              className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-muted-foreground"
+            >
+              <Lock className="size-3" aria-hidden="true" />
+              <span className="sm:hidden">Finalized</span>
+              <span className="hidden sm:inline">Finalized - schedule is read-only</span>
+            </span>
+          )}
+        </div>
 
         <Button
           type="button"

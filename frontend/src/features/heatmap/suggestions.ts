@@ -17,16 +17,10 @@ interface CandidateWindow {
   start: number;
   end: number;
   count: number;
+  score: number;
 }
 
 const columnKey = (cell: HeatmapCellData) => `${cell.specificDate ?? ''}|${cell.dayOfWeek ?? ''}`;
-
-/** Người có mặt suốt cả `cells` liên tiếp (giao của các tập người theo từng ô) */
-function attendeesAcross(cells: HeatmapCellData[]): Set<string> {
-  return cells
-    .map((cell) => new Set(cell.participants))
-    .reduce((common, next) => new Set([...common].filter((name) => next.has(name))));
-}
 
 function isContiguous(cells: HeatmapCellData[]): boolean {
   return cells.every(
@@ -36,19 +30,20 @@ function isContiguous(cells: HeatmapCellData[]): boolean {
   );
 }
 
-function mergeOverlapping(windows: CandidateWindow[]): CandidateWindow[] {
-  return windows.reduce<CandidateWindow[]>((merged, window) => {
-    const last = merged[merged.length - 1];
-    if (last && window.start <= last.end) last.end = Math.max(last.end, window.end);
-    else merged.push({ ...window });
-    return merged;
+/** Giữ cửa sổ đầu tiên trong một cụm đồng hạng bị chồng lấn để mỗi viền luôn đúng duration. */
+function removeOverlapping(windows: CandidateWindow[]): CandidateWindow[] {
+  return windows.reduce<CandidateWindow[]>((kept, window) => {
+    const last = kept[kept.length - 1];
+    if (!last || window.start >= last.end) kept.push(window);
+    return kept;
   }, []);
 }
 
 /**
- * Khung giờ nhiều người rảnh nhất: với mỗi khoảng liên tục dài `minDuration`, đếm số người
- * rảnh trong suốt khoảng đó, chỉ giữ các khoảng có số người cao nhất (rồi gộp khoảng chồng
- * nhau). Tính từ `heatmapGrid` nên luôn khớp với heatmap và tự cập nhật theo realtime.
+ * Khung giờ có mật độ tham gia cao nhất: cộng lượng người rảnh ở từng ô trong toàn bộ
+ * `minDuration`. Không dùng giao của các tập người để xếp hạng, vì cách đó ưu tiên một nhóm
+ * nhỏ cố định và bỏ qua một khoảng có nhiều người rảnh hơn ở phần lớn thời gian. Mỗi kết quả
+ * luôn dài đúng duration; các cửa sổ đồng hạng chồng nhau không bị gộp thành một khoảng dài hơn.
  */
 export function findBestSlots(event: HeatmapEvent, params: SuggestionParams): SuggestedSlot[] {
   const duration = params.minDuration ?? DEFAULT_MEETING_DURATION;
@@ -66,26 +61,35 @@ export function findBestSlots(event: HeatmapEvent, params: SuggestionParams): Su
     for (let index = 0; index + cellsNeeded <= cells.length; index++) {
       const span = cells.slice(index, index + cellsNeeded);
       if (!isContiguous(span)) continue;
-      const attendees = attendeesAcross(span);
-      if (attendees.size === 0) continue;
-      if (keyParticipant && ![...attendees].some((name) => name.toLowerCase() === keyParticipant))
+      if (
+        keyParticipant &&
+        !span.every((cell) =>
+          cell.participants.some((name) => name.toLowerCase() === keyParticipant),
+        )
+      )
         continue;
       const start = timeToMinutes(span[0].startTime);
-      windows.push({ start, end: start + cellsNeeded * SLOT_MINUTES, count: attendees.size });
+      const score = span.reduce((total, cell) => total + cell.count, 0);
+      windows.push({
+        start,
+        end: start + cellsNeeded * SLOT_MINUTES,
+        count: Math.min(...span.map((cell) => cell.count)),
+        score,
+      });
     }
     return { cell: cells[0], windows };
   });
 
-  const best = Math.max(0, ...perColumn.flatMap(({ windows }) => windows.map((w) => w.count)));
-  if (best === 0) return [];
+  const bestScore = Math.max(0, ...perColumn.flatMap(({ windows }) => windows.map((w) => w.score)));
+  if (bestScore === 0) return [];
 
   return perColumn.flatMap(({ cell, windows }) =>
-    mergeOverlapping(windows.filter((window) => window.count === best)).map((window) => ({
+    removeOverlapping(windows.filter((window) => window.score === bestScore)).map((window) => ({
       specificDate: cell.specificDate,
       dayOfWeek: cell.dayOfWeek,
       startTime: minutesToTime(window.start),
       endTime: minutesToTime(window.end),
-      participantCount: best,
+      participantCount: window.count,
       totalParticipants: event.participants.length,
     })),
   );

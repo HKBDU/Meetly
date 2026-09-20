@@ -38,7 +38,7 @@ test('Admin suggestions have no manual trigger button', async () => {
     );
 
     assert.doesNotMatch(html, /Find Suggested Times/);
-    assert.equal(DEFAULT_MEETING_DURATION, 60);
+    assert.equal(DEFAULT_MEETING_DURATION, 15);
     assert.match(html, /Suggestions update automatically/);
 
     assert.equal(getSuggestionParams(undefined, null), null);

@@ -1,5 +1,4 @@
 import { memo, useLayoutEffect, useMemo, useRef, useState } from "react"
-import { Lock } from "lucide-react"
 
 import { MOBILE_COLUMNS_PER_PAGE } from "@/features/heatmap/constants"
 import { getColumnPage, getPageCount } from "@/features/heatmap/time"
@@ -7,7 +6,6 @@ import { formatDateLabel, getGridTimes, getSlotId } from "@/features/participant
 import { useOptimizedDrag } from "@/features/participants/hooks/useOptimizedDrag"
 import { useParticipantStore } from "@/features/participants/store"
 import { ColumnPager } from "@/shared/components/ColumnPager"
-import { Alert, AlertDescription, AlertTitle } from "@/shared/components/ui"
 import { cn } from "@/lib/utils"
 import { formatDate, formatHourLabel } from "@/lib/date-time"
 
@@ -78,12 +76,14 @@ const ScheduleCell = memo(function ScheduleCell({
 interface PersonalScheduleGridProps {
   /** Nhận từ cha để kéo chuột, "Chọn thủ công" và "Xoá hết" dùng chung 1 debounce lưu */
   triggerAutoSave: () => void
+  manualSelection: { date: string; requestId: number } | null
 }
 
-export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridProps) {
+export function PersonalScheduleGrid({
+  triggerAutoSave,
+  manualSelection,
+}: PersonalScheduleGridProps) {
   const config = useParticipantStore((s) => s.scheduleConfig)
-  const isFinalized = useParticipantStore((s) => s.isFinalized)
-  const finalizedMessage = useParticipantStore((s) => s.finalizedMessage)
 
   const { handleCellPointerDown, handleCellPointerEnter } = useOptimizedDrag({
     onDragEnd: triggerAutoSave,
@@ -97,7 +97,8 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
   )
   const [containerWidth, setContainerWidth] = useState(0)
   const [page, setPage] = useState(0)
-  const dates = config?.dates ?? []
+  const [appliedManualSelectionKey, setAppliedManualSelectionKey] = useState<string | null>(null)
+  const dates = useMemo(() => config?.dates ?? [], [config])
   const usesCompactLayout = !isMobile && dates.length <= COMPACT_LAYOUT_MAX_COLUMNS
   const columnsThatFit =
     containerWidth > TIME_COLUMN_WIDTH
@@ -111,6 +112,19 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
   const pageCount = getPageCount(dates.length, pageSize)
   const currentPage = Math.min(page, pageCount - 1)
   const visibleDates = getColumnPage(dates, currentPage, pageSize)
+  const manualSelectionKey = manualSelection
+    ? `${manualSelection.requestId}:${manualSelection.date}:${pageSize}`
+    : null
+
+  // Điều chỉnh state ngay trong render có điều kiện để lần paint kế tiếp đã ở đúng page,
+  // tránh một frame hiển thị trang cũ sau khi dialog đóng.
+  if (manualSelection && manualSelectionKey !== appliedManualSelectionKey) {
+    const selectedDateIndex = dates.indexOf(manualSelection.date)
+    setAppliedManualSelectionKey(manualSelectionKey)
+    if (selectedDateIndex >= 0) {
+      setPage(Math.floor(selectedDateIndex / pageSize))
+    }
+  }
 
   useLayoutEffect(() => {
     const mediaQuery = window.matchMedia(MOBILE_BREAKPOINT_QUERY)
@@ -144,16 +158,6 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
 
   return (
     <section className="p-3 sm:p-4" aria-label="My schedule">
-      {isFinalized && (
-        <Alert className="mb-3 w-fit max-w-full border-primary/30 bg-primary/5">
-          <Lock className="size-4 text-primary" />
-          <AlertTitle>This event has been finalized</AlertTitle>
-          <AlertDescription>
-            {finalizedMessage ?? "The schedule can no longer be edited."}
-          </AlertDescription>
-        </Alert>
-      )}
-
       <ColumnPager
         page={currentPage}
         pageCount={pageCount}
