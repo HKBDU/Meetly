@@ -238,7 +238,7 @@ API này **không trả lịch chi tiết của từng Participant**.
       {
         "specificDate": "2026-09-10",
         "dayOfWeek": null,
-        "startTime": "08:30",
+        "startTime": "08:15",
         "participants": ["Uyên", "Bảo"],
         "count": 2
       }

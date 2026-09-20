@@ -19,8 +19,6 @@ public sealed record AdminRequest
 
 public sealed record UpdateEventRequest
 {
-    public string AdminUsername { get; init; } = string.Empty;
-    public string? AdminPassword { get; init; }
     public string Title { get; init; } = string.Empty;
     public int EventType { get; init; }
     public List<DateOnly> AvailableDates { get; init; } = [];
