@@ -1,10 +1,7 @@
 import type { DayOfWeek } from './types';
 
-// Frontend scheduling uses 15-minute cells. Missing Backend cells remain unavailable.
+/** BE tổng hợp heatmapGrid theo ô 15 phút (EventService.Heatmap -> AddMinutes(15)) */
 export const SLOT_MINUTES = 15;
-/** BE tổng hợp heatmapGrid theo ô 30 phút — dùng riêng cho tính toán suggestions (findBestSlots),
- * tách khỏi SLOT_MINUTES (granularity hiển thị của grid) để không lệch với dữ liệu BE trả về. */
-export const BACKEND_CELL_MINUTES = 30;
 export const DEFAULT_MEETING_DURATION = 60;
 export const MOBILE_COLUMNS_PER_PAGE = 3;
 export const DESKTOP_COLUMNS_PER_PAGE = 7;

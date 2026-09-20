@@ -1,5 +1,5 @@
 import { minutesToTime, timeToMinutes } from '@/lib/date-time';
-import { BACKEND_CELL_MINUTES, DEFAULT_MEETING_DURATION } from './constants';
+import { DEFAULT_MEETING_DURATION, SLOT_MINUTES } from './constants';
 import type { HeatmapCellData, HeatmapEvent, SuggestedSlot, SuggestionParams } from './types';
 
 export function getSuggestionParams(
@@ -32,7 +32,7 @@ function isContiguous(cells: HeatmapCellData[]): boolean {
   return cells.every(
     (cell, index) =>
       index === 0 ||
-      timeToMinutes(cell.startTime) - timeToMinutes(cells[index - 1].startTime) === BACKEND_CELL_MINUTES,
+      timeToMinutes(cell.startTime) - timeToMinutes(cells[index - 1].startTime) === SLOT_MINUTES,
   );
 }
 
@@ -52,7 +52,7 @@ function mergeOverlapping(windows: CandidateWindow[]): CandidateWindow[] {
  */
 export function findBestSlots(event: HeatmapEvent, params: SuggestionParams): SuggestedSlot[] {
   const duration = params.minDuration ?? DEFAULT_MEETING_DURATION;
-  const cellsNeeded = Math.max(1, Math.ceil(duration / BACKEND_CELL_MINUTES));
+  const cellsNeeded = Math.max(1, Math.ceil(duration / SLOT_MINUTES));
   const keyParticipant = params.keyParticipant?.trim().toLowerCase();
 
   const columns = new Map<string, HeatmapCellData[]>();
@@ -71,7 +71,7 @@ export function findBestSlots(event: HeatmapEvent, params: SuggestionParams): Su
       if (keyParticipant && ![...attendees].some((name) => name.toLowerCase() === keyParticipant))
         continue;
       const start = timeToMinutes(span[0].startTime);
-      windows.push({ start, end: start + cellsNeeded * BACKEND_CELL_MINUTES, count: attendees.size });
+      windows.push({ start, end: start + cellsNeeded * SLOT_MINUTES, count: attendees.size });
     }
     return { cell: cells[0], windows };
   });

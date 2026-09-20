@@ -40,13 +40,21 @@ test('best slots keep only the time with the most people, even when the set of p
     const day2 = '2026-09-26';
     const event = buildEvent([
       cell(day1, '09:00', ['An', 'Binh']),
+      cell(day1, '09:15', ['An', 'Binh']),
       cell(day1, '09:30', ['An', 'Binh', 'Chi', 'Dung']),
+      cell(day1, '09:45', ['An', 'Binh', 'Chi', 'Dung']),
       cell(day1, '10:00', ['An', 'Binh', 'Chi']),
+      cell(day1, '10:15', ['An', 'Binh', 'Chi']),
       cell(day1, '10:30', ['Em']),
+      cell(day1, '10:45', ['Em']),
       cell(day2, '09:00', ['An', 'Chi']),
+      cell(day2, '09:15', ['An', 'Chi']),
       cell(day2, '09:30', ['An', 'Chi']),
+      cell(day2, '09:45', ['An', 'Chi']),
       cell(day2, '10:00', ['Em']),
+      cell(day2, '10:15', ['Em']),
       cell(day2, '10:30', []),
+      cell(day2, '10:45', []),
     ]);
 
     assert.deepEqual(findBestSlots(event, { minDuration: 60 }), [
@@ -70,11 +78,17 @@ test('best slots merge overlapping windows and return every day that ties', asyn
     const all = ['An', 'Binh'];
     const event = buildEvent([
       cell('2026-09-25', '09:00', all),
+      cell('2026-09-25', '09:15', all),
       cell('2026-09-25', '09:30', all),
+      cell('2026-09-25', '09:45', all),
       cell('2026-09-25', '10:00', all),
+      cell('2026-09-25', '10:15', all),
       cell('2026-09-26', '09:00', all),
+      cell('2026-09-26', '09:15', all),
       cell('2026-09-26', '09:30', all),
+      cell('2026-09-26', '09:45', all),
       cell('2026-09-26', '10:00', ['An']),
+      cell('2026-09-26', '10:15', ['An']),
     ]);
 
     const slots = findBestSlots(event, { minDuration: 60 });
@@ -95,9 +109,13 @@ test('best slots respect the key participant and return nothing when nobody fits
   try {
     const event = buildEvent([
       cell('2026-09-25', '09:00', ['An', 'Binh', 'Chi']),
+      cell('2026-09-25', '09:15', ['An', 'Binh', 'Chi']),
       cell('2026-09-25', '09:30', ['An', 'Binh', 'Chi']),
+      cell('2026-09-25', '09:45', ['An', 'Binh', 'Chi']),
       cell('2026-09-25', '10:00', ['Em']),
+      cell('2026-09-25', '10:15', ['Em']),
       cell('2026-09-25', '10:30', ['Em']),
+      cell('2026-09-25', '10:45', ['Em']),
     ]);
 
     assert.deepEqual(
