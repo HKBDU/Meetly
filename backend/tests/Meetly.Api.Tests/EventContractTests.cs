@@ -22,4 +22,13 @@ public class EventContractTests
         Assert.Contains("\"admin\":{\"username\":\"Huy\"", request);
         Assert.Contains("\"timezone\":\"Asia/Ho_Chi_Minh\"", response);
     }
+
+    [Fact]
+    public void UpdateEventRequest_DoesNotContainAdminCredentials()
+    {
+        var request = JsonSerializer.Serialize(new UpdateEventRequest { Title = "Daily sync" }, Json);
+
+        Assert.DoesNotContain("username", request, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("password", request, StringComparison.OrdinalIgnoreCase);
+    }
 }
