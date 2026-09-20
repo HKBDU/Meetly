@@ -163,13 +163,10 @@ public sealed class EventService(
         return response;
     }
 
-    public async Task UpdateAsync(string shortCode, UpdateEventRequest request, CancellationToken cancellationToken)
+    public async Task UpdateAsync(string shortCode, ClaimsPrincipal user, UpdateEventRequest request, CancellationToken cancellationToken)
     {
         var entity = await GetEventAsync(shortCode, cancellationToken);
-        var admin = entity.Participants
-                        .SingleOrDefault(x => x.IsAdmin && string.Equals(x.Username, Required(request.AdminUsername, "adminUsername"), StringComparison.OrdinalIgnoreCase))
-            ?? throw new EventException(403, "Admin credentials are invalid.");
-        Verify(admin, request.AdminPassword);
+        RequireAdmin(entity, user);
         if (entity.Status != EventStatus.Open) throw new EventException(409, "Event is finalized.");
 
         entity.Title = Required(request.Title, "title");
@@ -265,9 +262,9 @@ public sealed class EventService(
     {
         var result = new List<HeatmapCellResponse>();
         foreach (var available in entity.AvailableDates)
-            for (var start = entity.DailyStartTime; start < entity.DailyEndTime; start = start.AddMinutes(30))
+            for (var start = entity.DailyStartTime; start < entity.DailyEndTime; start = start.AddMinutes(15))
             {
-                var end = start.AddMinutes(30) > entity.DailyEndTime ? entity.DailyEndTime : start.AddMinutes(30);
+                var end = start.AddMinutes(15) > entity.DailyEndTime ? entity.DailyEndTime : start.AddMinutes(15);
                 var participants = entity.Participants.Where(p => p.TimeSlots.Any(s => s.SpecificDate == available.SpecificDate && s.DayOfWeek == available.DayOfWeek && s.StartTime <= start && s.EndTime >= end)).Select(p => p.Username).Order().ToList();
                 result.Add(new HeatmapCellResponse(available.SpecificDate, available.DayOfWeek is null ? null : (System.DayOfWeek)(int)available.DayOfWeek.Value, Format(start), participants, participants.Count));
             }
