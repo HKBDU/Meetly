@@ -46,6 +46,15 @@ export {
 } from './form';
 export { Input } from './input';
 export { Label } from './label';
+export {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from './popover';
 export { ScrollArea, ScrollBar } from './scroll-area';
 export {
   Select,

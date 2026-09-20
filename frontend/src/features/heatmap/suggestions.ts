@@ -4,9 +4,9 @@ export function getSuggestionParams(
   duration: number | undefined,
   keyParticipant: string | null,
 ): SuggestionParams | null {
-  if (duration === undefined && keyParticipant === null) return null;
+  if (duration === undefined) return null;
   return {
-    ...(duration === undefined ? {} : { minDuration: duration }),
+    minDuration: duration,
     ...(keyParticipant === null ? {} : { keyParticipant }),
   };
 }

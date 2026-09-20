@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { HubConnectionState } from '@microsoft/signalr';
-import { createSignalRConnection } from '@/lib/signalr';
+import { useEventHubConnection } from '@/shared/hooks';
 import type {
   EventFinalizedPayload,
   EventUpdatedPayload,
@@ -30,11 +29,9 @@ export function shouldApplyRealtimePayload(
   shortCode: string,
   payload: { shortCode: string; revision: number },
 ): boolean {
-  return (
-    payload.shortCode.toUpperCase() === shortCode.toUpperCase() &&
-    Number.isFinite(payload.revision) &&
-    payload.revision > currentRevision
-  );
+  return payload.shortCode.toUpperCase() === shortCode.toUpperCase()
+    && Number.isFinite(payload.revision)
+    && payload.revision > currentRevision;
 }
 
 export function useEventRealtime({
@@ -45,6 +42,7 @@ export function useEventRealtime({
   onEventUpdated,
   onEventFinalized,
 }: UseEventRealtimeOptions) {
+  const connection = useEventHubConnection(shortCode, accessToken);
   const revisionRef = useRef(revision);
   const handlersRef = useRef<EventRealtimeHandlers>({
     onHeatmapUpdated,
@@ -58,17 +56,13 @@ export function useEventRealtime({
   }, [revision, onHeatmapUpdated, onEventUpdated, onEventFinalized]);
 
   useEffect(() => {
-    if (!accessToken) return;
-
-    const connection = createSignalRConnection(accessToken);
-    let disposed = false;
+    if (!connection) return;
 
     function accept(payload: { shortCode: string; revision: number }): boolean {
       if (!shouldApplyRealtimePayload(revisionRef.current, shortCode, payload)) return false;
       revisionRef.current = payload.revision;
       return true;
     }
-
     const handleHeatmapUpdated = (payload: HeatmapUpdatedPayload) => {
       if (accept(payload)) handlersRef.current.onHeatmapUpdated(payload);
     };
@@ -82,35 +76,10 @@ export function useEventRealtime({
     connection.on(REALTIME_EVENTS.HeatmapUpdated, handleHeatmapUpdated);
     connection.on(REALTIME_EVENTS.EventUpdated, handleEventUpdated);
     connection.on(REALTIME_EVENTS.EventFinalized, handleEventFinalized);
-    connection.onreconnected(() => {
-      if (!disposed) void connection.invoke('JoinEvent', shortCode).catch(() => undefined);
-    });
-
-    void connection
-      .start()
-      .then(async () => {
-        if (disposed) {
-          await connection.stop();
-          return;
-        }
-        await connection.invoke('JoinEvent', shortCode);
-      })
-      .catch(() => undefined);
-
     return () => {
-      disposed = true;
       connection.off(REALTIME_EVENTS.HeatmapUpdated, handleHeatmapUpdated);
       connection.off(REALTIME_EVENTS.EventUpdated, handleEventUpdated);
       connection.off(REALTIME_EVENTS.EventFinalized, handleEventFinalized);
-
-      if (connection.state === HubConnectionState.Connected) {
-        void connection
-          .invoke('LeaveEvent', shortCode)
-          .catch(() => undefined)
-          .finally(() => connection.stop());
-      } else {
-        void connection.stop();
-      }
     };
-  }, [accessToken, shortCode]);
+  }, [connection, shortCode]);
 }

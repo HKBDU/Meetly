@@ -55,7 +55,7 @@ export function EventHeader({
                 <SelectTrigger aria-label="Meeting duration" className="h-8 w-40 text-sm">
                   <SelectValue placeholder="Select duration" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" side="bottom" align="start" sideOffset={6}>
                   {DURATION_OPTIONS.map((minutes) => (
                     <SelectItem key={minutes} value={String(minutes)}>
                       {minutes} min
@@ -70,10 +70,10 @@ export function EventHeader({
               {event.status === 1 ? 'Overview · Read-only' : 'Event locked · Read-only'}
             </span>
           )}
-          {canEdit && (
+          {canEdit && canUpdate && (
             <EditEventDialog
               event={event}
-              disabled={disabled || !canUpdate}
+              disabled={disabled}
               onSave={onUpdateEvent}
             />
           )}

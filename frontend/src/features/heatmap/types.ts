@@ -69,10 +69,6 @@ export type EditableEvent = Pick<
 
 export type UpdateEventPayload = EditableEvent;
 
-export interface UpdateEventResult {
-  revision: number;
-}
-
 export interface SuggestionParams {
   keyParticipant?: string;
   minDuration?: number;
@@ -121,7 +117,7 @@ export interface HeatmapPageProps {
   onUpdateEvent?: (
     payload: UpdateEventPayload,
     currentEvent: HeatmapEvent,
-  ) => Promise<UpdateEventResult>;
+  ) => Promise<HeatmapEvent>;
   myScheduleHref?: string;
 }
 
@@ -162,6 +158,7 @@ export interface HeatmapProps {
 }
 
 export interface HeatmapCellProps extends Omit<HeatmapProps, 'event'> {
+  event: HeatmapEvent;
   point: SelectedCell;
   cell: HeatmapCellData | undefined;
   total: number;
@@ -204,6 +201,15 @@ export interface EditEventDialogProps {
   event: EditableEvent;
   disabled?: boolean;
   onSave: (payload: UpdateEventPayload) => Promise<void>;
+}
+
+export interface CurrentParticipant {
+  participantId: string;
+  username: string;
+  isAdmin: boolean;
+  timeSlots: FinalSchedule[];
+  eventStatus: EventStatus;
+  revision: number;
 }
 
 export interface EventHeaderProps {

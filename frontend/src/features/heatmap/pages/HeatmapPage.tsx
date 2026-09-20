@@ -4,9 +4,7 @@ import { AdminSuggestionControls } from '../components/AdminSuggestionControls';
 import { EventHeader } from '../components/EventHeader';
 import { HeatmapWorkspace } from '../components/HeatmapWorkspace';
 import { useEventRealtime } from '../hooks/useEventRealtime';
-import { DEFAULT_MEETING_DURATION } from '../constants';
 import { getSuggestionParams } from '../suggestions';
-import { formatDay } from '../time';
 import {
   HeatmapPendingAction,
   type EventFinalizedPayload,
@@ -29,7 +27,7 @@ function EventOverview({
   myScheduleHref,
 }: HeatmapPageProps) {
   const [event, setEvent] = useState(initialEvent);
-  const [duration, setDuration] = useState<number | undefined>(DEFAULT_MEETING_DURATION);
+  const [duration, setDuration] = useState<number>();
   const [keyParticipant, setKeyParticipant] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<SuggestedSlot[]>([]);
   const [suggestionsLoaded, setSuggestionsLoaded] = useState(false);
@@ -135,7 +133,7 @@ function EventOverview({
       if (!active.current) return;
       setEvent((current) =>
         current && result.revision >= current.revision
-          ? { ...current, ...payload, revision: result.revision }
+          ? result
           : current,
       );
       toast.success('Event updated successfully.');
@@ -143,6 +141,15 @@ function EventOverview({
       busy.current = false;
       if (active.current) setPending(null);
     }
+  }
+
+  function changeDuration(nextDuration: number | undefined) {
+    setDuration(nextDuration);
+    if (nextDuration !== undefined) return;
+    suggestionRequest.current += 1;
+    setSuggestions([]);
+    setSuggestionsLoaded(false);
+    setSuggestionsUpdating(false);
   }
 
   if (loading) return <p role="status" className="p-8 text-center text-slate-500">Loading event…</p>;
@@ -168,20 +175,9 @@ function EventOverview({
         disabled={pending !== null}
         canUpdate={Boolean(onUpdateEvent)}
         myScheduleHref={myScheduleHref}
-        onDurationChange={setDuration}
+        onDurationChange={changeDuration}
         onUpdateEvent={updateEventDetails}
       />
-
-      {event.status === 2 && (
-        <section className="mb-6 rounded-xl border border-emerald-300 bg-emerald-50 p-5">
-          <h2 className="font-semibold text-emerald-800">Final Meeting Time</h2>
-          {event.finalSchedule ? (
-            <p className="mt-2 text-lg font-semibold">{formatDay(event.finalSchedule)} · {event.finalSchedule.startTime} – {event.finalSchedule.endTime}</p>
-          ) : (
-            <p className="mt-2 text-sm">Final meeting details are not available.</p>
-          )}
-        </section>
-      )}
 
       {canEdit && (
         <AdminSuggestionControls

@@ -6,7 +6,6 @@ import type {
   SuggestedSlot,
   SuggestionParams,
   UpdateEventPayload,
-  UpdateEventResult,
 } from './types.ts'
 import { buildRows, getColumns, isValidSchedule } from './time.ts'
 
@@ -47,10 +46,10 @@ export function getMockScenario(params: URLSearchParams) {
 }
 
 export async function getMockSuggestions(event: HeatmapEvent, params: SuggestionParams): Promise<SuggestedSlot[]> {
-  const duration = params.minDuration ?? 60
+  const duration = params.minDuration
   const firstDay = getColumns(event)[0]
   const knownParticipant = !params.keyParticipant || event.participants.some(person => person.username === params.keyParticipant)
-  if (!firstDay || !knownParticipant || !event.participants.length || !event.heatmapGrid.length || duration <= 0 || duration > 120) return []
+  if (duration === undefined || !firstDay || !knownParticipant || !event.participants.length || !event.heatmapGrid.length || duration <= 0 || duration > 120) return []
   // A fixed sample, not the production suggestion algorithm.
   return [{
     specificDate: firstDay.specificDate, dayOfWeek: firstDay.dayOfWeek,
@@ -72,7 +71,7 @@ export async function finalizeMockEvent(event: HeatmapEvent, slot: FinalSchedule
 export async function updateMockEvent(
   payload: UpdateEventPayload,
   event: HeatmapEvent,
-): Promise<UpdateEventResult> {
+): Promise<HeatmapEvent> {
   if (event.status !== 1) throw new Error('This event is locked and cannot be edited.');
   if (!payload.title.trim()) throw new Error('Event name is required.');
   if (timeToMinutes(payload.dailyStartTime) >= timeToMinutes(payload.dailyEndTime))
@@ -81,5 +80,14 @@ export async function updateMockEvent(
     throw new Error('Select at least one date.');
   if (payload.eventType === 2 && payload.availableWeekdays.length === 0)
     throw new Error('Select at least one weekday.');
-  return { revision: event.revision + 1 };
+  return {
+    ...event,
+    title: payload.title,
+    eventType: payload.eventType,
+    availableDates: payload.availableDates,
+    availableWeekdays: payload.availableWeekdays,
+    dailyStartTime: payload.dailyStartTime,
+    dailyEndTime: payload.dailyEndTime,
+    revision: event.revision + 1,
+  };
 }

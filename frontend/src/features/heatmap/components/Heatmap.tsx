@@ -71,6 +71,7 @@ function HeatmapTable({ columns, rows, event, compactHeaders = false, ...interac
                   return (
                     <HeatmapCell
                       key={column.key}
+                      event={event}
                       point={{ column, row }}
                       cell={cell}
                       total={event.participants.length}
