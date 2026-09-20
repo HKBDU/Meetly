@@ -28,9 +28,7 @@ public sealed class EventRepository(AppDbContext db) : IEventRepository
     public void ReplaceAvailableDates(Events eventEntity, ICollection<EventAvailableDates> dates)
     {
         db.EventAvailableDates.RemoveRange(eventEntity.AvailableDates);
-        // Add explicitly: rows with a preset Id attached through the navigation are tracked as
-        // Modified, so SaveChanges would UPDATE rows that do not exist and fail with a 500.
-        foreach (var date in dates) date.EventId = eventEntity.Id;
+        eventEntity.AvailableDates = dates;
         db.EventAvailableDates.AddRange(dates);
     }
 
