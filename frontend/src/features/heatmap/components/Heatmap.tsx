@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatHourLabel } from '@/lib/date-time';
-import { ColumnPager } from '@/shared/components/ColumnPager';
+import { Button } from '@/shared/components/ui';
 import {
   AVAILABILITY_LEVELS,
   DESKTOP_COLUMNS_PER_PAGE,
@@ -23,7 +24,7 @@ function HeatmapTable({ columns, rows, event, compactHeaders = false, ...interac
     <div className="w-full overflow-hidden border border-slate-300 bg-white">
       <table className="w-full table-fixed border-collapse">
         <caption className="sr-only">
-          Availability grid with 30-minute slots. Hover, tap, or use Tab to view details.
+          Availability grid with 15-minute slots. Hover, tap, or use Tab to view details.
         </caption>
         <thead className="bg-white">
           <tr>
@@ -70,6 +71,7 @@ function HeatmapTable({ columns, rows, event, compactHeaders = false, ...interac
                   return (
                     <HeatmapCell
                       key={column.key}
+                      event={event}
                       point={{ column, row }}
                       cell={cell}
                       total={event.participants.length}
@@ -98,12 +100,33 @@ function PaginatedHeatmap({ columns, pageSize, ...tableProps }: PaginatedHeatmap
 
   return (
     <>
-      <ColumnPager
-        page={currentPage}
-        pageCount={pageCount}
-        onPageChange={setPageIndex}
-        label="Heatmap date pages"
-      />
+      {pageCount > 1 && (
+        <div className="mb-3 flex items-center justify-between gap-3" aria-label="Heatmap date pages">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={currentPage === 0}
+            onClick={() => setPageIndex(Math.max(0, currentPage - 1))}
+          >
+            <ChevronLeft aria-hidden="true" />
+            Previous
+          </Button>
+          <span className="text-xs font-medium text-muted-foreground">
+            {currentPage + 1} / {pageCount}
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={currentPage === pageCount - 1}
+            onClick={() => setPageIndex(Math.min(pageCount - 1, currentPage + 1))}
+          >
+            Next
+            <ChevronRight aria-hidden="true" />
+          </Button>
+        </div>
+      )}
       <HeatmapTable columns={visibleColumns} {...tableProps} />
     </>
   );

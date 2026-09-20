@@ -162,7 +162,7 @@ export interface HeatmapProps {
   onKeyboardSelect: (point: SelectedCell, extendRange?: boolean) => void;
 }
 
-export interface HeatmapCellProps extends Omit<HeatmapProps, 'event'> {
+export interface HeatmapCellProps extends HeatmapProps {
   point: SelectedCell;
   cell: HeatmapCellData | undefined;
   total: number;

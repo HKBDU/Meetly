@@ -143,7 +143,7 @@
     linear-gradient(rgba(16, 67, 48, .055) 1px, transparent 1px),
     linear-gradient(90deg, rgba(16, 67, 48, .055) 1px, transparent 1px),
     #eef1e7;
-  background-size: auto, 42px 42px, 42px 42px, auto;
+  background-size: auto, 100px 100px, 100px 100px, auto;
 }
 
 * {

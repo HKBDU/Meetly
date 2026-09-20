@@ -6,7 +6,6 @@ import { HeatmapWorkspace } from '../components/HeatmapWorkspace';
 import { useEventRealtime } from '../hooks/useEventRealtime';
 import { DEFAULT_MEETING_DURATION } from '../constants';
 import { getSuggestionParams } from '../suggestions';
-import { formatDay } from '../time';
 import {
   HeatmapPendingAction,
   type EventFinalizedPayload,
@@ -171,17 +170,6 @@ function EventOverview({
         onDurationChange={setDuration}
         onUpdateEvent={updateEventDetails}
       />
-
-      {event.status === 2 && (
-        <section className="mb-6 rounded-xl border border-emerald-300 bg-emerald-50 p-5">
-          <h2 className="font-semibold text-emerald-800">Final Meeting Time</h2>
-          {event.finalSchedule ? (
-            <p className="mt-2 text-lg font-semibold">{formatDay(event.finalSchedule)} · {event.finalSchedule.startTime} – {event.finalSchedule.endTime}</p>
-          ) : (
-            <p className="mt-2 text-sm">Final meeting details are not available.</p>
-          )}
-        </section>
-      )}
 
       {canEdit && (
         <AdminSuggestionControls

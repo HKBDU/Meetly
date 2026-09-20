@@ -55,7 +55,7 @@ export function EventHeader({
                 <SelectTrigger aria-label="Meeting duration" className="h-8 w-40 text-sm">
                   <SelectValue placeholder="Select duration" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" side="bottom" align="start" sideOffset={6}>
                   {DURATION_OPTIONS.map((minutes) => (
                     <SelectItem key={minutes} value={String(minutes)}>
                       {minutes} min

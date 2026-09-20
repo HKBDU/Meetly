@@ -23,8 +23,10 @@ test('time rows stop before the configured end time', async () => {
   try {
     const { buildRows } = await server.ssrLoadModule('/src/features/heatmap/time.ts');
     assert.deepEqual(buildRows('08:00', '09:00'), [
-      { startTime: '08:00', endTime: '08:30' },
-      { startTime: '08:30', endTime: '09:00' },
+      { startTime: '08:00', endTime: '08:15' },
+      { startTime: '08:15', endTime: '08:30' },
+      { startTime: '08:30', endTime: '08:45' },
+      { startTime: '08:45', endTime: '09:00' },
     ]);
   } finally {
     await server.close();
@@ -40,22 +42,21 @@ test('column pages use stable desktop and mobile page sizes', async () => {
     );
     const columns = Array.from({ length: 12 }, (_, index) => ({ key: String(index + 1) }));
 
-    assert.equal(DESKTOP_COLUMNS_PER_PAGE, 5);
+    assert.equal(DESKTOP_COLUMNS_PER_PAGE, 7);
     assert.equal(MOBILE_COLUMNS_PER_PAGE, 3);
-    assert.deepEqual(getColumnPage(columns, 0, 5).map((column) => column.key), ['1', '2', '3', '4', '5']);
-    assert.deepEqual(getColumnPage(columns, 1, 5).map((column) => column.key), ['6', '7', '8', '9', '10']);
-    assert.deepEqual(getColumnPage(columns, 2, 5).map((column) => column.key), ['11', '12']);
+    assert.deepEqual(getColumnPage(columns, 0, 7).map((column) => column.key), ['1', '2', '3', '4', '5', '6', '7']);
+    assert.deepEqual(getColumnPage(columns, 1, 7).map((column) => column.key), ['8', '9', '10', '11', '12']);
     assert.deepEqual(getColumnPage(columns, 0, 3).map((column) => column.key), ['1', '2', '3']);
     assert.deepEqual(getColumnPage(columns, 3, 3).map((column) => column.key), ['10', '11', '12']);
-    assert.equal(getPageCount(12, 5), 3);
+    assert.equal(getPageCount(12, 7), 2);
     assert.equal(getPageCount(12, 3), 4);
-    assert.equal(getPageCount(0, 5), 1);
+    assert.equal(getPageCount(0, 7), 1);
 
     for (const count of [1, 5, 6, 10, 11, 12]) {
       const desktopColumns = columns.slice(0, count);
       const pages = getPageCount(count, DESKTOP_COLUMNS_PER_PAGE);
       for (let page = 0; page < pages; page += 1) {
-        assert.ok(getColumnPage(desktopColumns, page, DESKTOP_COLUMNS_PER_PAGE).length <= 5);
+        assert.ok(getColumnPage(desktopColumns, page, DESKTOP_COLUMNS_PER_PAGE).length <= 7);
       }
     }
     for (const count of [1, 3, 4, 6, 7, 10]) {
@@ -78,7 +79,7 @@ test('shared app background includes the exact local-ui pixel grid', async () =>
     );
     assert.match(
       css.replace(/\s+/g, ' '),
-      /\.app-event-background \{ background: radial-gradient\(circle at 12% 18%, rgba\(151, 190, 146, \.35\), transparent 27rem\), linear-gradient\(rgba\(16, 67, 48, \.055\) 1px, transparent 1px\), linear-gradient\(90deg, rgba\(16, 67, 48, \.055\) 1px, transparent 1px\), #eef1e7; background-size: auto, 42px 42px, 42px 42px, auto; \}/,
+      /\.app-event-background \{ background: radial-gradient\(circle at 12% 18%, rgba\(151, 190, 146, \.35\), transparent 27rem\), linear-gradient\(rgba\(16, 67, 48, \.055\) 1px, transparent 1px\), linear-gradient\(90deg, rgba\(16, 67, 48, \.055\) 1px, transparent 1px\), #eef1e7; background-size: auto, 100px 100px, 100px 100px, auto; \}/,
     );
   }
 });
@@ -140,6 +141,7 @@ test('historical event dates remain paginated and selectable in the Heatmap', as
     const extended = [];
     const cellElement = HeatmapCell({
       point,
+      event,
       cell: historicalCell,
       total: event.participants.length,
       suggestions: [],
@@ -215,6 +217,7 @@ test('inspected cell details can be shown by hover or tap and dismissed after le
     let leaveCount = 0;
     const cellElement = HeatmapCell({
       point,
+      event: mockDatesEvent,
       cell: mockDatesEvent.heatmapGrid[0],
       total: mockDatesEvent.participants.length,
       suggestions: [],
@@ -228,7 +231,7 @@ test('inspected cell details can be shown by hover or tap and dismissed after le
     });
     const button = cellElement.props.children[0];
 
-    button.props.onMouseEnter();
+    button.props.onFocus();
     button.props.onClick({ detail: 1 });
     button.props.onMouseLeave();
 
@@ -317,7 +320,7 @@ test('finalized schedule keeps the blue range on the Heatmap', async () => {
       }),
     );
 
-    assert.equal((html.match(/border-blue-700/g) ?? []).length, 4);
+    assert.equal((html.match(/border-blue-400/g) ?? []).length, 8);
     assert.equal((html.match(/border-red-500/g) ?? []).length, 0);
   } finally {
     await server.close();

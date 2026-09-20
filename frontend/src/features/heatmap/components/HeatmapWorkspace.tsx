@@ -27,9 +27,7 @@ export function HeatmapWorkspace({
 }: HeatmapWorkspaceProps) {
   const [details, setDetails] = useState<CellDetails | null>(null);
   const [mode, setMode] = useState<HeatmapSelectionMode>(HeatmapSelectionMode.View);
-  const [selected, setSelected] = useState<FinalSchedule | null>(
-    event.status === 2 ? event.finalSchedule : null,
-  );
+  const [selected, setSelected] = useState<FinalSchedule | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const anchor = useRef<SelectedCell | null>(null);
   const keyboardAnchor = useRef<SelectedCell | null>(null);
@@ -42,15 +40,22 @@ export function HeatmapWorkspace({
     const stopDragging = () => {
       anchor.current = null;
     };
+    const hideDetailsImmediately = () => {
+      if (detailsHideTimer.current) clearTimeout(detailsHideTimer.current);
+      detailsHideTimer.current = null;
+      setDetails(null);
+    };
     window.addEventListener('pointerup', stopDragging);
     window.addEventListener('pointercancel', stopDragging);
     window.addEventListener('blur', stopDragging);
+    window.addEventListener('scroll', hideDetailsImmediately, true);
     return () => {
       active.current = false;
       if (detailsHideTimer.current) clearTimeout(detailsHideTimer.current);
       window.removeEventListener('pointerup', stopDragging);
       window.removeEventListener('pointercancel', stopDragging);
       window.removeEventListener('blur', stopDragging);
+      window.removeEventListener('scroll', hideDetailsImmediately, true);
     };
   }, []);
 
@@ -62,7 +67,14 @@ export function HeatmapWorkspace({
 
   function showDetails(nextDetails: CellDetails) {
     cancelDetailsHide();
-    setDetails(nextDetails);
+    setDetails((current) =>
+      current &&
+      current.dayLabel === nextDetails.dayLabel &&
+      current.startTime === nextDetails.startTime &&
+      current.endTime === nextDetails.endTime
+        ? current
+        : nextDetails,
+    );
   }
 
   function scheduleDetailsHide() {
