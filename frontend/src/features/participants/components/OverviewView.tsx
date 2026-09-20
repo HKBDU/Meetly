@@ -38,12 +38,7 @@ export function OverviewView({ shortCode }: OverviewViewProps) {
       isAdmin={auth?.isAdmin ?? false}
       onSuggestions={async (params, currentEvent) => findBestSlots(currentEvent, params)}
       onFinalize={(slot) => finalizeEvent(shortCode, slot, accessToken)}
-      onUpdateEvent={(payload, _event, adminPassword) =>
-        updateEvent(shortCode, payload, accessToken, {
-          username: auth?.username ?? "",
-          password: adminPassword,
-        })
-      }
+      onUpdateEvent={(payload) => updateEvent(shortCode, payload, accessToken)}
       onOpenMySchedule={() => setView("PERSONAL")}
     />
   )

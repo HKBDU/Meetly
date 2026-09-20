@@ -122,21 +122,16 @@ function EventOverview({
     },
   });
 
-  async function updateEventDetails(payload: UpdateEventPayload, adminPassword: string) {
+  async function updateEventDetails(payload: UpdateEventPayload) {
     if (!event || !isAdmin || event.status !== 1 || !onUpdateEvent || busy.current) {
       throw new Error('Event editing is not available.');
     }
     busy.current = true;
     setPending(HeatmapPendingAction.Update);
     try {
-      const result = await onUpdateEvent(payload, event, adminPassword);
-      if (!Number.isFinite(result.revision)) throw new Error('Invalid update event response.');
+      await onUpdateEvent(payload);
       if (!active.current) return;
-      setEvent((current) =>
-        current && result.revision >= current.revision
-          ? { ...current, ...payload, revision: result.revision }
-          : current,
-      );
+      setEvent((current) => (current ? { ...current, ...payload } : current));
       toast.success('Event updated successfully.');
     } finally {
       busy.current = false;

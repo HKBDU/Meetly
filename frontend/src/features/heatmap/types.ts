@@ -69,10 +69,6 @@ export type EditableEvent = Pick<
 
 export type UpdateEventPayload = EditableEvent;
 
-export interface UpdateEventResult {
-  revision: number;
-}
-
 export interface SuggestionParams {
   keyParticipant?: string;
   minDuration?: number;
@@ -118,11 +114,7 @@ export interface HeatmapPageProps {
   loadError?: string;
   onSuggestions?: (params: SuggestionParams, event: HeatmapEvent) => Promise<SuggestedSlot[]>;
   onFinalize?: (slot: FinalSchedule) => Promise<FinalizeResult>;
-  onUpdateEvent?: (
-    payload: UpdateEventPayload,
-    currentEvent: HeatmapEvent,
-    adminPassword: string,
-  ) => Promise<UpdateEventResult>;
+  onUpdateEvent?: (payload: UpdateEventPayload) => Promise<void>;
   onOpenMySchedule?: () => void;
 }
 
@@ -204,7 +196,7 @@ export interface FinalizeDialogProps {
 export interface EditEventDialogProps {
   event: EditableEvent;
   disabled?: boolean;
-  onSave: (payload: UpdateEventPayload, adminPassword: string) => Promise<void>;
+  onSave: (payload: UpdateEventPayload) => Promise<void>;
 }
 
 export interface EventHeaderProps {
@@ -215,7 +207,7 @@ export interface EventHeaderProps {
   canUpdate: boolean;
   onOpenMySchedule?: () => void;
   onDurationChange: (duration: number | undefined) => void;
-  onUpdateEvent: (payload: UpdateEventPayload, adminPassword: string) => Promise<void>;
+  onUpdateEvent: (payload: UpdateEventPayload) => Promise<void>;
 }
 
 export interface AdminSuggestionControlsProps {
