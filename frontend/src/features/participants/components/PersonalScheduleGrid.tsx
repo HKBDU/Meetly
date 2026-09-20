@@ -1,10 +1,7 @@
-import { memo, useLayoutEffect, useMemo, useState } from "react"
+import { memo, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { Lock } from "lucide-react"
 
-import {
-  DESKTOP_COLUMNS_PER_PAGE,
-  MOBILE_COLUMNS_PER_PAGE,
-} from "@/features/heatmap/constants"
+import { MOBILE_COLUMNS_PER_PAGE } from "@/features/heatmap/constants"
 import { getColumnPage, getPageCount } from "@/features/heatmap/time"
 import { formatDateLabel, getGridTimes, getSlotId } from "@/features/participants/gridUtils"
 import { useOptimizedDrag } from "@/features/participants/hooks/useOptimizedDrag"
@@ -14,12 +11,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/shared/components/ui"
 import { cn } from "@/lib/utils"
 import { formatDate, formatHourLabel } from "@/lib/date-time"
 
-/** Độ rộng cột như bản trước: cột ngày 75-139px, cột giờ 44px; ít ngày thì lưới thu hẹp và canh giữa */
+/** Cột ngày không được nhỏ hơn mức này trước khi lưới chuyển sang trang kế tiếp. */
 const TIME_COLUMN_WIDTH = 44
 const MIN_DAY_COLUMN_WIDTH = 75
-const MAX_DAY_COLUMN_WIDTH = 139
-
-/** Cùng breakpoint `md` với heatmap tổng để hai lưới đổi bố cục cùng lúc */
+/** Từ 1-3 ngày trên desktop, lưới không rộng hơn vùng table tối đa của heatmap tổng. */
+const COMPACT_LAYOUT_MAX_COLUMNS = 3
+const GROUP_HEATMAP_MAX_WIDTH = 1052
 const MOBILE_BREAKPOINT_QUERY = "(max-width: 767px)"
 
 interface ScheduleCellProps {
@@ -94,12 +91,23 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
 
   const times = useMemo(() => (config ? getGridTimes(config) : []), [config])
 
+  const gridContainerRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== "undefined" && window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches
   )
+  const [containerWidth, setContainerWidth] = useState(0)
   const [page, setPage] = useState(0)
   const dates = config?.dates ?? []
-  const pageSize = isMobile ? MOBILE_COLUMNS_PER_PAGE : DESKTOP_COLUMNS_PER_PAGE
+  const usesCompactLayout = !isMobile && dates.length <= COMPACT_LAYOUT_MAX_COLUMNS
+  const columnsThatFit =
+    containerWidth > TIME_COLUMN_WIDTH
+      ? Math.max(1, Math.floor((containerWidth - TIME_COLUMN_WIDTH) / MIN_DAY_COLUMN_WIDTH))
+      : Math.max(1, dates.length)
+  const pageSize = isMobile
+    ? MOBILE_COLUMNS_PER_PAGE
+    : usesCompactLayout
+      ? Math.max(1, dates.length)
+      : columnsThatFit
   const pageCount = getPageCount(dates.length, pageSize)
   const currentPage = Math.min(page, pageCount - 1)
   const visibleDates = getColumnPage(dates, currentPage, pageSize)
@@ -113,6 +121,19 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
     return () => mediaQuery.removeEventListener("change", updateViewportMode)
   }, [])
 
+  useLayoutEffect(() => {
+    const container = gridContainerRef.current
+    if (!container) return
+
+    const updateContainerWidth = () => setContainerWidth(container.clientWidth)
+    updateContainerWidth()
+
+    const resizeObserver = new ResizeObserver(updateContainerWidth)
+    resizeObserver.observe(container)
+
+    return () => resizeObserver.disconnect()
+  }, [])
+
   if (!config) {
     return (
       <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
@@ -124,7 +145,7 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
   return (
     <section className="p-3 sm:p-4" aria-label="My schedule">
       {isFinalized && (
-        <Alert className="mb-3 border-primary/30 bg-primary/5">
+        <Alert className="mb-3 w-fit max-w-full border-primary/30 bg-primary/5">
           <Lock className="size-4 text-primary" />
           <AlertTitle>This event has been finalized</AlertTitle>
           <AlertDescription>
@@ -140,13 +161,16 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
         label="Schedule date pages"
       />
 
-      <div className="overflow-x-auto">
+      <div ref={gridContainerRef} className="overflow-x-auto">
         <div
-          className="mx-auto border border-slate-300 bg-white"
-          style={{
-            minWidth: TIME_COLUMN_WIDTH + visibleDates.length * MIN_DAY_COLUMN_WIDTH,
-            maxWidth: TIME_COLUMN_WIDTH + visibleDates.length * MAX_DAY_COLUMN_WIDTH,
-          }}
+          className="mx-auto w-full border border-slate-300 bg-white"
+          style={
+            usesCompactLayout
+              ? {
+                  maxWidth: GROUP_HEATMAP_MAX_WIDTH,
+                }
+              : undefined
+          }
         >
         <table className="w-full table-fixed border-collapse select-none">
           <thead className="bg-white">
@@ -169,7 +193,8 @@ export function PersonalScheduleGrid({ triggerAutoSave }: PersonalScheduleGridPr
                     title={`${weekday} ${detail}`}
                     className="border-b border-r border-slate-200 px-1 py-2 text-xs font-semibold last:border-r-0 sm:py-3 sm:text-sm"
                   >
-                    {isMobile ? weekday.slice(0, 3) : weekday}
+                    <span className="sm:hidden">{weekday.slice(0, 3)}</span>
+                    <span className="hidden sm:inline">{weekday}</span>
                     <span className="mt-1 block truncate text-[10px] font-normal text-slate-500 sm:text-xs">
                       {detail}
                     </span>

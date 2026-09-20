@@ -26,7 +26,6 @@ const credentialsSchema = z.object({
 
 export function NewEventScreen() {
   const navigate = useNavigate()
-  const [isOpen, setIsOpen] = useState(true)
   const [step, setStep] = useState<EventStep>('credentials')
 
   const [adminCredentials, setAdminCredentials] = useState<CredentialsFormValues>({
@@ -67,18 +66,6 @@ export function NewEventScreen() {
     }
   }
 
-  if (!isOpen) {
-    return (
-      <Button
-        className={eventUi.reopenButton}
-        onClick={() => setIsOpen(true)}
-        type="button"
-      >
-        Open new event
-      </Button>
-    )
-  }
-
   return (
     <div className={eventUi.shell}>
       <div className={eventUi.mobileScreen}>
@@ -96,7 +83,7 @@ export function NewEventScreen() {
               adminUsername={adminCredentials.adminUsername}
               compact
               error={createError}
-              onCancel={() => setIsOpen(false)}
+              onCancel={() => navigate('/')}
               onSubmit={submitEvent}
               submitting={isCreating}
             />
@@ -120,7 +107,7 @@ export function NewEventScreen() {
                 adminPassword={adminCredentials.adminPassword}
                 adminUsername={adminCredentials.adminUsername}
                 error={createError}
-                onCancel={() => setIsOpen(false)}
+                onCancel={() => navigate('/')}
                 onSubmit={submitEvent}
                 submitting={isCreating}
               />

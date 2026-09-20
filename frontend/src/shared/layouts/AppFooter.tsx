@@ -1,5 +1,6 @@
-import { CalendarClock, Heart } from "lucide-react"
+import { Heart } from "lucide-react"
 
+import meetlyLogo from "@/assets/meetly-logo.png"
 import {
   DiscordIcon,
   GithubIcon,
@@ -22,7 +23,9 @@ export function AppFooter() {
     <footer className="flex flex-col gap-3 bg-primary px-4 py-5 text-primary-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
       <div>
         <div className="flex items-center gap-2 text-lg font-bold">
-          <CalendarClock className="size-5" />
+          <span className="grid h-7 w-9 shrink-0 place-items-center rounded-md bg-white p-1">
+            <img src={meetlyLogo} alt="" aria-hidden="true" className="h-full w-full object-contain" />
+          </span>
           meetly
         </div>
         <p className="mt-1 flex items-center gap-1 text-xs opacity-90">

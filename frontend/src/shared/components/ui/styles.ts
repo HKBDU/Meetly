@@ -47,17 +47,15 @@ export const eventUi = {
   mobileForm: 'max-[640px]:px-6 max-[640px]:pb-24 max-[640px]:pt-1',
   mobileScreen: 'hidden max-[640px]:block max-[640px]:min-h-screen',
   mobileTitle:
-    'm-0 mb-8 hidden text-[36px] leading-[44px] tracking-[-0.72px] text-[#0b1c30]\n' +
+    'm-0 mb-8 hidden font-sans text-[36px] font-semibold leading-[44px] tracking-[-0.72px] text-[#0b1c30]\n' +
     'max-[640px]:mx-6 max-[640px]:mb-5 max-[640px]:mt-7 max-[640px]:block\n' +
     'max-[640px]:text-[28px] max-[640px]:leading-9',
   page: 'mx-auto w-[min(calc(100%_-_40px),760px)] py-5 pb-5',
-  pageTitle: 'm-0 mb-8 text-[36px] leading-[44px] tracking-[-0.72px] text-[#0b1c30]',
+  pageTitle: 'm-0 mb-8 font-sans text-[36px] font-semibold leading-[44px] tracking-[-0.72px] text-[#0b1c30]',
   primaryButton:
     'w-full justify-center border-0 bg-[#009b4d] text-white hover:bg-[#008240]\n' +
     'disabled:cursor-wait disabled:opacity-[.65] h-10 rounded text-base font-semibold\n' +
     'sm:w-auto sm:min-w-[150px]',
-  reopenButton: 'm-[30px] rounded-lg border-0 bg-[#009b4d] px-[18px] py-3 font-bold text-white',
-
   requiredMark: 'text-[#ba1a1a]',
 
   secondaryButton:

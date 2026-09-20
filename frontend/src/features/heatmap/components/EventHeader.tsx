@@ -1,4 +1,4 @@
-import { Copy, Globe2, Link2, Users } from 'lucide-react';
+import { Copy, Globe2, Hash, Link2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Button,
@@ -24,14 +24,17 @@ export function EventHeader({
   onDurationChange,
   onUpdateEvent,
 }: EventHeaderProps) {
-  const canOpenMySchedule = Boolean(onOpenMySchedule) && event.status === 1 && !disabled;
+  const canOpenMySchedule = Boolean(onOpenMySchedule);
+  const shareUrl = typeof window === 'undefined'
+    ? event.url
+    : new URL(`/e/${encodeURIComponent(event.shortCode)}`, window.location.origin).toString();
 
-  async function copyLink() {
+  async function copyText(value: string, successMessage: string, failureMessage: string) {
     try {
-      await navigator.clipboard.writeText(event.url);
-      toast.success('Event link copied.');
+      await navigator.clipboard.writeText(value);
+      toast.success(successMessage);
     } catch {
-      toast.error('Unable to copy. Select and copy the link from the field.');
+      toast.error(failureMessage);
     }
   }
 
@@ -90,39 +93,59 @@ export function EventHeader({
         </div>
       </div>
       <div className="min-w-0 w-full shrink-0 space-y-3 sm:w-72">
-        {event.url && (
-          <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-2">
-            <Link2 size={14} className="shrink-0 text-primary" aria-hidden="true" />
-            <Input
-              aria-label="Event share link"
-              title={event.url}
-              value={event.url}
-              readOnly
-              onFocus={(focusEvent) => focusEvent.currentTarget.select()}
-              className="h-auto min-w-0 flex-1 truncate border-0 bg-transparent p-0 text-xs text-slate-600 focus:ring-0"
-            />
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => void copyLink()}
-              className="bg-white text-primary hover:bg-white hover:text-primary"
-            >
-              <Copy size={13} aria-hidden="true" />
-              Copy
-            </Button>
-          </div>
-        )}
+        <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-2">
+          <Link2 size={14} className="shrink-0 text-primary" aria-hidden="true" />
+          <Input
+            aria-label="Event share link"
+            title={shareUrl}
+            value={shareUrl}
+            readOnly
+            onFocus={(focusEvent) => focusEvent.currentTarget.select()}
+            className="h-auto min-w-0 flex-1 truncate border-0 bg-transparent p-0 text-xs text-slate-600 focus:ring-0"
+          />
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => void copyText(
+              shareUrl,
+              'Event link copied.',
+              'Unable to copy. Select and copy the link from the field.',
+            )}
+            className="bg-white text-primary hover:bg-white hover:text-primary"
+          >
+            <Copy size={13} aria-hidden="true" />
+            Copy
+          </Button>
+        </div>
+        <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-2">
+          <Hash size={14} className="shrink-0 text-primary" aria-hidden="true" />
+          <Input
+            aria-label="Event code"
+            title={event.shortCode}
+            value={event.shortCode}
+            readOnly
+            onFocus={(focusEvent) => focusEvent.currentTarget.select()}
+            className="h-auto min-w-0 flex-1 border-0 bg-transparent p-0 text-xs font-semibold tracking-wide text-slate-700 focus:ring-0"
+          />
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => void copyText(
+              event.shortCode,
+              'Event code copied.',
+              'Unable to copy. Select and copy the event code from the field.',
+            )}
+            className="bg-white text-primary hover:bg-white hover:text-primary"
+          >
+            <Copy size={13} aria-hidden="true" />
+            Copy
+          </Button>
+        </div>
         <button
           type="button"
           disabled={!canOpenMySchedule}
           onClick={onOpenMySchedule}
-          title={
-            event.status !== 1
-              ? 'This event is locked.'
-              : !onOpenMySchedule
-                ? 'My Schedule is not available yet.'
-                : undefined
-          }
+          title={!onOpenMySchedule ? 'My Schedule is not available yet.' : undefined}
           className="block w-full rounded-lg bg-primary px-4 py-3 text-center text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-60"
         >
           My Schedule

@@ -1,7 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { CalendarClock, KeyRound, User } from "lucide-react"
+import { KeyRound, User } from "lucide-react"
 import { useForm } from "react-hook-form"
+import { useNavigate } from "react-router-dom"
 
+import meetlyLogo from "@/assets/meetly-logo.png"
 import { useAuthParticipant } from "@/features/participants/hooks/useAuthParticipant"
 import { loginSchema, type LoginFormValues } from "@/features/participants/schema"
 import {
@@ -26,6 +28,7 @@ interface ParticipantAuthFormProps {
 
 /** Form định danh: username bắt buộc, password tuỳ chọn */
 export function ParticipantAuthForm({ shortCode }: ParticipantAuthFormProps) {
+  const navigate = useNavigate()
   const { access, isPending } = useAuthParticipant(shortCode)
 
   const form = useForm<LoginFormValues>({
@@ -44,9 +47,12 @@ export function ParticipantAuthForm({ shortCode }: ParticipantAuthFormProps) {
     <div className="flex min-h-dvh items-center justify-center p-4">
       <Card className="w-full max-w-sm border-border/80 shadow-lg shadow-green-900/5">
         <CardHeader className="items-center text-center">
-          <div className="mb-2 flex size-12 items-center justify-center bg-primary/10 text-primary">
-            <CalendarClock className="size-6" />
-          </div>
+          <img
+            src={meetlyLogo}
+            alt=""
+            aria-hidden="true"
+            className="mb-2 h-12 w-16 object-contain"
+          />
           <CardTitle className="text-xl">Join the Event</CardTitle>
           <CardDescription>Enter your name to start filling in your availability</CardDescription>
         </CardHeader>
@@ -96,9 +102,20 @@ export function ParticipantAuthForm({ shortCode }: ParticipantAuthFormProps) {
                 )}
               />
 
-              <Button type="submit" className="w-full" size="lg" disabled={isPending}>
-                {isPending ? "Please wait..." : "Continue"}
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  disabled={isPending}
+                  onClick={() => navigate("/")}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" size="lg" disabled={isPending}>
+                  {isPending ? "Please wait..." : "Continue"}
+                </Button>
+              </div>
             </form>
           </Form>
         </CardContent>
