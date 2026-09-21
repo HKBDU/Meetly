@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { CalendarCheck2, Check, Clock3, Copy, Globe2, Users, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { timeToMinutes } from '@/lib/date-time';
@@ -11,8 +11,27 @@ interface FinalizedSchedulePopoverProps {
   children: ReactNode;
 }
 
+const MOBILE_MEDIA_QUERY = '(max-width: 639px)';
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia(MOBILE_MEDIA_QUERY).matches,
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY);
+    const updateIsMobile = (event: MediaQueryListEvent) => setIsMobile(event.matches);
+
+    mediaQuery.addEventListener('change', updateIsMobile);
+    return () => mediaQuery.removeEventListener('change', updateIsMobile);
+  }, []);
+
+  return isMobile;
+}
+
 export function FinalizedSchedulePopover({ event, children }: FinalizedSchedulePopoverProps) {
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
   const schedule = event.finalSchedule;
   if (!schedule) return children;
   const finalizedSchedule = schedule;
@@ -35,12 +54,14 @@ export function FinalizedSchedulePopover({ event, children }: FinalizedScheduleP
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent
-        side="right"
-        align="start"
-        collisionPadding={16}
-        className="w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border-blue-200 p-0 shadow-xl"
+        side={isMobile ? 'bottom' : 'right'}
+        align={isMobile ? 'center' : 'start'}
+        sideOffset={isMobile ? 8 : 4}
+        collisionPadding={12}
+        sticky="always"
+        className="flex max-h-[var(--radix-popover-content-available-height)] w-[calc(100vw-1.5rem)] max-w-[22rem] flex-col overflow-hidden rounded-2xl border-blue-200 p-0 shadow-xl sm:w-[min(22rem,calc(100vw-2rem))]"
       >
-        <div className="flex items-start gap-3 bg-blue-600 px-4 py-4 text-white">
+        <div className="flex shrink-0 items-start gap-3 bg-blue-600 px-4 py-4 text-white">
           <span className="rounded-xl bg-white/15 p-2.5">
             <CalendarCheck2 className="size-5" aria-hidden="true" />
           </span>
@@ -52,7 +73,7 @@ export function FinalizedSchedulePopover({ event, children }: FinalizedScheduleP
             <X aria-hidden="true" />
           </Button>
         </div>
-        <div className="space-y-4 p-4">
+        <div className="min-h-0 space-y-4 overflow-y-auto overscroll-contain p-4">
           <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-3 text-sm">
             <CalendarCheck2 className="mt-0.5 size-4 text-blue-600" aria-hidden="true" />
             <div><dt className="text-xs text-muted-foreground">Date</dt><dd className="font-medium">{formatDay(finalizedSchedule)}</dd></div>
