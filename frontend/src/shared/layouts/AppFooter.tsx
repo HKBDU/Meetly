@@ -1,6 +1,5 @@
 import { Heart } from "lucide-react"
 
-import meetlyLogo from "@/assets/meetly-logo.png"
 import {
   DiscordIcon,
   GithubIcon,
@@ -24,7 +23,7 @@ export function AppFooter() {
       <div>
         <div className="flex items-center gap-2 text-lg font-bold">
           <span className="grid h-7 w-9 shrink-0 place-items-center rounded-md bg-white p-1">
-            <img src={meetlyLogo} alt="" aria-hidden="true" className="h-full w-full object-contain" />
+            <img src="/meetly-logo.png" alt="" aria-hidden="true" className="h-full w-full object-contain" />
           </span>
           meetly
         </div>
