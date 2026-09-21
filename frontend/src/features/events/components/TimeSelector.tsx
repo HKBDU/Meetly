@@ -22,8 +22,8 @@ export function TimeSelector({
         aria-label="Select time range"
         minStepsBetweenThumbs={1}
         className="h-5"
-        max={TIME_BOUNDARIES.length - 1}
-        min={0}
+        max={TIME_BOUNDARIES.length - 2}
+        min={1}
         step={1}
         value={[startIndex, endIndex]}
         onValueChange={(value) => {

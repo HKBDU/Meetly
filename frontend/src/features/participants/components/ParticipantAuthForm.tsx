@@ -3,7 +3,6 @@ import { KeyRound, User } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 
-import meetlyLogo from "@/assets/meetly-logo.png"
 import { useAuthParticipant } from "@/features/participants/hooks/useAuthParticipant"
 import { loginSchema, type LoginFormValues } from "@/features/participants/schema"
 import {
@@ -49,7 +48,7 @@ export function ParticipantAuthForm({ shortCode }: ParticipantAuthFormProps) {
           <CardHeader className="items-center text-center">
           <div className="mb-2 flex items-center gap-2">
             <img
-              src={meetlyLogo}
+              src="/meetly-logo.png"
               alt=""
               aria-hidden="true"
               className="h-8 w-10 object-contain"
