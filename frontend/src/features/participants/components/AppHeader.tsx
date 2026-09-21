@@ -1,14 +1,15 @@
-import { useLocation } from 'react-router-dom';
+import { House } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useParticipantStore } from '@/features/participants/store';
 import { Button } from '@/shared/components/ui';
 
-/** Header chung cho cả 3 màn; nút rời event chỉ hiện khi đã định danh */
+/** Header chung cho các màn; nút về trang chủ chỉ hiện khi đã định danh. */
 export function AppHeader() {
   const auth = useParticipantStore((s) => s.auth);
-  const resetSession = useParticipantStore((s) => s.resetSession);
+  const navigate = useNavigate();
   const { pathname } = useLocation();
-  const showJoinWithId = Boolean(auth) && pathname.startsWith('/e/');
+  const showBackToHome = Boolean(auth) && pathname.startsWith('/e/');
 
   return (
     <header className="flex shrink-0 items-center justify-between px-4 py-4 sm:px-8">
@@ -22,9 +23,10 @@ export function AppHeader() {
         Meetly
       </a>
 
-      {showJoinWithId && (
-        <Button variant="outline" size="sm" onClick={resetSession}>
-          Join with ID
+      {showBackToHome && (
+        <Button variant="outline" size="sm" onClick={() => navigate('/')}>
+          <House aria-hidden="true" />
+          Back to Home
         </Button>
       )}
     </header>

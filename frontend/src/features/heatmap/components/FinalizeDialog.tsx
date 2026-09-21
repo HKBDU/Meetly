@@ -23,6 +23,7 @@ export function FinalizeDialog({
     >
         <DialogContent
           showCloseButton={false}
+          className="gap-3 p-4 sm:max-w-sm sm:p-5"
           onOpenAutoFocus={(event) => {
             event.preventDefault();
             returnFocus.current =
@@ -41,23 +42,23 @@ export function FinalizeDialog({
             if (pending) event.preventDefault();
           }}
         >
-          <DialogHeader>
-          <DialogTitle>Finalize this meeting?</DialogTitle>
-          <DialogDescription className="leading-6 text-slate-600">
-            Confirming will lock this event. Participants will no longer be able to edit their
-            availability.
-          </DialogDescription>
+          <DialogHeader className="gap-1.5">
+            <DialogTitle>Finalize this meeting?</DialogTitle>
+            <DialogDescription className="leading-5 text-slate-600">
+              Confirming will lock this event. Participants will no longer be able to edit their
+              availability.
+            </DialogDescription>
           </DialogHeader>
           {selected && (
-            <div className="my-5 rounded-lg bg-emerald-50 p-4">
-              <p className="font-medium">{formatDay(selected)}</p>
-              <p className="mt-1 text-xl font-semibold">
+            <div className="rounded-lg bg-emerald-50 px-3 py-2.5">
+              <p className="text-sm font-medium">{formatDay(selected)}</p>
+              <p className="mt-0.5 text-lg font-semibold">
                 {selected.startTime} – {selected.endTime}
               </p>
-              <p className="mt-2 text-xs text-slate-600">{timezone}</p>
+              <p className="mt-1 text-xs text-slate-600">{timezone}</p>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="mt-1">
             <Button
               ref={cancelButton}
               variant="outline"

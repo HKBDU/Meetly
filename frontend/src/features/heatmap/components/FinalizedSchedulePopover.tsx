@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { CalendarCheck2, Check, Clock3, Copy, Globe2, Users, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { timeToMinutes } from '@/lib/date-time';
@@ -12,26 +12,55 @@ interface FinalizedSchedulePopoverProps {
 }
 
 const MOBILE_MEDIA_QUERY = '(max-width: 639px)';
+const HOVER_MEDIA_QUERY = '(hover: hover) and (pointer: fine)';
 
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== 'undefined' && window.matchMedia(MOBILE_MEDIA_QUERY).matches,
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia(query).matches,
   );
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY);
-    const updateIsMobile = (event: MediaQueryListEvent) => setIsMobile(event.matches);
+    const mediaQuery = window.matchMedia(query);
+    const updateMatches = (event: MediaQueryListEvent) => setMatches(event.matches);
 
-    mediaQuery.addEventListener('change', updateIsMobile);
-    return () => mediaQuery.removeEventListener('change', updateIsMobile);
-  }, []);
+    mediaQuery.addEventListener('change', updateMatches);
+    return () => mediaQuery.removeEventListener('change', updateMatches);
+  }, [query]);
 
-  return isMobile;
+  return matches;
 }
 
 export function FinalizedSchedulePopover({ event, children }: FinalizedSchedulePopoverProps) {
   const [open, setOpen] = useState(false);
-  const isMobile = useIsMobile();
+  const closeTimer = useRef<number | null>(null);
+  const isMobile = useMediaQuery(MOBILE_MEDIA_QUERY);
+  const canHover = useMediaQuery(HOVER_MEDIA_QUERY);
+
+  function cancelClose() {
+    if (closeTimer.current === null) return;
+    window.clearTimeout(closeTimer.current);
+    closeTimer.current = null;
+  }
+
+  function openFromHover() {
+    if (!canHover) return;
+    cancelClose();
+    setOpen(true);
+  }
+
+  function closeFromHover() {
+    if (!canHover) return;
+    cancelClose();
+    closeTimer.current = window.setTimeout(() => {
+      setOpen(false);
+      closeTimer.current = null;
+    }, 160);
+  }
+
+  useEffect(() => () => {
+    if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
+  }, []);
+
   const schedule = event.finalSchedule;
   if (!schedule) return children;
   const finalizedSchedule = schedule;
@@ -51,8 +80,16 @@ export function FinalizedSchedulePopover({ event, children }: FinalizedScheduleP
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>{children}</PopoverTrigger>
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => {
+        cancelClose();
+        setOpen(nextOpen);
+      }}
+    >
+      <span className="block h-full w-full" onMouseEnter={openFromHover} onMouseLeave={closeFromHover}>
+        <PopoverTrigger asChild>{children}</PopoverTrigger>
+      </span>
       <PopoverContent
         side={isMobile ? 'bottom' : 'right'}
         align={isMobile ? 'center' : 'start'}
@@ -60,6 +97,8 @@ export function FinalizedSchedulePopover({ event, children }: FinalizedScheduleP
         collisionPadding={12}
         sticky="always"
         className="flex max-h-[var(--radix-popover-content-available-height)] w-[calc(100vw-1.5rem)] max-w-[22rem] flex-col overflow-hidden rounded-2xl border-blue-200 p-0 shadow-xl sm:w-[min(22rem,calc(100vw-2rem))]"
+        onMouseEnter={openFromHover}
+        onMouseLeave={closeFromHover}
       >
         <div className="flex shrink-0 items-start gap-3 bg-blue-600 px-4 py-4 text-white">
           <span className="rounded-xl bg-white/15 p-2.5">
