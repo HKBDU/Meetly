@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Search, Star } from 'lucide-react';
 import { Button, Input } from '@/shared/components/ui';
-import { useDebounce } from '@/shared/hooks';
+import { useDebounce } from 'use-debounce';
 import type { KeyParticipantSelectorProps } from '../types';
 
 export function KeyParticipantSelector({
@@ -11,7 +11,7 @@ export function KeyParticipantSelector({
   onChange,
 }: KeyParticipantSelectorProps) {
   const [rawSearch, setRawSearch] = useState('');
-  const debouncedSearch = useDebounce(rawSearch, 300);
+  const [debouncedSearch] = useDebounce(rawSearch, 300);
   const normalizedSearch = debouncedSearch.trim().toLocaleLowerCase();
   const matchingParticipants = normalizedSearch
     ? participants.filter((person) =>

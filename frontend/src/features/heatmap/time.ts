@@ -16,17 +16,22 @@ export function buildRows(startTime: string, endTime: string): TimeRow[] {
   return rows;
 }
 
+/** Thứ Hai đầu tuần, Chủ nhật cuối tuần; BE trả các thứ không theo thứ tự nào */
+const weekdayRank = (day: number) => (day + 6) % 7;
+
 export function getColumns(event: HeatmapEvent): TimeColumn[] {
   if (event.eventType === 2) {
-    return event.availableWeekdays.map((dayOfWeek) => ({
-      key: `weekday:${dayOfWeek}`,
-      label: WEEKDAYS[dayOfWeek].label,
-      detail: 'Weekly',
-      specificDate: null,
-      dayOfWeek,
-    }));
+    return [...event.availableWeekdays]
+      .sort((a, b) => weekdayRank(a) - weekdayRank(b))
+      .map((dayOfWeek) => ({
+        key: `weekday:${dayOfWeek}`,
+        label: WEEKDAYS[dayOfWeek].label,
+        detail: 'Weekly',
+        specificDate: null,
+        dayOfWeek,
+      }));
   }
-  return event.availableDates.map((specificDate) => ({
+  return [...event.availableDates].sort().map((specificDate) => ({
     key: `date:${specificDate}`,
     label: WEEKDAYS[new Date(`${specificDate}T00:00:00Z`).getUTCDay()].label,
     detail: formatDate(specificDate),

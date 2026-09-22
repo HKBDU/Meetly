@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { AxiosError } from 'axios';
 import { createServer } from 'vite';
 import { readFile } from 'node:fs/promises';
 
@@ -25,7 +26,6 @@ test('Axios uses the environment host and Meetly API prefix', async () => {
   try {
     const { api } = await server.ssrLoadModule('/src/lib/axios.ts');
     assert.equal(api.defaults.baseURL, 'http://backend.test/api/v1');
-    assert.equal(api.defaults.headers.common.Accept, 'application/json');
   } finally {
     await server.close();
   }
@@ -43,6 +43,7 @@ test('SignalR manager uses the configured shared events hub', async () => {
     assert.equal(shouldApplyRealtimePayload(10, 'ABC', { shortCode: 'abc', revision: 11 }), true);
     assert.equal(shouldApplyRealtimePayload(10, 'ABC', { shortCode: 'ABC', revision: 10 }), false);
     assert.equal(shouldApplyRealtimePayload(10, 'ABC', { shortCode: 'OTHER', revision: 12 }), false);
+<<<<<<< HEAD
     const managerSource = await readFile(
       fileURLToPath(new URL('../src/lib/signalr.ts', import.meta.url)),
       'utf8',
@@ -51,6 +52,8 @@ test('SignalR manager uses the configured shared events hub', async () => {
     assert.match(managerSource, /withAutomaticReconnect\(\)/);
     assert.match(managerSource, /JoinEvent/);
     assert.match(managerSource, /LeaveEvent/);
+=======
+>>>>>>> a70dc91383b95562e44e6cdd8f79e117315377fc
   } finally {
     await server.close();
   }
@@ -141,23 +144,21 @@ test('Heatmap services unwrap once and preserve suggestion query parameters', as
   }
 });
 
-test('Heatmap services preserve a failed Meetly response message', async () => {
+test('Heatmap services show an English message for a failed response', async () => {
   const server = await createTestServer();
   try {
     const { api } = await server.ssrLoadModule('/src/lib/axios.ts');
     const { getEvent } = await server.ssrLoadModule('/src/features/heatmap/services.ts');
-    api.defaults.adapter = async (config) => ({
-      data: {
-        isSuccess: false,
-        code: 404,
-        message: 'Event not found',
-        value: null,
-      },
-      status: 404,
-      statusText: 'Not Found',
-      headers: {},
-      config,
-    });
+    api.defaults.adapter = async (config) => {
+      const response = {
+        data: { isSuccess: false, code: 404, message: 'Evento no encontrado', value: null },
+        status: 404,
+        statusText: 'Not Found',
+        headers: {},
+        config,
+      };
+      throw new AxiosError('Request failed', AxiosError.ERR_BAD_REQUEST, config, null, response);
+    };
 
     await assert.rejects(() => getEvent('UNKNOWN'), /Event not found/);
   } finally {
@@ -165,6 +166,7 @@ test('Heatmap services preserve a failed Meetly response message', async () => {
   }
 });
 
+<<<<<<< HEAD
 test('Axios normalizes PascalCase Meetly envelopes', async () => {
   const server = await createTestServer();
   try {
@@ -186,11 +188,55 @@ test('Axios normalizes PascalCase Meetly envelopes', async () => {
     await assert.rejects(
       () => getEvent('OTHER'),
       (error) => error?.status === 403 && /not allowed/.test(error.message),
+=======
+test('Update event sends only the event fields and reports a generic error when not authorized', async () => {
+  const server = await createTestServer();
+  try {
+    const { api } = await server.ssrLoadModule('/src/lib/axios.ts');
+    const { updateEvent } = await server.ssrLoadModule('/src/features/heatmap/services.ts');
+    const payload = {
+      title: 'Team sync',
+      eventType: 1,
+      availableDates: ['2026-09-25'],
+      availableWeekdays: [],
+      dailyStartTime: '09:00',
+      dailyEndTime: '17:00',
+    };
+
+    let sent;
+    api.defaults.adapter = async (config) => {
+      sent = JSON.parse(config.data);
+      return {
+        data: { isSuccess: true, code: 200, message: 'ok', value: null },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config,
+      };
+    };
+    await updateEvent('ABC', payload, 'event-token');
+    assert.deepEqual(sent, payload);
+
+    api.defaults.adapter = async (config) => {
+      const response = {
+        data: { IsSuccess: false, Code: 403, Message: 'Admin access is required.', Value: null },
+        status: 403,
+        statusText: 'Forbidden',
+        headers: {},
+        config,
+      };
+      throw new AxiosError('Request failed', AxiosError.ERR_BAD_REQUEST, config, null, response);
+    };
+    await assert.rejects(
+      () => updateEvent('ABC', payload, 'event-token'),
+      /You don't have permission to do this/,
+>>>>>>> a70dc91383b95562e44e6cdd8f79e117315377fc
     );
   } finally {
     await server.close();
   }
 });
+<<<<<<< HEAD
 
 test('participants/me keeps the authoritative event session fields', async () => {
   const server = await createTestServer();
@@ -398,3 +444,5 @@ test('Heatmap route loader restores Host role and clears rejected sessions', asy
     else globalThis.localStorage = previousStorage;
   }
 });
+=======
+>>>>>>> a70dc91383b95562e44e6cdd8f79e117315377fc

@@ -112,12 +112,12 @@ export interface HeatmapPageProps {
   isAdmin?: boolean;
   loading?: boolean;
   loadError?: string;
-  onSuggestions?: (params: SuggestionParams) => Promise<SuggestedSlot[]>;
+  onSuggestions?: (params: SuggestionParams, event: HeatmapEvent) => Promise<SuggestedSlot[]>;
   onFinalize?: (slot: FinalSchedule) => Promise<FinalizeResult>;
   onUpdateEvent?: (
     payload: UpdateEventPayload,
     currentEvent: HeatmapEvent,
-  ) => Promise<HeatmapEvent>;
+  ) => Promise<UpdateEventResult>;
   myScheduleHref?: string;
 }
 
@@ -158,7 +158,6 @@ export interface HeatmapProps {
 }
 
 export interface HeatmapCellProps extends Omit<HeatmapProps, 'event'> {
-  event: HeatmapEvent;
   point: SelectedCell;
   cell: HeatmapCellData | undefined;
   total: number;
@@ -218,7 +217,7 @@ export interface EventHeaderProps {
   duration: number | undefined;
   disabled: boolean;
   canUpdate: boolean;
-  myScheduleHref?: string;
+  onOpenMySchedule?: () => void;
   onDurationChange: (duration: number | undefined) => void;
   onUpdateEvent: (payload: UpdateEventPayload) => Promise<void>;
 }

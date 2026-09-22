@@ -45,6 +45,10 @@ test('Admin suggestions have no manual trigger button', async () => {
     const { getMockSuggestions, mockDatesEvent } = await server.ssrLoadModule(
       '/src/features/heatmap/mock.ts',
     );
+<<<<<<< HEAD
+=======
+    const { mockDatesEvent } = await server.ssrLoadModule('/tests/fixtures/heatmapEvent.ts');
+>>>>>>> a70dc91383b95562e44e6cdd8f79e117315377fc
     const html = renderToStaticMarkup(
       createElement(HeatmapPage, {
         initialEvent: mockDatesEvent,
@@ -54,7 +58,11 @@ test('Admin suggestions have no manual trigger button', async () => {
     );
 
     assert.doesNotMatch(html, /Find Suggested Times/);
+<<<<<<< HEAD
     assert.match(html, /Select duration/);
+=======
+    assert.equal(DEFAULT_MEETING_DURATION, 15);
+>>>>>>> a70dc91383b95562e44e6cdd8f79e117315377fc
     assert.match(html, /Suggestions update automatically/);
 
     assert.equal(getSuggestionParams(undefined, null), null);

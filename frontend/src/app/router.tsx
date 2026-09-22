@@ -1,24 +1,19 @@
-import { createBrowserRouter } from 'react-router-dom';
-import { HomePage } from '@/shared/pages';
+import { createBrowserRouter } from "react-router-dom"
+
+import { RootLayout } from "@/app/RootLayout"
+import { HomePage, NewEventScreen } from "@/features/events"
+import { ParticipantPage } from "@/features/participants"
 
 export const router = createBrowserRouter(
-  [
-    { path: '/', Component: HomePage },
-    {
-      path: '/e/:shortCode',
-      lazy: async () => {
-        const { default: Component } = await import('@/features/heatmap/pages/HeatmapRoutePage');
-        return { Component };
-      },
-    },
-    ...(import.meta.env.DEV
-      ? [{
-          path: '/__heatmap-demo',
+  import.meta.env.DEV
+    ? [
+        {
+          path: '*',
           lazy: async () => {
             const { default: Component } = await import('@/features/heatmap/pages/HeatmapDemoPage');
             return { Component };
           },
-        }]
-      : []),
-  ],
+        },
+      ]
+    : [{ path: '*', Component: HomePage }],
 );

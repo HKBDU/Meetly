@@ -55,6 +55,8 @@ export function useEventRealtime({
     handlersRef.current = { onHeatmapUpdated, onEventUpdated, onEventFinalized };
   }, [revision, onHeatmapUpdated, onEventUpdated, onEventFinalized]);
 
+  const connection = useEventHubConnection(shortCode, accessToken);
+
   useEffect(() => {
     if (!connection) return;
 
@@ -76,6 +78,21 @@ export function useEventRealtime({
     connection.on(REALTIME_EVENTS.HeatmapUpdated, handleHeatmapUpdated);
     connection.on(REALTIME_EVENTS.EventUpdated, handleEventUpdated);
     connection.on(REALTIME_EVENTS.EventFinalized, handleEventFinalized);
+    connection.onreconnected(() => {
+      if (!disposed) void connection.invoke('JoinEvent', shortCode).catch(() => undefined);
+    });
+
+    void connection
+      .start()
+      .then(async () => {
+        if (disposed) {
+          await connection.stop();
+          return;
+        }
+        await connection.invoke('JoinEvent', shortCode);
+      })
+      .catch(() => undefined);
+
     return () => {
       connection.off(REALTIME_EVENTS.HeatmapUpdated, handleHeatmapUpdated);
       connection.off(REALTIME_EVENTS.EventUpdated, handleEventUpdated);

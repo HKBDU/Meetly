@@ -26,7 +26,7 @@ export function AdminSuggestionControls({
         )}
         {suggestionCount > 0 && (
           <span className="text-xs text-slate-500">
-            {suggestionCount} suggestions · Red outline
+            {suggestionCount} best {suggestionCount === 1 ? 'time' : 'times'} · Shown in red after you click Select Final Time
           </span>
         )}
         {!updating && loaded && suggestionCount === 0 && (

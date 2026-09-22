@@ -1,7 +1,7 @@
 import type { DayOfWeek } from './types';
 
-// Frontend scheduling uses 15-minute cells. Missing Backend cells remain unavailable.
 export const SLOT_MINUTES = 15;
+export const DEFAULT_MEETING_DURATION = 60;
 export const MOBILE_COLUMNS_PER_PAGE = 3;
 export const DESKTOP_COLUMNS_PER_PAGE = 7;
 

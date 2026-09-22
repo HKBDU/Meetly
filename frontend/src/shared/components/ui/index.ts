@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 export { Badge, badgeVariants } from './badge';
 export { Button, buttonVariants } from './button';
 export { Calendar, CalendarDayButton } from './calendar';
@@ -71,3 +72,22 @@ export {
 export { Separator } from './separator';
 export { Slider } from './slider';
 export { Toaster } from './sonner';
+=======
+export * from "@/shared/components/ui/alert"
+export * from "@/shared/components/ui/badge"
+export * from "@/shared/components/ui/button"
+export * from "@/shared/components/ui/card"
+export * from "@/shared/components/ui/dialog"
+export * from "@/shared/components/ui/form"
+export * from "@/shared/components/ui/input"
+export * from "@/shared/components/ui/label"
+export * from "@/shared/components/ui/popover"
+export * from "@/shared/components/ui/select"
+export * from "@/shared/components/ui/separator"
+export * from "@/shared/components/ui/slider"
+export * from "@/shared/components/ui/sonner"
+export * from "@/shared/components/ui/toggle"
+export * from "@/shared/components/ui/toggle-group"
+export * from "@/shared/components/ui/field"
+export * from "@/shared/components/ui/scroll-area"
+>>>>>>> a70dc91383b95562e44e6cdd8f79e117315377fc

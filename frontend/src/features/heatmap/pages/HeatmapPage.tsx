@@ -24,7 +24,7 @@ function EventOverview({
   onSuggestions,
   onFinalize,
   onUpdateEvent,
-  myScheduleHref,
+  onOpenMySchedule,
 }: HeatmapPageProps) {
   const [event, setEvent] = useState(initialEvent);
   const [duration, setDuration] = useState<number>();
@@ -62,7 +62,7 @@ function EventOverview({
       setSuggestionsLoaded(false);
       setSuggestionsUpdating(true);
 
-      void onSuggestions(params)
+      void onSuggestions(params, event)
         .then((result) => {
           if (!active.current || suggestionRequest.current !== requestId) return;
           setSuggestions(result);
@@ -128,12 +128,11 @@ function EventOverview({
     busy.current = true;
     setPending(HeatmapPendingAction.Update);
     try {
-      const result = await onUpdateEvent(payload, event);
-      if (!Number.isFinite(result.revision)) throw new Error('Invalid update event response.');
+      await onUpdateEvent(payload);
       if (!active.current) return;
       setEvent((current) =>
         current && result.revision >= current.revision
-          ? result
+          ? { ...current, ...payload, revision: result.revision }
           : current,
       );
       toast.success('Event updated successfully.');
@@ -167,7 +166,7 @@ function EventOverview({
   ].join(':');
 
   return (
-    <main className="mx-auto max-w-[1440px] px-4 py-8 text-slate-900 sm:px-8">
+    <div className="mx-auto max-w-[1440px] px-4 py-8 text-slate-900 sm:px-8">
       <EventHeader
         event={event}
         canEdit={canEdit}
@@ -175,7 +174,7 @@ function EventOverview({
         disabled={pending !== null}
         canUpdate={Boolean(onUpdateEvent)}
         myScheduleHref={myScheduleHref}
-        onDurationChange={changeDuration}
+        onDurationChange={setDuration}
         onUpdateEvent={updateEventDetails}
       />
 
@@ -212,7 +211,7 @@ function EventOverview({
           toast.success('Meeting finalized. This event is now read-only.');
         }}
       />
-    </main>
+    </div>
   );
 }
 
