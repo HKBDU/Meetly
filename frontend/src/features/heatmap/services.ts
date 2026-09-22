@@ -1,4 +1,4 @@
-import { api, getApiErrorMessage } from '@/lib/axios';
+import { api, type ApiResponse, unwrapApiResponse } from '@/lib/axios';
 import type {
   FinalizeResult,
   FinalSchedule,
@@ -6,43 +6,33 @@ import type {
   SuggestedSlot,
   SuggestionParams,
   UpdateEventPayload,
+  UpdateEventResult,
 } from './types';
 
 const eventEndpoint = (shortCode: string, suffix = '') =>
   `/events/${encodeURIComponent(shortCode)}${suffix}`;
 
-const authHeaders = (accessToken: string) => ({ Authorization: `Bearer ${accessToken}` });
-
-/** Đổi lỗi axios thành `Error` với câu tiếng Anh để nơi gọi toast trực tiếp */
-async function unwrap<T>(request: Promise<{ data: T }>, fallback: string): Promise<T> {
-  try {
-    return (await request).data;
-  } catch (error) {
-    throw new Error(getApiErrorMessage(error, fallback), { cause: error });
-  }
-}
-
-export function getEvent(shortCode: string): Promise<HeatmapEvent> {
-  return unwrap(api.get<HeatmapEvent>(eventEndpoint(shortCode)), 'Unable to load the event.');
+export async function getEvent(shortCode: string): Promise<HeatmapEvent> {
+  return unwrapApiResponse(await api.get<ApiResponse<HeatmapEvent>>(eventEndpoint(shortCode)));
 }
 
 export async function getSuggestions(
   shortCode: string,
   params: SuggestionParams,
-  accessToken: string,
 ): Promise<SuggestedSlot[]> {
-  if (!accessToken) throw new Error('Sign in to find suggested times.');
   const keyParticipant = params.keyParticipant?.trim() || undefined;
   if (params.minDuration !== undefined) {
     if (!Number.isFinite(params.minDuration) || params.minDuration <= 0)
       throw new Error('Duration must be greater than zero.');
   }
-  const result = await unwrap(
-    api.get<{ suggestedSlots: SuggestedSlot[] }>(eventEndpoint(shortCode, '/suggestions'), {
-      params: { keyParticipant, minDuration: params.minDuration },
-      headers: authHeaders(accessToken),
-    }),
-    'Unable to update suggestions. Please try again.',
+  const result = unwrapApiResponse(
+    await api.get<ApiResponse<{ suggestedSlots: SuggestedSlot[] }>>(
+      eventEndpoint(shortCode, '/suggestions'),
+      {
+        params: { keyParticipant, minDuration: params.minDuration },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    ),
   );
   if (!Array.isArray(result.suggestedSlots)) throw new Error('Invalid suggestions response.');
   return result.suggestedSlots;
@@ -51,14 +41,12 @@ export async function getSuggestions(
 export async function finalizeEvent(
   shortCode: string,
   payload: FinalSchedule,
-  accessToken: string,
 ): Promise<FinalizeResult> {
   if (!accessToken) throw new Error('Sign in to finalize the meeting.');
-  return unwrap(
-    api.post<FinalizeResult>(eventEndpoint(shortCode, '/finalize'), payload, {
-      headers: authHeaders(accessToken),
+  return unwrapApiResponse(
+    await api.post<ApiResponse<FinalizeResult>>(eventEndpoint(shortCode, '/finalize'), payload, {
+      headers: { Authorization: `Bearer ${accessToken}` },
     }),
-    'Unable to finalize the meeting. Please try again.',
   );
 }
 
@@ -66,10 +54,11 @@ export async function updateEvent(
   shortCode: string,
   payload: UpdateEventPayload,
   accessToken: string,
-): Promise<void> {
+): Promise<UpdateEventResult> {
   if (!accessToken) throw new Error('Sign in as the event host to edit this event.');
-  await unwrap(
-    api.put<null>(eventEndpoint(shortCode), payload, { headers: authHeaders(accessToken) }),
-    'Unable to update the event. Please try again.',
+  return unwrapApiResponse(
+    await api.put<ApiResponse<UpdateEventResult>>(eventEndpoint(shortCode), payload, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }),
   );
 }

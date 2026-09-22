@@ -1,8 +1,7 @@
 import type { DayOfWeek } from './types';
 
-/** BE tổng hợp heatmapGrid theo ô 15 phút (EventService.Heatmap -> AddMinutes(15)) */
 export const SLOT_MINUTES = 15;
-export const DEFAULT_MEETING_DURATION = 15;
+export const DEFAULT_MEETING_DURATION = 60;
 export const MOBILE_COLUMNS_PER_PAGE = 3;
 export const DESKTOP_COLUMNS_PER_PAGE = 7;
 

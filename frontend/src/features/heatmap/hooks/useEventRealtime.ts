@@ -29,11 +29,9 @@ export function shouldApplyRealtimePayload(
   shortCode: string,
   payload: { shortCode: string; revision: number },
 ): boolean {
-  return (
-    payload.shortCode.toUpperCase() === shortCode.toUpperCase() &&
-    Number.isFinite(payload.revision) &&
-    payload.revision > currentRevision
-  );
+  return payload.shortCode.toUpperCase() === shortCode.toUpperCase()
+    && Number.isFinite(payload.revision)
+    && payload.revision > currentRevision;
 }
 
 export function useEventRealtime({
@@ -44,6 +42,7 @@ export function useEventRealtime({
   onEventUpdated,
   onEventFinalized,
 }: UseEventRealtimeOptions) {
+  const connection = useEventHubConnection(shortCode, accessToken);
   const revisionRef = useRef(revision);
   const handlersRef = useRef<EventRealtimeHandlers>({
     onHeatmapUpdated,
@@ -66,7 +65,6 @@ export function useEventRealtime({
       revisionRef.current = payload.revision;
       return true;
     }
-
     const handleHeatmapUpdated = (payload: HeatmapUpdatedPayload) => {
       if (accept(payload)) handlersRef.current.onHeatmapUpdated(payload);
     };
@@ -80,6 +78,20 @@ export function useEventRealtime({
     connection.on(REALTIME_EVENTS.HeatmapUpdated, handleHeatmapUpdated);
     connection.on(REALTIME_EVENTS.EventUpdated, handleEventUpdated);
     connection.on(REALTIME_EVENTS.EventFinalized, handleEventFinalized);
+    connection.onreconnected(() => {
+      if (!disposed) void connection.invoke('JoinEvent', shortCode).catch(() => undefined);
+    });
+
+    void connection
+      .start()
+      .then(async () => {
+        if (disposed) {
+          await connection.stop();
+          return;
+        }
+        await connection.invoke('JoinEvent', shortCode);
+      })
+      .catch(() => undefined);
 
     return () => {
       connection.off(REALTIME_EVENTS.HeatmapUpdated, handleHeatmapUpdated);

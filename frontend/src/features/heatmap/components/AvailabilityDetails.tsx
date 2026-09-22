@@ -29,7 +29,7 @@ export function AvailabilityDetails({
         </p>
       </CardHeader>
       <CardContent className="px-5 pb-5">
-        <ScrollArea className="h-72 pr-3 lg:h-[min(24rem,55vh)]">
+        <ScrollArea className="max-h-[min(24rem,55vh)] pr-3 [&_[data-slot=scroll-area-viewport]]:max-h-[min(24rem,55vh)]">
           <section aria-labelledby="available-participants-heading">
             <Badge variant="secondary" className="bg-primary/10 text-primary">
               <span id="available-participants-heading">Available</span> · {available.length}/

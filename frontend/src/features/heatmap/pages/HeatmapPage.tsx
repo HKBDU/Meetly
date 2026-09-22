@@ -4,7 +4,6 @@ import { AdminSuggestionControls } from '../components/AdminSuggestionControls';
 import { EventHeader } from '../components/EventHeader';
 import { HeatmapWorkspace } from '../components/HeatmapWorkspace';
 import { useEventRealtime } from '../hooks/useEventRealtime';
-import { DEFAULT_MEETING_DURATION } from '../constants';
 import { getSuggestionParams } from '../suggestions';
 import {
   HeatmapPendingAction,
@@ -28,7 +27,7 @@ function EventOverview({
   onOpenMySchedule,
 }: HeatmapPageProps) {
   const [event, setEvent] = useState(initialEvent);
-  const [duration, setDuration] = useState<number | undefined>(DEFAULT_MEETING_DURATION);
+  const [duration, setDuration] = useState<number>();
   const [keyParticipant, setKeyParticipant] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<SuggestedSlot[]>([]);
   const [suggestionsLoaded, setSuggestionsLoaded] = useState(false);
@@ -131,12 +130,25 @@ function EventOverview({
     try {
       await onUpdateEvent(payload);
       if (!active.current) return;
-      setEvent((current) => (current ? { ...current, ...payload } : current));
+      setEvent((current) =>
+        current && result.revision >= current.revision
+          ? { ...current, ...payload, revision: result.revision }
+          : current,
+      );
       toast.success('Event updated successfully.');
     } finally {
       busy.current = false;
       if (active.current) setPending(null);
     }
+  }
+
+  function changeDuration(nextDuration: number | undefined) {
+    setDuration(nextDuration);
+    if (nextDuration !== undefined) return;
+    suggestionRequest.current += 1;
+    setSuggestions([]);
+    setSuggestionsLoaded(false);
+    setSuggestionsUpdating(false);
   }
 
   if (loading) return <p role="status" className="p-8 text-center text-slate-500">Loading event…</p>;
@@ -161,7 +173,7 @@ function EventOverview({
         duration={duration}
         disabled={pending !== null}
         canUpdate={Boolean(onUpdateEvent)}
-        onOpenMySchedule={onOpenMySchedule}
+        myScheduleHref={myScheduleHref}
         onDurationChange={setDuration}
         onUpdateEvent={updateEventDetails}
       />

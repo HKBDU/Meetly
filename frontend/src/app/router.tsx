@@ -4,14 +4,16 @@ import { RootLayout } from "@/app/RootLayout"
 import { HomePage, NewEventScreen } from "@/features/events"
 import { ParticipantPage } from "@/features/participants"
 
-export const router = createBrowserRouter([
-  {
-    element: <RootLayout />,
-    children: [
-      { path: "/", element: <HomePage /> },
-      { path: "/create", element: <NewEventScreen /> },
-      { path: "/e/:shortCode", element: <ParticipantPage /> },
-      { path: "*", element: <HomePage /> },
-    ],
-  },
-])
+export const router = createBrowserRouter(
+  import.meta.env.DEV
+    ? [
+        {
+          path: '*',
+          lazy: async () => {
+            const { default: Component } = await import('@/features/heatmap/pages/HeatmapDemoPage');
+            return { Component };
+          },
+        },
+      ]
+    : [{ path: '*', Component: HomePage }],
+);

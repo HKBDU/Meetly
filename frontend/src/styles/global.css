@@ -124,9 +124,15 @@
   }
 }
 
-/* Đúng class màu ô lịch từ feat/22-build-event-heatmap (không dùng bg-[#..] rời rạc nữa,
-   để 2 nơi CHIA SẺ đúng 1 định nghĩa màu, đổi 1 chỗ là khớp cả 2). Grid cá nhân ở đây chỉ
-   có 1 người tô (không có "count") nên chỉ dùng level-0 (chưa tô) và level-5 (đã tô). */
+.app-event-background {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(151, 190, 146, .35), transparent 27rem),
+    linear-gradient(rgba(16, 67, 48, .055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 67, 48, .055) 1px, transparent 1px),
+    #eef1e7;
+  background-size: auto, 42px 42px, 42px 42px, auto;
+}
+
 .availability-level-0 { background-color: #ffffff; }
 .availability-level-1 { background-color: #d8f0e1; }
 .availability-level-2 { background-color: #b7e4c7; }

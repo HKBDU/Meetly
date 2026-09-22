@@ -114,8 +114,11 @@ export interface HeatmapPageProps {
   loadError?: string;
   onSuggestions?: (params: SuggestionParams, event: HeatmapEvent) => Promise<SuggestedSlot[]>;
   onFinalize?: (slot: FinalSchedule) => Promise<FinalizeResult>;
-  onUpdateEvent?: (payload: UpdateEventPayload) => Promise<void>;
-  onOpenMySchedule?: () => void;
+  onUpdateEvent?: (
+    payload: UpdateEventPayload,
+    currentEvent: HeatmapEvent,
+  ) => Promise<UpdateEventResult>;
+  myScheduleHref?: string;
 }
 
 export interface HeatmapUpdatedPayload {
@@ -154,7 +157,7 @@ export interface HeatmapProps {
   onKeyboardSelect: (point: SelectedCell, extendRange?: boolean) => void;
 }
 
-export interface HeatmapCellProps extends HeatmapProps {
+export interface HeatmapCellProps extends Omit<HeatmapProps, 'event'> {
   point: SelectedCell;
   cell: HeatmapCellData | undefined;
   total: number;
@@ -197,6 +200,15 @@ export interface EditEventDialogProps {
   event: EditableEvent;
   disabled?: boolean;
   onSave: (payload: UpdateEventPayload) => Promise<void>;
+}
+
+export interface CurrentParticipant {
+  participantId: string;
+  username: string;
+  isAdmin: boolean;
+  timeSlots: FinalSchedule[];
+  eventStatus: EventStatus;
+  revision: number;
 }
 
 export interface EventHeaderProps {

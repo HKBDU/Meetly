@@ -73,10 +73,10 @@ export function EventHeader({
               {event.status === 1 ? 'Overview · Read-only' : 'Event locked · Read-only'}
             </span>
           )}
-          {canEdit && (
+          {canEdit && canUpdate && (
             <EditEventDialog
               event={event}
-              disabled={disabled || !canUpdate}
+              disabled={disabled}
               onSave={onUpdateEvent}
             />
           )}
