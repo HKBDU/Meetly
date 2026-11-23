@@ -37,29 +37,49 @@ async function withServer(run) {
   }
 }
 
-test('home and create pages render without runtime errors', async () => {
+test('home and create pages render the new create flow', async () => {
   await withServer(async (load, render) => {
     const { HomePage } = await load('/src/features/events/pages/HomePage.tsx');
     const { NewEventPage } = await load('/src/features/events/pages/NewEventPage.tsx');
-    assert.match(render(createElement(HomePage)), /Create New Event/);
+    const home = render(createElement(HomePage));
+    assert.match(home, /Create an event/);
+    assert.match(home, /id="join-code"/);
+
     const create = render(createElement(NewEventPage), '/create');
-    assert.match(create, /Admin credentials/);
+    // Một trang: tên -> ngày -> giờ -> host, kèm nút tạo trên cả desktop lẫn mobile
+    for (const section of ['section-name', 'section-days', 'section-hours', 'section-host']) {
+      assert.match(create, new RegExp(`id="${section}"`));
+    }
+    assert.ok(create.indexOf('section-days') < create.indexOf('section-host'));
     assert.match(create, /id="admin-password"/);
+    assert.match(create, /Create event/);
   });
 });
 
-test('event form renders both date modes and never offers a 24:00 end time', async () => {
+test('event form offers quick picks for both day modes and hour presets', async () => {
   await withServer(async (load, render) => {
     const { EventForm } = await load('/src/features/events/components/EventForm.tsx');
     const { DEFAULT_EVENT_VALUES } = await load('/src/features/events/schema.ts');
-    const weekdays = render(createElement(EventForm, { onSubmit: () => undefined }));
-    assert.match(weekdays, /data-weekday="1"/);
-    assert.match(weekdays, /aria-valuemax="95"/);
+    const dates = render(createElement(EventForm, { onSubmit: () => undefined }));
+    assert.match(dates, /Next 7 days/);
+    assert.match(dates, /Working hours/);
+    assert.match(dates, /Tap or drag across dates/);
 
-    const dates = render(
-      createElement(EventForm, { onSubmit: () => undefined, initialValues: { ...DEFAULT_EVENT_VALUES, eventType: 1 } }),
+    const weekdays = render(
+      createElement(EventForm, { onSubmit: () => undefined, initialValues: { ...DEFAULT_EVENT_VALUES, eventType: 2 } }),
     );
-    assert.match(dates, /Reset dates/);
+    assert.match(weekdays, /data-weekday="1"/);
+    assert.match(weekdays, /Mon – Fri/);
+  });
+});
+
+test('join accepts a code or a pasted event link', async () => {
+  await withServer(async (load) => {
+    const { parseEventCode, inviteMessage } = await load('/src/shared/lib/share.ts');
+    assert.equal(parseEventCode('  abc123 '), 'ABC123');
+    assert.equal(parseEventCode('https://meetly.app/e/abc123/me?x=1'), 'ABC123');
+    assert.equal(parseEventCode(''), '');
+    assert.match(inviteMessage('Sprint', 'https://meetly.app/e/ABC123'), /"Sprint".*https:\/\/meetly\.app\/e\/ABC123/);
   });
 });
 
@@ -92,6 +112,6 @@ test('event route shows the join form when nobody is signed in', async () => {
       createElement(Routes, null, createElement(Route, { path: '/e/:shortCode', element: createElement(EventLayout) })),
       '/e/abc123',
     );
-    assert.match(html, /Join the Event/);
+    assert.match(html, /Join the event/);
   });
 });

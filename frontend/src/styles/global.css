@@ -4,101 +4,120 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design token duy nhất của app. Component chỉ dùng class theo token (bg-primary,
- * text-muted-foreground, bg-heat-3, border-selection...), không viết hex rời rạc.
+ * Design token duy nhất của app. Phong cách minimal cao cấp: nền trắng ngà, chữ gần đen,
+ * viền 1px rất nhạt, bóng mềm (shadow-soft), một màu nhấn emerald dùng tiết chế.
+ * Component chỉ dùng class theo token, không viết hex rời rạc.
  */
 :root {
-  --radius: 0.4rem;
+  --radius: 0.875rem;
 
-  --background: hsl(140 40% 98%);
-  --foreground: hsl(214 63% 12%);
+  --background: #fafaf9;
+  --foreground: #0c0a09;
 
-  --card: hsl(0 0% 100%);
+  --card: #ffffff;
   --card-foreground: var(--foreground);
-  --popover: hsl(0 0% 100%);
+  --popover: #ffffff;
   --popover-foreground: var(--foreground);
 
-  /* Màu thương hiệu: emerald-600 */
+  /* Màu chủ đạo: emerald, cho nút chính và mọi trạng thái được chọn */
   --primary: #059669;
   --primary-hover: #047857;
-  --primary-foreground: hsl(0 0% 100%);
+  --primary-foreground: #ffffff;
 
-  --secondary: hsl(120 32% 93%);
-  --secondary-foreground: hsl(120 70% 18%);
+  /* Cùng họ emerald, dùng cho icon/điểm nhấn nhỏ và nền nhạt */
+  --brand: #059669;
+  --brand-soft: #ecfdf5;
+  --brand-foreground: #ffffff;
 
-  --muted: hsl(140 25% 95%);
-  --muted-foreground: hsl(150 8% 42%);
+  --secondary: #f5f5f4;
+  --secondary-foreground: var(--foreground);
 
-  --accent: hsl(120 38% 90%);
-  --accent-foreground: hsl(120 70% 18%);
+  --muted: #f5f5f4;
+  --muted-foreground: #78716c;
 
-  --destructive: hsl(0 72% 42%);
-  --destructive-foreground: hsl(0 0% 100%);
+  --accent: #f5f5f4;
+  --accent-foreground: var(--foreground);
 
-  --border: hsl(142 15% 86%);
-  --input: hsl(220 9% 46%);
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  --border: #e7e5e4;
+  --input: #e7e5e4;
   --ring: #059669;
 
   /* Thang mật độ rảnh của heatmap: 0 = không ai, 5 = tất cả */
   --heat-0: #ffffff;
-  --heat-1: #d8f0e1;
-  --heat-2: #b7e4c7;
-  --heat-3: #8fd3a8;
-  --heat-4: #55bd7c;
-  --heat-5: #00a844;
+  --heat-1: #e6f6ef;
+  --heat-2: #bfe9d5;
+  --heat-3: #86d4b0;
+  --heat-4: #34b27d;
+  --heat-5: #059669;
 
   /* Lưới thời gian */
-  --grid-line: hsl(215 16% 80%);
-  --grid-line-soft: hsl(215 20% 90%);
+  --grid-line: #e7e5e4;
+  --grid-line-soft: #f1f0ee;
 
   /* Trạng thái trên lưới: vùng admin đang chọn, khung gợi ý, lịch đã chốt */
-  --selection: #1d4ed8;
-  --suggestion: #ef4444;
+  --selection: #0c0a09;
+  --suggestion: #e11d48;
+  /* Lịch đã chốt: xanh dương, tương phản rõ với heatmap xanh lá */
   --finalized: #2563eb;
-  --finalized-foreground: hsl(0 0% 100%);
+  --finalized-foreground: #ffffff;
   --finalized-muted: #eff6ff;
 
-  /* Đánh dấu Key Participant */
-  --highlight: #f59e0b;
+  /* Đánh dấu Key Participant / cảnh báo nhẹ */
+  --highlight: #d97706;
 
   --chart-1: #059669;
-  --chart-2: hsl(142 50% 58%);
-  --chart-3: hsl(142 30% 75%);
-  --chart-4: hsl(45 90% 55%);
-  --chart-5: hsl(0 72% 51%);
+  --chart-2: #34b27d;
+  --chart-3: #bfe9d5;
+  --chart-4: #d97706;
+  --chart-5: #dc2626;
 }
 
 .dark {
-  --background: hsl(150 18% 8%);
-  --foreground: hsl(140 25% 95%);
+  --background: #0c0a09;
+  --foreground: #fafaf9;
+  --card: #1c1917;
+  --popover: #1c1917;
+  --primary: #10b981;
+  --primary-hover: #34d399;
+  --primary-foreground: #04261a;
+  --brand-soft: #052e22;
+  --secondary: #292524;
+  --muted: #292524;
+  --muted-foreground: #a8a29e;
+  --accent: #292524;
+  --border: #292524;
+  --input: #44403c;
+  --heat-0: #1c1917;
+  --heat-1: #12352a;
+  --heat-2: #155a3e;
+  --heat-3: #1a7d55;
+  --heat-4: #22a06c;
+  --heat-5: #34c38a;
+  --grid-line: #292524;
+  --grid-line-soft: #1f1d1b;
+  --finalized: #60a5fa;
+  --finalized-foreground: #0b1a33;
+  --finalized-muted: #172554;
+  --selection: #fafaf9;
+  --brand: #34c38a;
+  --ring: #34c38a;
+  --destructive: #f87171;
+}
 
-  --card: hsl(150 16% 11%);
-  --popover: hsl(150 16% 11%);
-
-  --primary-hover: #10b981;
-
-  --secondary: hsl(150 15% 16%);
-  --secondary-foreground: hsl(140 30% 90%);
-
-  --muted: hsl(150 15% 16%);
-  --muted-foreground: hsl(140 12% 65%);
-
-  --accent: hsl(150 20% 20%);
-  --accent-foreground: hsl(140 30% 92%);
-
-  --destructive: hsl(0 65% 55%);
-
-  --border: hsl(150 15% 20%);
-  --input: hsl(150 15% 30%);
-
-  --heat-0: hsl(150 16% 11%);
-  --grid-line: hsl(150 15% 25%);
-  --grid-line-soft: hsl(150 15% 18%);
-  --finalized-muted: hsl(220 40% 18%);
+/* Nền tối: quầng sáng emerald đậm hơn chút để vẫn thấy được */
+.dark .app-event-background {
+  background:
+    radial-gradient(60rem 28rem at 50% -8rem, color-mix(in oklab, var(--brand) 14%, transparent), transparent 70%),
+    var(--background);
 }
 
 @theme inline {
-  --font-sans: "Roboto", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  /* Chỉ dùng cho từ nhấn trong tiêu đề lớn */
+  --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -109,6 +128,9 @@
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
   --color-primary-foreground: var(--primary-foreground);
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-foreground: var(--brand-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -142,10 +164,14 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Bóng mềm nhiều lớp cho thẻ nổi nhẹ trên nền */
+  --shadow-soft: 0 1px 2px rgb(12 10 9 / 0.04), 0 8px 24px -12px rgb(12 10 9 / 0.12);
+  --shadow-lift: 0 1px 2px rgb(12 10 9 / 0.05), 0 24px 48px -20px rgb(12 10 9 / 0.22);
 }
 
 @layer base {
@@ -153,40 +179,36 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background font-sans text-foreground antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+  h1, h2 {
+    @apply tracking-tight;
   }
 }
 
-/* Nền hoạ tiết lưới mờ dùng chung cho mọi trang (khoá bằng test heatmap-ui) */
+/* Nền chung: trắng ngà với quầng sáng emerald rất nhạt ở trên cùng */
 .app-event-background {
   background:
-    radial-gradient(circle at 12% 18%, rgba(151, 190, 146, .35), transparent 27rem),
-    linear-gradient(rgba(16, 67, 48, .055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(16, 67, 48, .055) 1px, transparent 1px),
-    #eef1e7;
-  background-size: auto, 100px 100px, 100px 100px, auto;
+    radial-gradient(60rem 28rem at 50% -8rem, color-mix(in oklab, var(--brand) 10%, transparent), transparent 70%),
+    var(--background);
+}
+
+/* Bề mặt kính mờ cho header và thanh cố định */
+.surface-glass {
+  background: color-mix(in oklab, var(--background) 72%, transparent);
+  -webkit-backdrop-filter: saturate(1.6) blur(16px);
+  backdrop-filter: saturate(1.6) blur(16px);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--primary) var(--muted);
+  scrollbar-color: var(--input) transparent;
 }
 
-*::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-*::-webkit-scrollbar-track {
-  background: var(--muted);
-}
-
-*::-webkit-scrollbar-thumb {
-  background: var(--primary);
-  border: 2px solid var(--muted);
-  border-radius: 9999px;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-hover);
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

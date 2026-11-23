@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
-import { formatDay } from '@/shared/grid/model'
+import { columnKey, formatDay } from '@/shared/grid/model'
 import type { FinalSchedule } from '@/shared/types'
 import { isValidSchedule, normalizeSelection } from '../selection'
 import {
@@ -11,7 +11,9 @@ import {
   type HeatmapWorkspaceProps,
   type SelectedCell,
 } from '../types'
+import { rankedKey, type RankedTime } from '../suggestions'
 import { AvailabilityDetails } from './AvailabilityDetails'
+import { BestTimesPanel } from './BestTimesPanel'
 import { FinalizeDialog } from './FinalizeDialog'
 import { Heatmap } from './Heatmap'
 import type { HeatmapCellHandlers } from './HeatmapCell'
@@ -22,12 +24,17 @@ const DETAILS_HIDE_DELAY_MS = 100
 export function HeatmapWorkspace({
   event,
   canEdit,
-  suggestions,
-  keyParticipant,
+  bestTimes,
+  duration,
+  mustInclude,
+  onDurationChange,
+  onMustIncludeChange,
   pending,
   onFinalize,
   onPendingChange,
 }: HeatmapWorkspaceProps) {
+  const [highlighted, setHighlighted] = useState<RankedTime | null>(null)
+  const [reveal, setReveal] = useState<{ key: string; requestId: number } | null>(null)
   const [details, setDetails] = useState<CellDetails | null>(null)
   const [mode, setMode] = useState<HeatmapSelectionMode>(HeatmapSelectionMode.View)
   const [selected, setSelected] = useState<FinalSchedule | null>(null)
@@ -121,6 +128,18 @@ export function HeatmapWorkspace({
     [],
   )
 
+  function highlight(slot: RankedTime | null) {
+    setHighlighted(slot)
+    // Lật lưới tới trang chứa khung đang xem
+    if (slot) setReveal((current) => ({ key: columnKey(slot), requestId: (current?.requestId ?? 0) + 1 }))
+  }
+
+  /** Chốt nhanh từ Best times: đặt sẵn khung rồi mở hộp xác nhận */
+  function pickBestTime(slot: RankedTime) {
+    setSelected({ specificDate: slot.specificDate, dayOfWeek: slot.dayOfWeek, startTime: slot.startTime, endTime: slot.endTime })
+    setDialogOpen(true)
+  }
+
   function cancelSelection() {
     anchor.current = null
     keyboardAnchor.current = null
@@ -157,19 +176,41 @@ export function HeatmapWorkspace({
 
   return (
     <>
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <Heatmap
-          event={event}
-          suggestions={selectingFinal ? suggestions : []}
-          selected={selected}
-          selecting={interactive && selectingFinal}
-          handlers={handlers}
-        />
-        <div className="space-y-5">
-          {canEdit && (
+      {/* Mobile: Best times → heatmap → chi tiết; desktop: heatmap bên trái, cột phải là Best times + chi tiết */}
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        {canEdit && (
+          <div className="min-w-0 lg:col-start-2 lg:row-start-1">
+            <BestTimesPanel
+              times={bestTimes}
+              participants={event.participants}
+              duration={duration}
+              mustInclude={mustInclude}
+              highlightedKey={highlighted ? rankedKey(highlighted) : null}
+              disabled={pending !== null || !onFinalize}
+              onDurationChange={onDurationChange}
+              onMustIncludeChange={onMustIncludeChange}
+              onHighlight={highlight}
+              onPick={pickBestTime}
+              onChooseManually={() => setMode(HeatmapSelectionMode.SelectFinal)}
+            />
+          </div>
+        )}
+        <div className="min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1">
+          <Heatmap
+            event={event}
+            bestTimes={canEdit ? bestTimes : []}
+            highlightedKey={highlighted ? rankedKey(highlighted) : null}
+            reveal={reveal}
+            selected={selected}
+            selecting={interactive && selectingFinal}
+            handlers={handlers}
+          />
+        </div>
+        <div className="min-w-0 space-y-5 lg:col-start-2 lg:row-start-2">
+          {canEdit && selectingFinal && (
             <ScheduleControls
               selected={selected}
-              selecting={selectingFinal}
+              selecting
               disabled={pending !== null || !onFinalize}
               onBegin={() => setMode(HeatmapSelectionMode.SelectFinal)}
               onCancel={cancelSelection}
@@ -179,7 +220,7 @@ export function HeatmapWorkspace({
           <AvailabilityDetails
             details={details}
             participants={event.participants}
-            keyParticipant={keyParticipant}
+            highlighted={mustInclude}
             onMouseEnter={cancelHide}
             onMouseLeave={scheduleHide}
           />
@@ -190,7 +231,10 @@ export function HeatmapWorkspace({
         selected={selected}
         timezone={event.timezone}
         pending={pending === HeatmapPendingAction.Finalize}
-        onClose={() => setDialogOpen(false)}
+        onClose={() => {
+          setDialogOpen(false)
+          if (!selectingFinal) setSelected(null)
+        }}
         onConfirm={() => void confirmSchedule()}
       />
     </>

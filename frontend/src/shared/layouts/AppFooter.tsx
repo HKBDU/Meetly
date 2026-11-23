@@ -19,15 +19,15 @@ const SOCIAL_LINKS = [
 
 export function AppFooter() {
   return (
-    <footer className="flex flex-col gap-3 bg-primary px-4 py-5 text-primary-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
+    <footer className="flex flex-col gap-3 border-t bg-card/60 px-4 py-6 text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
       <div>
-        <div className="flex items-center gap-2 text-lg font-bold">
-          <span className="grid h-7 w-9 shrink-0 place-items-center rounded-md bg-white p-1">
+        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <span className="grid h-6 w-7 shrink-0 place-items-center">
             <img src="/meetly-logo.png" alt="" aria-hidden="true" className="h-full w-full object-contain" />
           </span>
           meetly
         </div>
-        <p className="mt-1 flex items-center gap-1 text-xs opacity-90">
+        <p className="mt-1 flex items-center gap-1 text-xs">
           Made with <Heart className="size-3 fill-current" /> by{" "}
           <a
             href="https://github.com/HKBDU"

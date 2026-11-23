@@ -15,7 +15,9 @@ export function OverviewPage() {
     <HeatmapPage
       event={event}
       isAdmin={auth.isAdmin}
+      currentUsername={auth.username}
       onOpenMySchedule={() => navigate('me')}
+      onInvite={() => navigate('share')}
       onUpdateEvent={async (payload) => {
         await updateEvent(shortCode, payload)
         // Hiện ngay; lưới và revision mới sẽ tới qua realtime `EventUpdated`

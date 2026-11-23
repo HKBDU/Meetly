@@ -12,11 +12,11 @@ export function ScheduleControls({
 }: ScheduleControlsProps) {
   return (
     <Card
-      className="border-2 border-selection shadow-none"
+      className="gap-4"
       aria-labelledby="schedule-heading"
     >
       <CardHeader>
-        <h2 id="schedule-heading" className="text-lg font-semibold">Select Event Time</h2>
+        <h2 id="schedule-heading" className="font-medium">Select event time</h2>
       </CardHeader>
       <CardContent>
       {!selecting && (

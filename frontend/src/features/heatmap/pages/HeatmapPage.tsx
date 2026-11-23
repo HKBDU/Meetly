@@ -3,11 +3,11 @@ import { toast } from 'sonner'
 
 import { EventStatus } from '@/shared/constants'
 import type { EditableEvent } from '@/shared/types'
-import { AdminSuggestionControls } from '../components/AdminSuggestionControls'
 import { EventHeader } from '../components/EventHeader'
+import { GettingStartedBanner } from '../components/GettingStartedBanner'
 import { HeatmapWorkspace } from '../components/HeatmapWorkspace'
 import { DEFAULT_MEETING_DURATION } from '../constants'
-import { findBestSlots, getSuggestionParams } from '../suggestions'
+import { rankBestTimes } from '../suggestions'
 import { HeatmapPendingAction, type HeatmapPageProps } from '../types'
 
 /**
@@ -20,20 +20,19 @@ export function HeatmapPage({
   onFinalize,
   onUpdateEvent,
   onOpenMySchedule,
+  onInvite,
+  currentUsername,
 }: HeatmapPageProps) {
-  const [duration, setDuration] = useState<number | undefined>(DEFAULT_MEETING_DURATION)
-  const [keyParticipant, setKeyParticipant] = useState<string | null>(null)
+  const [duration, setDuration] = useState<number>(DEFAULT_MEETING_DURATION)
+  const [mustInclude, setMustInclude] = useState<string[]>([])
   const [pending, setPending] = useState<HeatmapPendingAction | null>(null)
   const busy = useRef(false)
 
   const canEdit = isAdmin && event.status === EventStatus.Open
-  const params = getSuggestionParams(duration, keyParticipant)
-
   // Tính ngay trên lưới đang có: lưới đổi (realtime) là gợi ý đổi theo, không cần gọi BE
-  const suggestions = useMemo(
-    () => (canEdit && params ? findBestSlots(event, params) : []),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- params dựng lại từ duration/keyParticipant
-    [canEdit, event, duration, keyParticipant],
+  const bestTimes = useMemo(
+    () => (canEdit ? rankBestTimes(event, { duration, mustInclude }) : []),
+    [canEdit, event, duration, mustInclude],
   )
 
   async function updateEventDetails(payload: EditableEvent) {
@@ -64,22 +63,19 @@ export function HeatmapPage({
       <EventHeader
         event={event}
         canEdit={canEdit}
-        duration={duration}
         disabled={pending !== null}
         canUpdate={Boolean(onUpdateEvent)}
         onOpenMySchedule={onOpenMySchedule}
-        onDurationChange={setDuration}
+        onInvite={onInvite}
         onUpdateEvent={updateEventDetails}
       />
 
-      {canEdit && (
-        <AdminSuggestionControls
-          participants={event.participants}
-          keyParticipant={keyParticipant}
-          disabled={pending !== null}
-          hasFilters={params !== null}
-          suggestionCount={suggestions.length}
-          onKeyParticipantChange={setKeyParticipant}
+      {event.status === EventStatus.Open && (
+        <GettingStartedBanner
+          event={event}
+          currentUsername={currentUsername}
+          onInvite={onInvite}
+          onOpenMySchedule={onOpenMySchedule}
         />
       )}
 
@@ -87,8 +83,11 @@ export function HeatmapPage({
         key={workspaceKey}
         event={event}
         canEdit={canEdit}
-        suggestions={suggestions}
-        keyParticipant={keyParticipant}
+        bestTimes={bestTimes}
+        duration={duration}
+        mustInclude={mustInclude}
+        onDurationChange={setDuration}
+        onMustIncludeChange={setMustInclude}
         pending={pending}
         onFinalize={onFinalize}
         onPendingChange={setPending}

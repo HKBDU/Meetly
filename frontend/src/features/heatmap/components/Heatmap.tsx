@@ -7,12 +7,18 @@ import { TimeGrid } from '@/shared/grid/TimeGrid'
 import type { EventDetail, FinalSchedule } from '@/shared/types'
 import { AVAILABILITY_LEVELS } from '../constants'
 import { getAvailabilityLevelClass } from '../availability'
-import type { SelectedCell, SuggestedSlot } from '../types'
+import { rankedKey, type RankedTime } from '../suggestions'
+import type { SelectedCell } from '../types'
 import { HeatmapCell, type HeatmapCellHandlers, type RangeEdge } from './HeatmapCell'
 
 export interface HeatmapProps {
   event: EventDetail
-  suggestions: SuggestedSlot[]
+  /** Các khung gợi ý đã xếp hạng (vẽ viền nét đứt kèm số thứ hạng) */
+  bestTimes: RankedTime[]
+  /** Khung đang được hover/chạm trong danh sách Best times */
+  highlightedKey: string | null
+  /** Đổi `requestId` để lật lưới tới trang chứa khung đang chọn */
+  reveal?: { key: string; requestId: number } | null
   selected: FinalSchedule | null
   selecting: boolean
   /** Phải là tham chiếu ổn định (xem `HeatmapWorkspace`) để `HeatmapCell` memo được */
@@ -36,7 +42,7 @@ function edgeOf(range: FinalSchedule | null | undefined, column: TimeColumn, row
   return top && bottom ? 'single' : top ? 'top' : bottom ? 'bottom' : 'middle'
 }
 
-export function Heatmap({ event, suggestions, selected, selecting, handlers }: HeatmapProps) {
+export function Heatmap({ event, bestTimes, highlightedKey, reveal, selected, selecting, handlers }: HeatmapProps) {
   // Chỉ tính lại khi cấu hình lưới đổi, không phải mỗi lần realtime đổi dữ liệu ô
   const structure = [
     event.eventType,
@@ -93,9 +99,20 @@ export function Heatmap({ event, suggestions, selected, selecting, handlers }: H
         rows={rows}
         caption="Availability grid with 15-minute slots. Hover, tap, or use Tab to view details."
         pagerLabel="Heatmap date pages"
+        revealColumn={reveal}
         renderCell={(column, row) => {
           const key = `${column.key}|${row.startTime}`
           const finalized = edgeOf(finalSchedule, column, row)
+          let suggestion: RangeEdge = null
+          let suggestionRank: number | undefined
+          let suggestionHighlighted = false
+          for (let index = 0; index < bestTimes.length && suggestion === null; index++) {
+            suggestion = edgeOf(bestTimes[index], column, row)
+            if (suggestion) {
+              suggestionRank = index + 1
+              suggestionHighlighted = rankedKey(bestTimes[index]) === highlightedKey
+            }
+          }
           return (
             <HeatmapCell
               key={column.key}
@@ -104,7 +121,9 @@ export function Heatmap({ event, suggestions, selected, selecting, handlers }: H
               total={total}
               selecting={selecting}
               selection={edgeOf(selected, column, row)}
-              suggestion={suggestions.reduce<RangeEdge>((edge, slot) => edge ?? edgeOf(slot, column, row), null)}
+              suggestion={suggestion}
+              suggestionRank={suggestionRank}
+              suggestionHighlighted={suggestionHighlighted}
               finalized={finalized}
               finalizedEvent={finalized ? event : undefined}
               finalizedCellCount={finalizedCellCount}
