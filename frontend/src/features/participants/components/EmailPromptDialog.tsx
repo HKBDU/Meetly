@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
 import { getMyParticipant, saveAvailability } from '@/shared/api/events'
+import { t as translate, useT } from '@/shared/i18n'
 import { eventQueryKey } from '@/shared/hooks'
 import type { EventDetail } from '@/shared/types'
 import {
@@ -32,6 +33,7 @@ import { useParticipantStore } from '@/features/participants/store'
  * email riêng nên gửi lại lịch đang lưu trên server kèm email (BE REPLACE nên không đổi lịch).
  */
 export function EmailPromptDialog({ shortCode }: { shortCode: string }) {
+  const t = useT()
   const queryClient = useQueryClient()
   const isOpen = useParticipantStore((s) => s.isEmailDialogOpen)
   const closeEmailDialog = useParticipantStore((s) => s.closeEmailDialog)
@@ -45,13 +47,13 @@ export function EmailPromptDialog({ shortCode }: { shortCode: string }) {
   const mutation = useMutation({
     mutationFn: async (email: string) => {
       const event = queryClient.getQueryData<EventDetail>(eventQueryKey(shortCode))
-      if (event && event.status !== 1) throw new Error('This event is already finalized.')
+      if (event && event.status !== 1) throw new Error(translate('email.finalizedAlready'))
       // Lấy lịch đã lưu trên server, không lấy bản đang tô dở (có thể chưa kịp auto-save)
       const me = await getMyParticipant(shortCode)
       return saveAvailability(shortCode, { email, timeSlots: me.timeSlots })
     },
     onSuccess: () => {
-      toast.success("You'll be notified by email")
+      toast.success(translate('email.subscribed'))
       markEmailSubscribed()
       form.reset()
     },
@@ -63,12 +65,12 @@ export function EmailPromptDialog({ shortCode }: { shortCode: string }) {
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <DialogTitle>Email Notifications</DialogTitle>
+            <DialogTitle>{t('email.title')}</DialogTitle>
             <Badge variant="secondary" className="font-normal">
-              Optional
+              {t('email.optional')}
             </Badge>
           </div>
-          <DialogDescription>Get notified when the host confirms the final event time.</DialogDescription>
+          <DialogDescription>{t('email.description')}</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -78,7 +80,7 @@ export function EmailPromptDialog({ shortCode }: { shortCode: string }) {
               name="email"
               render={({ field }) => (
                 <FormItem className="space-y-1.5">
-                  <FormLabel className="text-xs text-muted-foreground">Email address</FormLabel>
+                  <FormLabel className="text-xs text-muted-foreground">{t('email.address')}</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -90,12 +92,20 @@ export function EmailPromptDialog({ shortCode }: { shortCode: string }) {
               )}
             />
 
-            <DialogFooter className="gap-2 sm:justify-between">
-              <Button type="button" variant="outline" className="flex-1" onClick={closeEmailDialog} disabled={mutation.isPending}>
-                Skip
+            {/* Mobile xếp dọc: nút cao 44px dễ bấm; `flex-1` chỉ dùng khi nằm ngang, vì basis 0 làm nút xếp dọc bị bẹp */}
+            <DialogFooter className="gap-2 pt-1 sm:justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="h-11 w-full sm:h-10 sm:w-auto sm:flex-1"
+                onClick={closeEmailDialog}
+                disabled={mutation.isPending}
+              >
+                {t('email.skip')}
               </Button>
-              <Button type="submit" className="flex-1" disabled={mutation.isPending}>
-                {mutation.isPending ? 'Saving…' : 'Save'}
+              <Button type="submit" size="lg" className="h-11 w-full sm:h-10 sm:w-auto sm:flex-1" disabled={mutation.isPending}>
+                {mutation.isPending ? t('common.saving') : t('common.save')}
               </Button>
             </DialogFooter>
           </form>

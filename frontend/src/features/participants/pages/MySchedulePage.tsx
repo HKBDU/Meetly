@@ -9,10 +9,12 @@ import { expandRangesToSlotIds } from '@/features/participants/gridUtils'
 import { useAutoSaveSchedule } from '@/features/participants/hooks/useAutoSaveSchedule'
 import { useScheduleGrid } from '@/features/participants/hooks/useScheduleGrid'
 import { useParticipantStore } from '@/features/participants/store'
+import { useT } from '@/shared/i18n'
 import { useEventOutlet } from './eventOutlet'
 
 /** Màn lịch cá nhân `/e/:shortCode/me` */
 export function MySchedulePage() {
+  const t = useT()
   const { shortCode, event } = useEventOutlet()
   const grid = useScheduleGrid(event)
   const loadedSlotsFor = useParticipantStore((s) => s.loadedSlotsFor)
@@ -42,7 +44,7 @@ export function MySchedulePage() {
       <EventInfoBar event={event} locked={grid.isLocked} />
       {needsSlots ? (
         <p role={me.error ? 'alert' : 'status'} className="p-8 text-center text-sm text-muted-foreground">
-          {me.error ? me.error.message : 'Loading your schedule…'}
+          {me.error ? me.error.message : t('schedule.loading')}
         </p>
       ) : (
         <>

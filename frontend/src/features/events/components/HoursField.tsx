@@ -5,6 +5,7 @@ import { minutesToTime, timeToMinutes } from '@/lib/date-time'
 import { SLOT_MINUTES } from '@/shared/constants'
 import { FieldError, FieldLabel } from '@/shared/components/ui/field'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
+import { getLocale, useT } from '@/shared/i18n'
 import { HOUR_PRESETS } from '../schema'
 import { dailyMinutes, describeDuration } from '../summary'
 import { QuickChip } from './QuickChip'
@@ -16,6 +17,7 @@ const TIME_OPTIONS = Array.from({ length: (24 * 60) / SLOT_MINUTES - 1 }, (_, in
 
 const PRESET_ICONS = [Briefcase, Sunrise, Sun, Moon]
 
+/** Gợi ý giờ 12h cạnh giờ 24h; tiếng Việt quen dùng 24h nên không cần */
 const label12h = (time: string) => {
   const minutes = timeToMinutes(time)
   const hour = Math.floor(minutes / 60)
@@ -31,21 +33,22 @@ interface HoursFieldProps {
 
 /** Khung giờ mỗi ngày: chọn nhanh bằng chip hoặc chỉnh chi tiết bằng 2 dropdown */
 export function HoursField({ start, end, onChange, error }: HoursFieldProps) {
+  const t = useT()
   const minutes = dailyMinutes(start, end)
 
   return (
     <div className="grid gap-4">
-      <div className="flex flex-wrap gap-2" aria-label="Quick time ranges">
+      <div className="flex flex-wrap gap-2" aria-label={t('hours.quick')}>
         {HOUR_PRESETS.map((preset, index) => {
           const Icon = PRESET_ICONS[index]
           return (
             <QuickChip
-              key={preset.label}
+              key={preset.labelKey}
               active={start === preset.start && end === preset.end}
               onClick={() => onChange(preset.start, preset.end)}
               icon={<Icon className="size-4" aria-hidden="true" />}
             >
-              {preset.label}
+              {t(preset.labelKey)}
               {/* Màn hẹp ẩn giờ để 4 chip nằm gọn 2 dòng */}
               <span className={cn('hidden tabular-nums sm:inline', start === preset.start && end === preset.end ? 'opacity-70' : 'text-muted-foreground')}>
                 {preset.start}–{preset.end}
@@ -56,13 +59,13 @@ export function HoursField({ start, end, onChange, error }: HoursFieldProps) {
       </div>
 
       <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2 sm:max-w-md">
-        <TimeSelect id="daily-start" label="From" value={start} onChange={(next) => onChange(next, end)} />
+        <TimeSelect id="daily-start" label={t('hours.from')} value={start} onChange={(next) => onChange(next, end)} />
         <span className="pb-3 text-muted-foreground" aria-hidden="true">
           –
         </span>
         <TimeSelect
           id="daily-end"
-          label="To"
+          label={t('hours.to')}
           value={end}
           onChange={(next) => onChange(start, next)}
           isDisabled={(time) => timeToMinutes(time) <= timeToMinutes(start)}
@@ -73,7 +76,8 @@ export function HoursField({ start, end, onChange, error }: HoursFieldProps) {
         <FieldError>{error}</FieldError>
       ) : (
         <p className="text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">{describeDuration(minutes)}</span> each day, in 15-minute slots
+          <span className="font-medium text-foreground">{describeDuration(minutes)}</span>
+          {t('hours.eachDay')}
         </p>
       )}
     </div>
@@ -105,7 +109,8 @@ function TimeSelect({
         <SelectContent className="max-h-64" position="popper">
           {TIME_OPTIONS.map((time) => (
             <SelectItem key={time} value={time} disabled={isDisabled?.(time)} className="tabular-nums">
-              {time} <span className="time-12h text-muted-foreground">({label12h(time)})</span>
+              {time}{' '}
+              {getLocale() === 'en' && <span className="time-12h text-muted-foreground">({label12h(time)})</span>}
             </SelectItem>
           ))}
         </SelectContent>

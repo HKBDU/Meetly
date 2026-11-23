@@ -4,6 +4,7 @@ import { CalendarCheck2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDay } from '@/shared/grid/model'
 import { rowBoundaryClass } from '@/shared/grid/rowBoundary'
+import { t, type Locale } from '@/shared/i18n'
 import type { EventDetail } from '@/shared/types'
 import { getAvailabilityClass } from '../availability'
 import type { SelectedCell } from '../types'
@@ -36,6 +37,8 @@ export interface HeatmapCellProps {
   /** Số ô của lịch đã chốt, để nhãn ở ô đầu phủ hết khoảng */
   finalizedCellCount?: number
   handlers: HeatmapCellHandlers
+  /** Chỉ để memo vẽ lại ô khi đổi ngôn ngữ (nhãn đọc ngôn ngữ hiện tại qua `t`) */
+  locale?: Locale
 }
 
 const edgeClass = (edge: RangeEdge) =>
@@ -61,7 +64,10 @@ export const HeatmapCell = memo(function HeatmapCell({
   const isFinalizedStart = finalized === 'top' || finalized === 'single'
   const schedule = finalizedEvent?.finalSchedule
 
-  const label = `${formatDay(column)}, ${row.startTime} – ${row.endTime}: ${count} of ${total} participants available${suggestion ? ', suggested time' : ''}${finalized ? ', finalized meeting time' : ''}`
+  const label =
+    t('cell.label', { day: formatDay(column), start: row.startTime, end: row.endTime, count, total }) +
+    (suggestion ? t('cell.suggested') : '') +
+    (finalized ? t('cell.finalized') : '')
 
   const button = (
     <button
@@ -112,7 +118,7 @@ export const HeatmapCell = memo(function HeatmapCell({
             <span className="block whitespace-nowrap">
               {schedule.startTime} – {schedule.endTime}
             </span>
-            <span className="block text-finalized-foreground/80">Finalized</span>
+            <span className="block text-finalized-foreground/80">{t('info.finalized')}</span>
           </span>
         </span>
       )}

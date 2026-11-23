@@ -1,4 +1,5 @@
 import { api, getApiErrorMessage } from '@/lib/axios'
+import { t, type MessageKey } from '@/shared/i18n'
 import type { DayOfWeek, EditableEvent, EventDetail, EventType, FinalSchedule } from '@/shared/types'
 
 /**
@@ -9,12 +10,12 @@ import type { DayOfWeek, EditableEvent, EventDetail, EventType, FinalSchedule } 
 const eventEndpoint = (shortCode: string, suffix = '') =>
   `/events/${encodeURIComponent(shortCode)}${suffix}`
 
-/** Đổi lỗi axios thành `Error` với câu tiếng Anh để nơi gọi toast trực tiếp */
-async function unwrap<T>(request: Promise<{ data: T }>, fallback: string): Promise<T> {
+/** Đổi lỗi axios thành `Error` với câu theo ngôn ngữ đang chọn để nơi gọi toast trực tiếp */
+async function unwrap<T>(request: Promise<{ data: T }>, fallback: MessageKey): Promise<T> {
   try {
     return (await request).data
   } catch (error) {
-    throw new Error(getApiErrorMessage(error, fallback), { cause: error })
+    throw new Error(getApiErrorMessage(error, t(fallback)), { cause: error })
   }
 }
 
@@ -84,27 +85,27 @@ export interface SaveAvailabilityRequest {
 }
 
 export function getEvent(shortCode: string): Promise<EventDetail> {
-  return unwrap(api.get<EventDetail>(eventEndpoint(shortCode)), 'Unable to load the event.')
+  return unwrap(api.get<EventDetail>(eventEndpoint(shortCode)), 'api.loadEvent')
 }
 
 export function createEvent(payload: CreateEventRequest): Promise<CreatedEvent> {
   return unwrap(
     api.post<CreatedEvent>('/events', payload),
-    'Unable to create the event. Please try again.',
+    'api.createEvent',
   )
 }
 
 export async function updateEvent(shortCode: string, payload: EditableEvent): Promise<void> {
   await unwrap(
     api.put<null>(eventEndpoint(shortCode), payload),
-    'Unable to update the event. Please try again.',
+    'api.updateEvent',
   )
 }
 
 export function finalizeEvent(shortCode: string, payload: FinalSchedule): Promise<FinalizeResult> {
   return unwrap(
     api.post<FinalizeResult>(eventEndpoint(shortCode, '/finalize'), payload),
-    'Unable to finalize the meeting. Please try again.',
+    'api.finalize',
   )
 }
 
@@ -116,14 +117,14 @@ export function accessParticipant(
     api.post<ParticipantAccess>(eventEndpoint(shortCode, '/participants/access'), credentials, {
       keepSessionOn401: true,
     }),
-    'Could not join, please try again',
+    'api.join',
   )
 }
 
 export function getMyParticipant(shortCode: string): Promise<MyParticipant> {
   return unwrap(
     api.get<MyParticipant>(eventEndpoint(shortCode, '/participants/me')),
-    "Couldn't load your schedule, please try again",
+    'api.loadSchedule',
   )
 }
 
@@ -133,6 +134,6 @@ export function saveAvailability(
 ): Promise<{ revision: number }> {
   return unwrap(
     api.put<{ revision: number }>(eventEndpoint(shortCode, '/participants/me/availability'), payload),
-    'Failed to save, please try again',
+    'api.save',
   )
 }

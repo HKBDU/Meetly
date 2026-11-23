@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import { EventStatus } from '@/shared/constants'
+import { t } from '@/shared/i18n'
 import type { EditableEvent } from '@/shared/types'
 import { EventHeader } from '../components/EventHeader'
 import { GettingStartedBanner } from '../components/GettingStartedBanner'
@@ -36,12 +37,12 @@ export function HeatmapPage({
   )
 
   async function updateEventDetails(payload: EditableEvent) {
-    if (!canEdit || !onUpdateEvent || busy.current) throw new Error('Event editing is not available.')
+    if (!canEdit || !onUpdateEvent || busy.current) throw new Error(t('edit.unavailable'))
     busy.current = true
     setPending(HeatmapPendingAction.Update)
     try {
       await onUpdateEvent(payload)
-      toast.success('Event updated successfully.')
+      toast.success(t('edit.success'))
     } finally {
       busy.current = false
       setPending(null)

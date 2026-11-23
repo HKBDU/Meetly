@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/shared/components/ui/button'
 import { FieldError, FieldLabel } from '@/shared/components/ui/field'
 import { Input } from '@/shared/components/ui/input'
+import { useT } from '@/shared/i18n'
 import { DEFAULT_EVENT_VALUES, eventFormSchema, type EventFormValues } from '../schema'
 import { DaysField } from './DaysField'
 import { HoursField } from './HoursField'
@@ -24,11 +25,12 @@ export function EventForm({
   initialValues = DEFAULT_EVENT_VALUES,
   onSubmit,
   onCancel,
-  submitLabel = 'Save',
+  submitLabel,
   submitting = false,
   error,
   className,
 }: EventFormProps) {
+  const t = useT()
   const {
     control,
     register,
@@ -49,13 +51,13 @@ export function EventForm({
   return (
     <form className={cn('grid gap-6', className)} onSubmit={handleSubmit(onSubmit)} noValidate>
       <div className="grid gap-2">
-        <FieldLabel htmlFor="event-name">Event name</FieldLabel>
+        <FieldLabel htmlFor="event-name">{t('common.eventName')}</FieldLabel>
         <Input id="event-name" aria-invalid={Boolean(errors.title)} {...register('title')} />
         {errors.title && <FieldError>{errors.title.message}</FieldError>}
       </div>
 
       <div className="grid gap-2">
-        <FieldLabel>Days</FieldLabel>
+        <FieldLabel>{t('common.daysTitle')}</FieldLabel>
         <DaysField
           eventType={eventType}
           dates={dates}
@@ -68,7 +70,7 @@ export function EventForm({
       </div>
 
       <div className="grid gap-2">
-        <FieldLabel>Hours</FieldLabel>
+        <FieldLabel>{t('common.hoursTitle')}</FieldLabel>
         <HoursField
           start={dailyStartTime}
           end={dailyEndTime}
@@ -89,11 +91,11 @@ export function EventForm({
       <footer className="flex gap-2.5 sm:justify-end">
         {onCancel && (
           <Button type="button" variant="outline" size="lg" className="flex-1 sm:flex-none" onClick={onCancel}>
-            Cancel
+            {t('common.cancel')}
           </Button>
         )}
         <Button type="submit" size="lg" className="flex-1 sm:min-w-36 sm:flex-none" disabled={busy}>
-          {busy ? 'Saving…' : submitLabel}
+          {busy ? t('common.saving') : (submitLabel ?? t('common.save'))}
         </Button>
       </footer>
     </form>

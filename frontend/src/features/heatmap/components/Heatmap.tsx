@@ -4,6 +4,7 @@ import { timeToMinutes } from '@/lib/date-time'
 import { EventStatus, SLOT_MINUTES } from '@/shared/constants'
 import { buildRows, columnKey, getColumns, type TimeColumn, type TimeRow } from '@/shared/grid/model'
 import { TimeGrid } from '@/shared/grid/TimeGrid'
+import { useLocale, useT } from '@/shared/i18n'
 import type { EventDetail, FinalSchedule } from '@/shared/types'
 import { AVAILABILITY_LEVELS } from '../constants'
 import { getAvailabilityLevelClass } from '../availability'
@@ -43,6 +44,8 @@ function edgeOf(range: FinalSchedule | null | undefined, column: TimeColumn, row
 }
 
 export function Heatmap({ event, bestTimes, highlightedKey, reveal, selected, selecting, handlers }: HeatmapProps) {
+  const t = useT()
+  const { locale } = useLocale()
   // Chỉ tính lại khi cấu hình lưới đổi, không phải mỗi lần realtime đổi dữ liệu ô
   const structure = [
     event.eventType,
@@ -75,30 +78,30 @@ export function Heatmap({ event, bestTimes, highlightedKey, reveal, selected, se
   const total = event.participants.length
 
   if (columns.length === 0)
-    return <p className="rounded-xl bg-muted p-6 text-muted-foreground">No dates available for the heatmap.</p>
+    return <p className="rounded-xl bg-muted p-6 text-muted-foreground">{t('heatmap.noDates')}</p>
   if (rows.length === 0)
-    return <p className="rounded-xl bg-muted p-6 text-muted-foreground">No valid time slots available.</p>
+    return <p className="rounded-xl bg-muted p-6 text-muted-foreground">{t('heatmap.noSlots')}</p>
 
   return (
     <section className="min-w-0" aria-labelledby="heatmap-heading">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 id="heatmap-heading" className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-          Group Availability
+          {t('heatmap.title')}
         </h2>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground" aria-label="Availability scale from fewer to more participants">
-          <span className="mr-1">Less</span>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground" aria-label={t('heatmap.scale')}>
+          <span className="mr-1">{t('heatmap.less')}</span>
           {AVAILABILITY_LEVELS.map((level) => (
             <span key={level} className={`h-4 w-4 rounded-sm border border-border ${getAvailabilityLevelClass(level)}`} />
           ))}
-          <span className="ml-1">More</span>
+          <span className="ml-1">{t('heatmap.more')}</span>
         </div>
       </div>
-      {total === 0 && <p className="mb-3 text-sm text-muted-foreground">No participants yet.</p>}
+      {total === 0 && <p className="mb-3 text-sm text-muted-foreground">{t('heatmap.noParticipants')}</p>}
       <TimeGrid
         columns={columns}
         rows={rows}
-        caption="Availability grid with 15-minute slots. Hover, tap, or use Tab to view details."
-        pagerLabel="Heatmap date pages"
+        caption={t('heatmap.caption')}
+        pagerLabel={t('heatmap.pager')}
         revealColumn={reveal}
         renderCell={(column, row) => {
           const key = `${column.key}|${row.startTime}`
@@ -128,6 +131,7 @@ export function Heatmap({ event, bestTimes, highlightedKey, reveal, selected, se
               finalizedEvent={finalized ? event : undefined}
               finalizedCellCount={finalizedCellCount}
               handlers={handlers}
+              locale={locale}
             />
           )
         }}

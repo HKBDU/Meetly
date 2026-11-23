@@ -1,6 +1,7 @@
 import { Button, Card, CardContent, CardHeader } from '@/shared/components/ui';
 import type { ScheduleControlsProps } from '../types';
 import { formatDay } from '@/shared/grid/model';
+import { useT } from '@/shared/i18n';
 
 export function ScheduleControls({
   selected,
@@ -10,34 +11,34 @@ export function ScheduleControls({
   onCancel,
   onConfirm,
 }: ScheduleControlsProps) {
+  const t = useT();
   return (
     <Card
       className="gap-4"
       aria-labelledby="schedule-heading"
     >
       <CardHeader>
-        <h2 id="schedule-heading" className="font-medium">Select event time</h2>
+        <h2 id="schedule-heading" className="font-medium">{t('select.title')}</h2>
       </CardHeader>
       <CardContent>
       {!selecting && (
         <>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Enable selection to drag a continuous time range within one day.
+            {t('select.enable')}
           </p>
           <Button
             disabled={disabled}
             onClick={onBegin}
             className="mt-4 w-full"
           >
-            Select Final Time
+            {t('select.begin')}
           </Button>
         </>
       )}
       {selecting && (
         <>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Drag across the grid to select. Keyboard: Enter sets the first slot; Shift + Enter sets
-            the last.
+            {t('select.help')}
           </p>
           {selected && (
             <div className="mt-4 rounded-lg border border-border p-4">
@@ -52,7 +53,7 @@ export function ScheduleControls({
             onClick={onConfirm}
             className="mt-4 w-full"
           >
-            Confirm
+            {t('select.confirm')}
           </Button>
           <Button
             variant="outline"
@@ -60,7 +61,7 @@ export function ScheduleControls({
             onClick={onCancel}
             className="mt-2 w-full"
           >
-            Cancel Selection
+            {t('select.cancel')}
           </Button>
         </>
       )}

@@ -1,9 +1,12 @@
+import type { MessageKey } from '@/shared/i18n'
+
 export type PaintMode = 'FREE' | 'BUSY'
 
-export const PAINT_MODE_LABEL: Record<PaintMode, string> = {
-  FREE: 'availability',
-  BUSY: 'busy time',
-}
+/** Khoá dịch tên của chế độ tô, VD "availability" / "busy time" */
+export const PAINT_MODE_LABEL = {
+  FREE: 'paint.free',
+  BUSY: 'paint.busy',
+} as const satisfies Record<PaintMode, MessageKey>
 
 /** Phiên đăng nhập của participant trên một event */
 export interface ParticipantAuthInfo {

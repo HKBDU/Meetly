@@ -7,6 +7,7 @@ import {
   RedditIcon,
   XIcon,
 } from "@/shared/layouts/SocialIcons"
+import { useT } from "@/shared/i18n"
 
 // TODO: thay các href "#" bằng link mạng xã hội thật
 const SOCIAL_LINKS = [
@@ -18,6 +19,7 @@ const SOCIAL_LINKS = [
 ] as const
 
 export function AppFooter() {
+  const t = useT()
   return (
     <footer className="flex flex-col gap-3 border-t bg-card/60 px-4 py-6 text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
       <div>
@@ -28,7 +30,7 @@ export function AppFooter() {
           meetly
         </div>
         <p className="mt-1 flex items-center gap-1 text-xs">
-          Made with <Heart className="size-3 fill-current" /> by{" "}
+          {t("footer.madeWith")} <Heart className="size-3 fill-current" /> {t("footer.by")}{" "}
           <a
             href="https://github.com/HKBDU"
             target="_blank"

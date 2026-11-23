@@ -1,4 +1,6 @@
-import { format, isValid, parseISO } from 'date-fns';
+import { isValid, parseISO } from 'date-fns';
+
+import { getLocale, intlLocale, type Locale } from '@/shared/i18n';
 
 /** Mọi hàm ngày/giờ của app nằm ở đây; ngày dạng "YYYY-MM-DD", giờ dạng "HH:mm" */
 
@@ -9,9 +11,23 @@ export function parseDate(value: string): Date | null {
   return isValid(date) ? date : null;
 }
 
+const formatterCache = new Map<string, Intl.DateTimeFormat>();
+
+/** Intl.DateTimeFormat theo ngôn ngữ hiện tại, tạo một lần cho mỗi cặp (ngôn ngữ, tuỳ chọn) */
+export function dateFormatter(options: Intl.DateTimeFormatOptions, locale: Locale = getLocale()): Intl.DateTimeFormat {
+  const key = `${locale}|${JSON.stringify(options)}`;
+  let formatter = formatterCache.get(key);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(intlLocale(locale), options);
+    formatterCache.set(key, formatter);
+  }
+  return formatter;
+}
+
+/** "Nov 24, 2026" / "24 thg 11, 2026" */
 export function formatDate(value: string): string {
   const date = parseDate(value);
-  return date ? format(date, 'MMM d, yyyy') : value;
+  return date ? dateFormatter({ month: 'short', day: 'numeric', year: 'numeric' }).format(date) : value;
 }
 
 /** Date theo giờ máy -> "YYYY-MM-DD" (không qua UTC để không lệch ngày) */
@@ -27,10 +43,12 @@ export function fromIsoDate(value: string): Date {
   return new Date(`${value}T00:00:00`);
 }
 
+/** Nhãn mốc giờ ở cột trái lưới: "9 AM" (tiếng Anh) hoặc "9:00" (tiếng Việt quen dùng 24 giờ) */
 export function formatHourLabel(time: string): string {
   const minutes = timeToMinutes(time);
   if (!Number.isFinite(minutes)) return time;
   const hour = Math.floor(minutes / 60);
+  if (getLocale() === 'vi') return `${hour}:00`;
   return `${hour % 12 || 12} ${hour < 12 ? 'AM' : 'PM'}`;
 }
 

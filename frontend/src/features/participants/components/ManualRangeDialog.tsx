@@ -4,6 +4,8 @@ import { useForm } from 'react-hook-form'
 
 import { minutesToTime, timeToMinutes } from '@/lib/date-time'
 import { SLOT_MINUTES } from '@/shared/constants'
+import { columnDetail, columnLabel } from '@/shared/grid/model'
+import { useT } from '@/shared/i18n'
 import {
   Button,
   Dialog,
@@ -40,6 +42,7 @@ interface ManualRangeDialogProps {
 
 /** Chọn 1 cột và khoảng giờ bằng slider để tô hàng loạt, theo `paintMode` hiện tại */
 export function ManualRangeDialog({ grid, open, onOpenChange, triggerAutoSave, onRangeApplied }: ManualRangeDialogProps) {
+  const t = useT()
   const paintMode = useParticipantStore((s) => s.paintMode)
   const setSlotsPainted = useParticipantStore((s) => s.setSlotsPainted)
 
@@ -74,8 +77,8 @@ export function ManualRangeDialog({ grid, open, onOpenChange, triggerAutoSave, o
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Manual Range Entry</DialogTitle>
-          <DialogDescription>Add a continuous block of {PAINT_MODE_LABEL[paintMode]}</DialogDescription>
+          <DialogTitle>{t('manual.title')}</DialogTitle>
+          <DialogDescription>{t('manual.description', { mode: t(PAINT_MODE_LABEL[paintMode]) })}</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -85,7 +88,7 @@ export function ManualRangeDialog({ grid, open, onOpenChange, triggerAutoSave, o
               name="date"
               render={({ field }) => (
                 <FormItem className="space-y-1.5">
-                  <FormLabel>Select Date</FormLabel>
+                  <FormLabel>{t('manual.date')}</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger className="w-full">
@@ -95,7 +98,7 @@ export function ManualRangeDialog({ grid, open, onOpenChange, triggerAutoSave, o
                     <SelectContent>
                       {grid.columns.map((column) => (
                         <SelectItem key={column.key} value={column.key}>
-                          {column.specificDate ? `${column.label}, ${column.detail}` : column.label}
+                          {column.specificDate ? `${columnLabel(column)}, ${columnDetail(column)}` : columnLabel(column)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -110,7 +113,7 @@ export function ManualRangeDialog({ grid, open, onOpenChange, triggerAutoSave, o
               render={({ field }) => (
                 <FormItem className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <FormLabel>Time Range</FormLabel>
+                    <FormLabel>{t('manual.range')}</FormLabel>
                     <span className="text-sm font-medium tabular-nums">
                       {boundaries[field.value[0]]} – {boundaries[field.value[1]]}
                     </span>
@@ -132,9 +135,9 @@ export function ManualRangeDialog({ grid, open, onOpenChange, triggerAutoSave, o
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
-              <Button type="submit">Save</Button>
+              <Button type="submit">{t('common.save')}</Button>
             </DialogFooter>
           </form>
         </Form>

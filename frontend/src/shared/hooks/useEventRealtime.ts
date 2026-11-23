@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
+import { t } from '@/shared/i18n'
 import { useEventHubConnection } from '@/shared/hooks/useEventHubConnection'
 import { eventQueryKey, patchEventCache } from '@/shared/hooks/useEventQuery'
 import type {
@@ -102,8 +103,8 @@ export function useEventRealtime(shortCode: string, accessToken: string | undefi
         finalSchedule: payload.finalSchedule,
       }))
       if (applied) {
-        toast.info('The host has finalized the meeting time.', {
-          description: 'Schedules are now locked and can no longer be edited.',
+        toast.info(t('realtime.finalized'), {
+          description: t('realtime.finalizedDesc'),
           duration: 6000,
         })
       }

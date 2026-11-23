@@ -7,6 +7,7 @@ import { ManualRangeDialog } from '@/features/participants/components/ManualRang
 import type { ScheduleGrid } from '@/features/participants/hooks/useScheduleGrid'
 import { useParticipantStore } from '@/features/participants/store'
 import type { PaintMode } from '@/features/participants/types'
+import { useT } from '@/shared/i18n'
 
 interface ScheduleActionsBarProps {
   grid: ScheduleGrid
@@ -22,6 +23,7 @@ const modeItemClass = cn(
 
 /** Hàng điều khiển phía trên lưới: chọn thủ công, xoá hết, trạng thái lưu và chế độ Busy/Available */
 export function ScheduleActionsBar({ grid, triggerAutoSave, isSaving, onManualRangeApplied }: ScheduleActionsBarProps) {
+  const t = useT()
   const paintMode = useParticipantStore((s) => s.paintMode)
   const setPaintMode = useParticipantStore((s) => s.setPaintMode)
   const clearAllPainted = useParticipantStore((s) => s.clearAllPainted)
@@ -36,7 +38,7 @@ export function ScheduleActionsBar({ grid, triggerAutoSave, isSaving, onManualRa
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" disabled={locked} onClick={() => setIsManualDialogOpen(true)}>
             <SlidersHorizontal />
-            Select range
+            {t('actions.selectRange')}
           </Button>
           <Button
             variant="ghost"
@@ -48,7 +50,7 @@ export function ScheduleActionsBar({ grid, triggerAutoSave, isSaving, onManualRa
               triggerAutoSave()
             }}
           >
-            Clear all
+            {t('actions.clearAll')}
           </Button>
           <Button
             type="button"
@@ -56,8 +58,8 @@ export function ScheduleActionsBar({ grid, triggerAutoSave, isSaving, onManualRa
             size="icon-sm"
             className="ml-auto text-muted-foreground sm:ml-0"
             onClick={openEmailDialog}
-            aria-label={hasEmailSubscribed ? 'Email notifications on' : 'Notify me by email'}
-            title={hasEmailSubscribed ? 'Email notifications on' : 'Notify me by email'}
+            aria-label={hasEmailSubscribed ? t('actions.emailOn') : t('actions.emailOff')}
+            title={hasEmailSubscribed ? t('actions.emailOn') : t('actions.emailOff')}
           >
             {hasEmailSubscribed ? <BellRing className="text-brand" /> : <BellRing />}
           </Button>
@@ -68,27 +70,27 @@ export function ScheduleActionsBar({ grid, triggerAutoSave, isSaving, onManualRa
             type="single"
             value={paintMode}
             disabled={locked}
-            aria-label="Paint mode"
+            aria-label={t('actions.paintMode')}
             className="rounded-full bg-muted p-1"
             // Đổi chế độ giữ nguyên lịch (lấy phần bù), nên không cần lưu lại
             onValueChange={(value) => value && setPaintMode(value as PaintMode, grid.allSlotIds)}
           >
-            <ToggleGroupItem value="FREE" aria-label="Paint available time" className={modeItemClass}>
-              Available
+            <ToggleGroupItem value="FREE" aria-label={t('actions.paintFree')} className={modeItemClass}>
+              {t('common.available')}
             </ToggleGroupItem>
-            <ToggleGroupItem value="BUSY" aria-label="Paint busy time" className={modeItemClass}>
-              Busy
+            <ToggleGroupItem value="BUSY" aria-label={t('actions.paintBusy')} className={modeItemClass}>
+              {t('actions.busy')}
             </ToggleGroupItem>
           </ToggleGroup>
 
           <span role="status" className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
             {isSaving ? (
               <>
-                <Loader2 className="size-3.5 animate-spin" /> Saving…
+                <Loader2 className="size-3.5 animate-spin" /> {t('common.saving')}
               </>
             ) : (
               <>
-                <CloudCheck className="size-3.5 text-brand" /> Saved
+                <CloudCheck className="size-3.5 text-brand" /> {t('actions.saved')}
               </>
             )}
           </span>
