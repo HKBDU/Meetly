@@ -1,6 +1,8 @@
 import { minutesToTime, timeToMinutes } from '@/lib/date-time';
-import { DEFAULT_MEETING_DURATION, SLOT_MINUTES } from './constants';
-import type { HeatmapCellData, HeatmapEvent, SuggestedSlot, SuggestionParams } from './types';
+import { SLOT_MINUTES } from '@/shared/constants';
+import type { EventDetail, HeatmapCellData } from '@/shared/types';
+import { DEFAULT_MEETING_DURATION } from './constants';
+import type { SuggestedSlot, SuggestionParams } from './types';
 
 export function getSuggestionParams(
   duration: number | undefined,
@@ -45,14 +47,17 @@ function removeOverlapping(windows: CandidateWindow[]): CandidateWindow[] {
  * nhỏ cố định và bỏ qua một khoảng có nhiều người rảnh hơn ở phần lớn thời gian. Mỗi kết quả
  * luôn dài đúng duration; các cửa sổ đồng hạng chồng nhau không bị gộp thành một khoảng dài hơn.
  */
-export function findBestSlots(event: HeatmapEvent, params: SuggestionParams): SuggestedSlot[] {
+export function findBestSlots(event: EventDetail, params: SuggestionParams): SuggestedSlot[] {
   const duration = params.minDuration ?? DEFAULT_MEETING_DURATION;
   const cellsNeeded = Math.max(1, Math.ceil(duration / SLOT_MINUTES));
   const keyParticipant = params.keyParticipant?.trim().toLowerCase();
 
   const columns = new Map<string, HeatmapCellData[]>();
   for (const cell of event.heatmapGrid) {
-    columns.set(columnKey(cell), [...(columns.get(columnKey(cell)) ?? []), cell]);
+    const key = columnKey(cell);
+    const column = columns.get(key);
+    if (column) column.push(cell);
+    else columns.set(key, [cell]);
   }
 
   const perColumn = [...columns.values()].map((column) => {

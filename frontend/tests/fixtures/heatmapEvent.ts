@@ -1,11 +1,11 @@
-import { buildRows, getColumns } from '@/features/heatmap/time';
-import type { HeatmapEvent } from '@/features/heatmap/types';
+import { buildRows, getColumns } from '@/shared/grid/model';
+import type { EventDetail } from '@/shared/types';
 
 const participants = ['Dương', 'An', 'Bình', 'Chi', 'Duy', 'Huyền', 'Khoa', 'Linh'].map(
   (username) => ({ username }),
 );
 
-const baseEvent: HeatmapEvent = {
+const baseEvent: EventDetail = {
   title: 'Meetly Team Meeting',
   shortCode: 'DEMO26',
   url: 'https://meetly.example/DEMO26',
@@ -25,7 +25,7 @@ const baseEvent: HeatmapEvent = {
 const levels = [0, 2, 4, 5, 6, 7, 8];
 
 /** Sự kiện chọn ngày cụ thể với độ rảnh mẫu, chỉ dùng cho test */
-export const mockDatesEvent: HeatmapEvent = {
+export const mockDatesEvent: EventDetail = {
   ...baseEvent,
   heatmapGrid: getColumns(baseEvent).flatMap((column, dayIndex) =>
     buildRows(baseEvent.dailyStartTime, baseEvent.dailyEndTime).map((row, rowIndex) => {

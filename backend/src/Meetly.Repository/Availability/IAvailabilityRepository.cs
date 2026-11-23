@@ -11,7 +11,8 @@ public interface IAvailabilityRepository
         Guid participantId,
         CancellationToken cancellationToken);
 
-    Task<long> ReplaceAsync(
+    /// <summary>Thay toàn bộ lịch của participant; trả revision mới, hoặc null nếu event không còn Open.</summary>
+    Task<long?> ReplaceAsync(
         Events eventEntity,
         EventParticipants participant,
         IReadOnlyCollection<TimeSlots> timeSlots,

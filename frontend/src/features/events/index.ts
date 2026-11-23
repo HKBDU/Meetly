@@ -1,5 +1,5 @@
 export { EventForm } from './components/EventForm'
-export { NewEventScreen } from './components/NewEventScreen'
 export { HomePage } from './pages/HomePage'
-export { toCreateEventPayload, toUpdateEventPayload } from './services'
-export type { CreateEventRequest, CreatedEvent, EventFormValues, EventType, UpdateEventRequest } from './types'
+export { NewEventPage } from './pages/NewEventPage'
+export { toEventFields, toFormValues } from './schema'
+export type { EventFormValues } from './schema'

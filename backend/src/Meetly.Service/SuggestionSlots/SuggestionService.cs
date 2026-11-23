@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Meetly.Repository.Entity;
 using Meetly.Repository.Enum;
 using Meetly.Repository.SuggestionSlots;
+using Meetly.Service.Common;
 
 namespace Meetly.Service.SuggestionSlots;
 
@@ -21,18 +22,21 @@ public sealed class SuggestionService : ISuggestionService
         SuggestionEventRequest request,
         CancellationToken cancellationToken)
     {
-        if (!IsAdmin(user))
-            throw new SuggestionException(403, "Chỉ Admin mới được gợi ý khung giờ.");
+        // Token admin của event khác không được xem gợi ý của event này
+        if (!IsAdmin(user) || !string.Equals(user.FindFirst("shortCode")?.Value, shortCode, StringComparison.OrdinalIgnoreCase))
+            throw new SuggestionException(403, "Chỉ Admin của sự kiện này mới được gợi ý khung giờ.");
 
-        var eventEntity = await _repository.GetEventAsync(shortCode, cancellationToken)
+        var eventEntity = await _repository.GetEventAsync(shortCode.Trim().ToUpperInvariant(), cancellationToken)
             ?? throw new SuggestionException(404, "Không tìm thấy sự kiện.");
 
         if (eventEntity.Status != EventStatus.Open)
             throw new SuggestionException(409, "Sự kiện không còn mở để gợi ý khung giờ.");
 
         var minimumDuration = request.MinDuration ?? DefaultDurationMinutes;
-        if (minimumDuration <= 0)
-            throw new SuggestionException(422, "minDuration phải lớn hơn 0.");
+        if (minimumDuration is <= 0 or > InputLimits.MaxDurationMinutes)
+            throw new SuggestionException(422, $"minDuration phải trong khoảng 1-{InputLimits.MaxDurationMinutes}.");
+        if (request.KeyParticipant?.Length > InputLimits.UsernameMaxLength)
+            throw new SuggestionException(422, "keyParticipant quá dài.");
 
         var keyParticipant = FindKeyParticipant(eventEntity, request.KeyParticipant);
         var suggestions = new List<TimeSlotsSuggestionRequest>();

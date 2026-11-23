@@ -1,6 +1,6 @@
 import { Button, Card, CardContent, CardHeader } from '@/shared/components/ui';
 import type { ScheduleControlsProps } from '../types';
-import { formatDay } from '../time';
+import { formatDay } from '@/shared/grid/model';
 
 export function ScheduleControls({
   selected,
@@ -12,7 +12,7 @@ export function ScheduleControls({
 }: ScheduleControlsProps) {
   return (
     <Card
-      className="border-2 border-blue-700 shadow-none"
+      className="border-2 border-selection shadow-none"
       aria-labelledby="schedule-heading"
     >
       <CardHeader>
@@ -21,7 +21,7 @@ export function ScheduleControls({
       <CardContent>
       {!selecting && (
         <>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
             Enable selection to drag a continuous time range within one day.
           </p>
           <Button
@@ -35,12 +35,12 @@ export function ScheduleControls({
       )}
       {selecting && (
         <>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
             Drag across the grid to select. Keyboard: Enter sets the first slot; Shift + Enter sets
             the last.
           </p>
           {selected && (
-            <div className="mt-4 rounded-lg border border-slate-200 p-4">
+            <div className="mt-4 rounded-lg border border-border p-4">
               <p className="text-sm font-medium">{formatDay(selected)}</p>
               <p className="mt-1 text-xl font-bold">
                 {selected.startTime} – {selected.endTime}

@@ -1,153 +1,120 @@
-import { EventFormActions } from './EventFormActions'
-import { AvailabilitySelector } from './AvailabilitySelector'
-import { EventTitleField } from './EventTitleField'
-import { EventTypeSelect } from './EventTypeSelect'
-import { TimeRangeFields } from './TimeRangeFields'
-import { eventUi } from '../../../shared/components/ui/styles'
-import { cn } from '@/lib/utils'
-import { useForm, Controller, FormProvider } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import type { EventFormProps, EventFormValues, EventType } from '../types'
-import { eventFormSchema } from '../schema'
 
-const INITIAL_VALUES: Partial<EventFormValues> = {
-  title: '',
-  eventType: 2,
-  availableDates: ['Mon'],
-  dailyStartTime: '09:00',
-  dailyEndTime: '17:00',
+import { cn } from '@/lib/utils'
+import { EventType } from '@/shared/constants'
+import { Button } from '@/shared/components/ui/button'
+import { FieldError, FieldLabel } from '@/shared/components/ui/field'
+import { Input } from '@/shared/components/ui/input'
+import { ToggleGroup, ToggleGroupItem } from '@/shared/components/ui/toggle-group'
+import { DEFAULT_EVENT_VALUES, eventFormSchema, type EventFormValues } from '../schema'
+import { DatePicker, WeekdayPicker } from './AvailabilitySelector'
+import { TimeRangeField } from './TimeRangeField'
+
+interface EventFormProps {
+  initialValues?: EventFormValues
+  onSubmit: (values: EventFormValues) => void | Promise<void>
+  onCancel?: () => void
+  submitLabel?: string
+  submitting?: boolean
+  error?: string
+  className?: string
 }
 
+/** Form tên, loại, ngày/thứ và khung giờ của event; dùng cho cả tạo mới lẫn sửa */
 export function EventForm({
-  compact = false,
-  onCancel,
+  initialValues = DEFAULT_EVENT_VALUES,
   onSubmit,
-  adminUsername,
-  adminPassword,
+  onCancel,
+  submitLabel = 'Create Event',
   submitting = false,
   error,
-  initialValues,
-  submitLabel,
+  className,
 }: EventFormProps) {
-    const methods = useForm<EventFormValues>({
+  const {
+    control,
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
-    defaultValues: {
-      ...INITIAL_VALUES,
-      ...initialValues,
-      adminUsername,
-      adminPassword,
-    },
+    defaultValues: initialValues,
   })
-
-const {
-      control,
-      handleSubmit,
-      setValue,
-      watch,
-      formState: { errors, isSubmitting },
-  } = methods
-
-const currentEventType = watch("eventType");
-
-
-// Dates and weekdays are different value domains. Do not carry a value
-// from one mode into the other.
-  function handleChangeEventType(newType: EventType) {
-    setValue("eventType", newType);
-    setValue("availableDates", [], { shouldValidate: true});
-  }
-
-  const onFormSubmit = async(data: EventFormValues) => {
-    await onSubmit?.(data);
-  }
+  const [eventType, dates, weekdays, dailyStartTime, dailyEndTime] = useWatch({
+    control,
+    name: ['eventType', 'dates', 'weekdays', 'dailyStartTime', 'dailyEndTime'],
+  })
+  const busy = submitting || isSubmitting
 
   return (
-    <FormProvider {...methods}>
-   <form
-      className={cn(eventUi.form, compact && eventUi.mobileForm)}
-      onSubmit={handleSubmit(onFormSubmit)}
-    >
-      <input type="hidden" {...methods.register('adminUsername')} />
-      <input type="hidden" {...methods.register('adminPassword')} />
-      <section className={eventUi.formContent}>
-        {/* Title Field */}
+    <form className={cn('grid gap-5', className)} onSubmit={handleSubmit(onSubmit)} noValidate>
+      <div className="grid gap-2">
+        <FieldLabel htmlFor="event-name">
+          Event name <span className="text-destructive">*</span>
+        </FieldLabel>
+        <Input id="event-name" aria-invalid={Boolean(errors.title)} {...register('title')} />
+        {errors.title && <FieldError>{errors.title.message}</FieldError>}
+      </div>
 
+      <ToggleGroup
+        type="single"
+        variant="outline"
+        aria-label="Event type"
+        value={String(eventType)}
+        onValueChange={(next) => {
+          if (next) setValue('eventType', Number(next) as EventFormValues['eventType'], { shouldValidate: false })
+        }}
+        className="w-full"
+      >
+        <ToggleGroupItem value={String(EventType.Dates)} className="flex-1 data-[state=on]:border-primary data-[state=on]:text-primary">
+          Specific dates
+        </ToggleGroupItem>
+        <ToggleGroupItem value={String(EventType.Weekdays)} className="flex-1 data-[state=on]:border-primary data-[state=on]:text-primary">
+          Days of the week
+        </ToggleGroupItem>
+      </ToggleGroup>
 
-        <Controller
-          control={control}
-          name="title"
-          render={({ field }) => (
-            <EventTitleField
-              error={errors.title?.message}
-              onChange={field.onChange}
-              value={field.value}
-            />
-          )}
+      {eventType === EventType.Dates ? (
+        <DatePicker
+          value={dates}
+          onChange={(next) => setValue('dates', next, { shouldValidate: Boolean(errors.dates) })}
+          error={errors.dates?.message}
         />
-
-        {/* Event Type Select */}
-        <Controller
-          control={control}
-          name="eventType"
-          render={({ field }) => (
-            <EventTypeSelect
-              onChange={(type) => {
-                field.onChange(type)
-                handleChangeEventType(type)
-              }}
-              value={field.value}
-            />
-          )}
+      ) : (
+        <WeekdayPicker
+          value={weekdays}
+          onChange={(next) => setValue('weekdays', next, { shouldValidate: Boolean(errors.weekdays) })}
+          error={errors.weekdays?.message}
         />
-
-        {/* Availability Selector */}
-        <Controller
-          control={control}
-          name="availableDates"
-          render={({ field }) => (
-            <AvailabilitySelector
-              error={errors.availableDates?.message}
-              eventType={currentEventType}
-              onChange={field.onChange}
-              value={field.value}
-            />
-          )}
-        />
-
-        {/* Time Range Fields */}
-        <Controller
-          control={control}
-          name="dailyStartTime"
-          render={({ field: startField }) => (
-            <Controller
-              control={control}
-              name="dailyEndTime"
-              render={({ field: endField }) => (
-                <TimeRangeFields
-                  end={endField.value}
-                  error={errors.dailyEndTime?.message}
-                  onEndChange={endField.onChange}
-                  onStartChange={startField.onChange}
-                  start={startField.value}
-                />
-              )}
-            />
-          )}
-        />
-      </section>
-
-      {error && (
-        <div className={eventUi.submitError} role="alert">
-          {error}
-        </div>
       )}
 
-      <EventFormActions
-        onCancel={onCancel ?? (() => undefined)}
-        submitLabel={submitLabel}
-        submitting={submitting || isSubmitting}
+      <TimeRangeField
+        start={dailyStartTime}
+        end={dailyEndTime}
+        onChange={(start, end) => {
+          setValue('dailyStartTime', start)
+          setValue('dailyEndTime', end, { shouldValidate: Boolean(errors.dailyEndTime) })
+        }}
+        error={errors.dailyEndTime?.message}
       />
+
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+
+      <footer className="sticky bottom-0 -mx-5 flex gap-2.5 border-t bg-card px-5 py-3 sm:static sm:mx-0 sm:justify-end sm:border-0 sm:bg-transparent sm:p-0">
+        {onCancel && (
+          <Button type="button" variant="outline" size="lg" className="flex-1 sm:flex-none" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
+        <Button type="submit" size="lg" className="flex-1 sm:flex-none sm:min-w-36" disabled={busy}>
+          {busy ? 'Saving…' : submitLabel}
+        </Button>
+      </footer>
     </form>
-    </FormProvider>
   )
 }

@@ -42,14 +42,14 @@ export function AvailabilityDetails({
                   {person.username === keyParticipant && (
                     <Star
                       size={14}
-                      className="fill-amber-300 text-amber-500"
+                      className="fill-highlight/60 text-highlight"
                       aria-label="Key Participant"
                     />
                   )}
                 </li>
               ))}
             </ul>
-            {available.length === 0 && <p className="mt-2 text-sm text-slate-500">None.</p>}
+            {available.length === 0 && <p className="mt-2 text-sm text-muted-foreground">None.</p>}
           </section>
           <Separator className="my-4" />
           <section aria-labelledby="unavailable-participants-heading">
@@ -64,14 +64,14 @@ export function AvailabilityDetails({
                   {person.username === keyParticipant && (
                     <Star
                       size={14}
-                      className="fill-amber-300 text-amber-500"
+                      className="fill-highlight/60 text-highlight"
                       aria-label="Key Participant"
                     />
                   )}
                 </li>
               ))}
             </ul>
-            {busy.length === 0 && <p className="mt-2 text-sm text-slate-500">None.</p>}
+            {busy.length === 0 && <p className="mt-2 text-sm text-muted-foreground">None.</p>}
           </section>
         </ScrollArea>
       </CardContent>

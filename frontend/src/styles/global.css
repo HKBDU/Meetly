@@ -3,40 +3,63 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Design token duy nhất của app. Component chỉ dùng class theo token (bg-primary,
+ * text-muted-foreground, bg-heat-3, border-selection...), không viết hex rời rạc.
+ */
 :root {
-  /* Gần như vuông theo ảnh mẫu, bo nhẹ (~10%) theo yêu cầu mới nhất - 5%
-     trước đó (0.2rem) quá nhẹ, gần như không thấy được */
   --radius: 0.4rem;
 
-  /* Nền trang có sắc xanh lá rất nhạt, card giữ trắng để nổi bật */
   --background: hsl(140 40% 98%);
-  --foreground: hsl(150 20% 12%);
+  --foreground: hsl(214 63% 12%);
 
   --card: hsl(0 0% 100%);
-  --card-foreground: hsl(150 20% 12%);
+  --card-foreground: var(--foreground);
   --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(150 20% 12%);
+  --popover-foreground: var(--foreground);
 
-  /* Emerald-600 - đồng bộ màu chủ đạo với feat/22-build-event-heatmap. */
+  /* Màu thương hiệu: emerald-600 */
   --primary: #059669;
+  --primary-hover: #047857;
   --primary-foreground: hsl(0 0% 100%);
 
-  /* Xanh lá nhạt - dùng cho badge, chip, vùng nhấn nhẹ */
   --secondary: hsl(120 32% 93%);
   --secondary-foreground: hsl(120 70% 18%);
 
   --muted: hsl(140 25% 95%);
-  --muted-foreground: hsl(150 12% 42%);
+  --muted-foreground: hsl(150 8% 42%);
 
   --accent: hsl(120 38% 90%);
   --accent-foreground: hsl(120 70% 18%);
 
-  --destructive: hsl(0 72% 51%);
+  --destructive: hsl(0 72% 42%);
   --destructive-foreground: hsl(0 0% 100%);
 
-  --border: hsl(142 25% 88%);
-  --input: hsl(142 25% 88%);
+  --border: hsl(142 15% 86%);
+  --input: hsl(220 9% 46%);
   --ring: #059669;
+
+  /* Thang mật độ rảnh của heatmap: 0 = không ai, 5 = tất cả */
+  --heat-0: #ffffff;
+  --heat-1: #d8f0e1;
+  --heat-2: #b7e4c7;
+  --heat-3: #8fd3a8;
+  --heat-4: #55bd7c;
+  --heat-5: #00a844;
+
+  /* Lưới thời gian */
+  --grid-line: hsl(215 16% 80%);
+  --grid-line-soft: hsl(215 20% 90%);
+
+  /* Trạng thái trên lưới: vùng admin đang chọn, khung gợi ý, lịch đã chốt */
+  --selection: #1d4ed8;
+  --suggestion: #ef4444;
+  --finalized: #2563eb;
+  --finalized-foreground: hsl(0 0% 100%);
+  --finalized-muted: #eff6ff;
+
+  /* Đánh dấu Key Participant */
+  --highlight: #f59e0b;
 
   --chart-1: #059669;
   --chart-2: hsl(142 50% 58%);
@@ -50,12 +73,9 @@
   --foreground: hsl(140 25% 95%);
 
   --card: hsl(150 16% 11%);
-  --card-foreground: hsl(140 25% 95%);
   --popover: hsl(150 16% 11%);
-  --popover-foreground: hsl(140 25% 95%);
 
-  --primary: #059669;
-  --primary-foreground: hsl(0 0% 100%);
+  --primary-hover: #10b981;
 
   --secondary: hsl(150 15% 16%);
   --secondary-foreground: hsl(140 30% 90%);
@@ -67,21 +87,17 @@
   --accent-foreground: hsl(140 30% 92%);
 
   --destructive: hsl(0 65% 55%);
-  --destructive-foreground: hsl(0 0% 100%);
 
   --border: hsl(150 15% 20%);
-  --input: hsl(150 15% 20%);
-  --ring: #059669;
+  --input: hsl(150 15% 30%);
 
-  --chart-1: #059669;
-  --chart-2: hsl(142 40% 60%);
-  --chart-3: hsl(142 25% 40%);
-  --chart-4: hsl(45 80% 55%);
-  --chart-5: hsl(0 65% 55%);
+  --heat-0: hsl(150 16% 11%);
+  --grid-line: hsl(150 15% 25%);
+  --grid-line-soft: hsl(150 15% 18%);
+  --finalized-muted: hsl(220 40% 18%);
 }
 
 @theme inline {
-  /* Roboto - đúng font family dùng trong Figma design (xem ma-mau-reference.png) */
   --font-sans: "Roboto", ui-sans-serif, system-ui, sans-serif;
 
   --color-background: var(--background);
@@ -91,6 +107,7 @@
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -103,6 +120,22 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  --color-heat-0: var(--heat-0);
+  --color-heat-1: var(--heat-1);
+  --color-heat-2: var(--heat-2);
+  --color-heat-3: var(--heat-3);
+  --color-heat-4: var(--heat-4);
+  --color-heat-5: var(--heat-5);
+  --color-grid-line: var(--grid-line);
+  --color-grid-line-soft: var(--grid-line-soft);
+  --color-selection: var(--selection);
+  --color-suggestion: var(--suggestion);
+  --color-finalized: var(--finalized);
+  --color-finalized-foreground: var(--finalized-foreground);
+  --color-finalized-muted: var(--finalized-muted);
+  --color-highlight: var(--highlight);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -124,19 +157,7 @@
   }
 }
 
-/* Đúng class màu ô lịch từ feat/22-build-event-heatmap (không dùng bg-[#..] rời rạc nữa,
-   để 2 nơi CHIA SẺ đúng 1 định nghĩa màu, đổi 1 chỗ là khớp cả 2). Grid cá nhân ở đây chỉ
-   có 1 người tô (không có "count") nên chỉ dùng level-0 (chưa tô) và level-5 (đã tô). */
-.availability-level-0 { background-color: #ffffff; }
-.availability-level-1 { background-color: #d8f0e1; }
-.availability-level-2 { background-color: #b7e4c7; }
-.availability-level-3 { background-color: #8fd3a8; }
-.availability-level-4 { background-color: #55bd7c; }
-.availability-level-5 { background-color: #00a844; }
-
-/* Nền hoạ tiết mờ (lưới kẻ + đốm sáng xanh nhạt) từ feat/22-build-event-heatmap
-   (`.app-event-background`) - copy nguyên, KHÔNG chỉnh gì
-   để khớp 100% với heatmap. Dùng thay cho `bg-background` phẳng ở khung ngoài App.tsx. */
+/* Nền hoạ tiết lưới mờ dùng chung cho mọi trang (khoá bằng test heatmap-ui) */
 .app-event-background {
   background:
     radial-gradient(circle at 12% 18%, rgba(151, 190, 146, .35), transparent 27rem),
@@ -148,7 +169,7 @@
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #10b981 #f8fafc;
+  scrollbar-color: var(--primary) var(--muted);
 }
 
 *::-webkit-scrollbar {
@@ -157,15 +178,15 @@
 }
 
 *::-webkit-scrollbar-track {
-  background: #f8fafc;
+  background: var(--muted);
 }
 
 *::-webkit-scrollbar-thumb {
-  background: #10b981;
-  border: 2px solid #f8fafc;
+  background: var(--primary);
+  border: 2px solid var(--muted);
   border-radius: 9999px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: #059669;
+  background: var(--primary-hover);
 }

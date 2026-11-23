@@ -16,6 +16,9 @@ public static class JwtExtensions
         JwtOptions jwtOption = new JwtOptions();
         configuration.GetSection(nameof(JwtOptions)).Bind(jwtOption);
         var key = Encoding.UTF8.GetBytes(jwtOption.SecretKey);
+        // HS256 cần khoá >= 256 bit; khoá ngắn dễ bị brute force offline
+        if (key.Length < 32)
+            throw new InvalidOperationException("JwtOptions:SecretKey must be at least 32 bytes.");
 
         services.AddAuthentication(options =>
             {

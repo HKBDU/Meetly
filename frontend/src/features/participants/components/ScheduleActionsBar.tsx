@@ -1,56 +1,52 @@
-import { useState } from "react"
-import { BellRing, CloudCheck, Loader2, SlidersHorizontal } from "lucide-react"
+import { useState } from 'react'
+import { BellRing, CloudCheck, Loader2, SlidersHorizontal } from 'lucide-react'
 
-import { ManualRangeDialog } from "@/features/participants/components/ManualRangeDialog"
-import { useParticipantStore } from "@/features/participants/store"
-import type { PaintMode } from "@/features/participants/types"
-import { Button, ToggleGroup, ToggleGroupItem } from "@/shared/components/ui"
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils'
+import { Button, ToggleGroup, ToggleGroupItem } from '@/shared/components/ui'
+import { ManualRangeDialog } from '@/features/participants/components/ManualRangeDialog'
+import type { ScheduleGrid } from '@/features/participants/hooks/useScheduleGrid'
+import { useParticipantStore } from '@/features/participants/store'
+import type { PaintMode } from '@/features/participants/types'
 
 interface ScheduleActionsBarProps {
+  grid: ScheduleGrid
   triggerAutoSave: () => void
   isSaving: boolean
-  onManualRangeApplied: (date: string) => void
+  onManualRangeApplied: (columnKey: string) => void
 }
 
-/** Hàng điều khiển phía trên lưới: Chọn thủ công, Xoá hết, trạng thái lưu và chế độ Busy/Available */
-export function ScheduleActionsBar({
-  triggerAutoSave,
-  isSaving,
-  onManualRangeApplied,
-}: ScheduleActionsBarProps) {
+const modeItemClass = cn(
+  'h-8 w-24 border-2 text-xs sm:h-9',
+  'data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground',
+)
+
+/** Hàng điều khiển phía trên lưới: chọn thủ công, xoá hết, trạng thái lưu và chế độ Busy/Available */
+export function ScheduleActionsBar({ grid, triggerAutoSave, isSaving, onManualRangeApplied }: ScheduleActionsBarProps) {
   const paintMode = useParticipantStore((s) => s.paintMode)
   const setPaintMode = useParticipantStore((s) => s.setPaintMode)
   const clearAllPainted = useParticipantStore((s) => s.clearAllPainted)
-  const isFinalized = useParticipantStore((s) => s.isFinalized)
   const hasEmailSubscribed = useParticipantStore((s) => s.hasEmailSubscribed)
   const openEmailDialog = useParticipantStore((s) => s.openEmailDialog)
   const [isManualDialogOpen, setIsManualDialogOpen] = useState(false)
-
-  function handleResetDates() {
-    clearAllPainted()
-    triggerAutoSave()
-  }
+  const locked = grid.isLocked
 
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3 px-3 pt-1 pb-3 sm:px-4">
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={isFinalized}
-            onClick={() => setIsManualDialogOpen(true)}
-          >
-            <SlidersHorizontal className="size-4" />
+          <Button variant="outline" size="sm" disabled={locked} onClick={() => setIsManualDialogOpen(true)}>
+            <SlidersHorizontal />
             Select Manual
           </Button>
           <Button
             variant="ghost"
             size="sm"
             className="text-muted-foreground"
-            disabled={isFinalized}
-            onClick={handleResetDates}
+            disabled={locked}
+            onClick={() => {
+              clearAllPainted()
+              triggerAutoSave()
+            }}
           >
             Reset dates
           </Button>
@@ -63,29 +59,23 @@ export function ScheduleActionsBar({
             size="sm"
             className="text-muted-foreground"
             onClick={openEmailDialog}
-            aria-label={hasEmailSubscribed ? "Notifications on" : "Notify me by email"}
+            aria-label={hasEmailSubscribed ? 'Notifications on' : 'Notify me by email'}
           >
-            <BellRing className="size-4" />
-            <span className="hidden sm:inline">
-              {hasEmailSubscribed ? "Notifications on" : "Notify me by email"}
-            </span>
+            <BellRing />
+            <span className="hidden sm:inline">{hasEmailSubscribed ? 'Notifications on' : 'Notify me by email'}</span>
           </Button>
 
           <span
-            className={cn(
-              "flex shrink-0 items-center gap-1 text-xs font-medium",
-              isSaving ? "text-muted-foreground" : "text-foreground"
-            )}
+            role="status"
+            className={cn('flex shrink-0 items-center gap-1 text-xs font-medium', isSaving && 'text-muted-foreground')}
           >
             {isSaving ? (
               <>
-                <Loader2 className="size-3.5 animate-spin" />
-                Saving...
+                <Loader2 className="size-3.5 animate-spin" /> Saving…
               </>
             ) : (
               <>
-                <CloudCheck className="size-3.5" />
-                Synced
+                <CloudCheck className="size-3.5" /> Synced
               </>
             )}
           </span>
@@ -97,28 +87,15 @@ export function ScheduleActionsBar({
               variant="outline"
               spacing={2}
               value={paintMode}
-              onValueChange={(value) => value && setPaintMode(value as PaintMode)}
-              disabled={isFinalized}
+              disabled={locked}
               className="w-auto"
+              // Đổi chế độ giữ nguyên lịch (lấy phần bù), nên không cần lưu lại
+              onValueChange={(value) => value && setPaintMode(value as PaintMode, grid.allSlotIds)}
             >
-              <ToggleGroupItem
-                value="BUSY"
-                aria-label="Record busy"
-                className={cn(
-                  "h-8 w-24 border-2 text-xs sm:h-9",
-                  "data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                )}
-              >
+              <ToggleGroupItem value="BUSY" aria-label="Record busy" className={modeItemClass}>
                 Busy
               </ToggleGroupItem>
-              <ToggleGroupItem
-                value="FREE"
-                aria-label="Record available"
-                className={cn(
-                  "h-8 w-24 border-2 text-xs sm:h-9",
-                  "data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                )}
-              >
+              <ToggleGroupItem value="FREE" aria-label="Record available" className={modeItemClass}>
                 Available
               </ToggleGroupItem>
             </ToggleGroup>
@@ -127,6 +104,7 @@ export function ScheduleActionsBar({
       </div>
 
       <ManualRangeDialog
+        grid={grid}
         open={isManualDialogOpen}
         onOpenChange={setIsManualDialogOpen}
         triggerAutoSave={triggerAutoSave}
