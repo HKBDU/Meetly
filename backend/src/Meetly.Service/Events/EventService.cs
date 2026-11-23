@@ -5,11 +5,13 @@ using System.Text.Encodings.Web;
 using Meetly.Repository.Entity;
 using Meetly.Repository.Enum;
 using Meetly.Repository.EventScheduling;
+using Meetly.Service.Common;
 using Meetly.Service.Email;
 using Meetly.Service.JwtService;
 using Meetly.Service.Realtime;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Meetly.Service.EventScheduling;
 
@@ -18,6 +20,7 @@ public sealed class EventService(
     IJwtService jwt,
     IEventRealtimeNotifier notifier,
     IEmailService emailService,
+    IOptions<AppOptions> appOptions,
     ILogger<EventService> logger) : IEventService
 {
     private const string Alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -26,14 +29,18 @@ public sealed class EventService(
 
     public async Task<CreateEventResponse> CreateAsync(CreateEventRequest request, CancellationToken cancellationToken)
     {
+        var title = Text(request.Title, "title", InputLimits.TitleMaxLength);
+        var adminName = Text(request.Admin.Username, "admin.username", InputLimits.UsernameMaxLength);
+        // Admin bắt buộc có mật khẩu: nếu không, ai biết tên admin cũng lấy được token admin qua /participants/access
+        var adminPassword = Password(request.Admin.Password, "admin.password", required: true)!;
         var code = await NewCode(cancellationToken);
         var entity = new Events
         {
             Id = Guid.NewGuid(),
-            Title = Required(request.Title, "title"),
+            Title = title,
             EventType = (EventType)request.EventType,
             ShortCode = code,
-            URL = $"https://meetly.com/{code}",
+            URL = appOptions.Value.EventUrl(code),
             TimeZone = "Asia/Ho_Chi_Minh",
             DailyStartTime = request.DailyStartTime,
             DailyEndTime = request.DailyEndTime,
@@ -45,9 +52,9 @@ public sealed class EventService(
         {
             Id = Guid.NewGuid(),
             EventId = entity.Id,
-            Username = Required(request.Admin.Username, "admin.username"),
+            Username = adminName,
             IsAdmin = true,
-            PasswordHash = string.IsNullOrWhiteSpace(request.Admin.Password) ? null : PasswordHasher.HashPassword(null!, request.Admin.Password),
+            PasswordHash = PasswordHasher.HashPassword(null!, adminPassword),
             CreatedAt = DateTimeOffset.UtcNow
         };
         repository.Add(entity);
@@ -57,7 +64,7 @@ public sealed class EventService(
         return new CreateEventResponse
         {
             ShortCode = code,
-            Url = entity.URL,
+            Url = appOptions.Value.EventUrl(code),
             ParticipantId = admin.Id,
             IsAdmin = true,
             AccessToken = access.Token,
@@ -72,8 +79,9 @@ public sealed class EventService(
 
     public async Task<ParticipantAccessResponse> AccessAsync(string shortCode, ParticipantAccessRequest request, CancellationToken cancellationToken)
     {
+        var name = Text(request.Username, "username", InputLimits.UsernameMaxLength);
+        var password = Password(request.Password, "password", required: false);
         var entity = await GetEventAsync(shortCode, cancellationToken);
-        var name = Required(request.Username, "username");
         var participant = entity.Participants.SingleOrDefault(x => string.Equals(x.Username, name, StringComparison.OrdinalIgnoreCase));
         var isNew = participant is null;
         if (participant is null)
@@ -83,14 +91,14 @@ public sealed class EventService(
                 Id = Guid.NewGuid(),
                 EventId = entity.Id,
                 Username = name,
-                PasswordHash = string.IsNullOrWhiteSpace(request.Password) ? null : PasswordHasher.HashPassword(null!, request.Password),
+                PasswordHash = password is null ? null : PasswordHasher.HashPassword(null!, password),
                 IsAdmin = false,
                 CreatedAt = DateTimeOffset.UtcNow
             };
             repository.Add(participant);
             await repository.SaveChangesAsync(cancellationToken);
         }
-        else Verify(participant, request.Password);
+        else Verify(participant, password);
 
         var access = IssueToken(entity, participant);
         return new ParticipantAccessResponse
@@ -169,7 +177,7 @@ public sealed class EventService(
         RequireAdmin(entity, user);
         if (entity.Status != EventStatus.Open) throw new EventException(409, "Event is finalized.");
 
-        entity.Title = Required(request.Title, "title");
+        entity.Title = Text(request.Title, "title", InputLimits.TitleMaxLength);
         entity.EventType = (EventType)request.EventType;
         entity.DailyStartTime = request.DailyStartTime;
         entity.DailyEndTime = request.DailyEndTime;
@@ -207,6 +215,8 @@ public sealed class EventService(
 
     private static List<EventAvailableDates> ParseCreateDates(CreateEventRequest request)
     {
+        if (request.AvailableDates.Count > InputLimits.MaxAvailableDates || request.AvailableWeekdays.Count > 7)
+            throw new EventException(422, $"An event can have at most {InputLimits.MaxAvailableDates} dates.");
         if (request.EventType == (int)EventType.Dates && request.AvailableDates.Count > 0 && request.AvailableWeekdays.Count == 0)
             return request.AvailableDates.Distinct().Select(date => new EventAvailableDates { Id = Guid.NewGuid(), SpecificDate = date, CreatedAt = DateTimeOffset.UtcNow }).ToList();
         if (request.EventType == (int)EventType.Weekdays && request.AvailableDates.Count == 0 && request.AvailableWeekdays.Count > 0 && request.AvailableWeekdays.All(day => (int)day is >= 0 and <= 6))
@@ -224,11 +234,11 @@ public sealed class EventService(
         });
     }
 
-    private static EventResponse ToResponse(Events entity) => new()
+    private EventResponse ToResponse(Events entity) => new()
     {
         Title = entity.Title,
         ShortCode = entity.ShortCode,
-        Url = entity.URL,
+        Url = appOptions.Value.EventUrl(entity.ShortCode),
         EventType = (int)entity.EventType,
         TimeZone = entity.TimeZone,
         AvailableDates = entity.AvailableDates.Where(x => x.SpecificDate.HasValue).Select(x => x.SpecificDate!.Value).ToList(),
@@ -245,12 +255,14 @@ public sealed class EventService(
             Format(entity.FinalStartTime!.Value), Format(entity.FinalEndTime!.Value))
     };
 
-    private static string BuildFinalizedEmail(Events entity, FinalizeEventResponse response)
+    private static readonly string[] VietnameseWeekdays = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+
+    private string BuildFinalizedEmail(Events entity, FinalizeEventResponse response)
     {
         var title = HtmlEncoder.Default.Encode(entity.Title);
-        var url = HtmlEncoder.Default.Encode(entity.URL);
+        var url = HtmlEncoder.Default.Encode(appOptions.Value.EventUrl(entity.ShortCode));
         var schedule = response.FinalSchedule;
-        var date = schedule.SpecificDate is null ? $"Thứ {(schedule.DayOfWeek ?? 0)}" : schedule.SpecificDate;
+        var date = schedule.SpecificDate ?? $"{VietnameseWeekdays[schedule.DayOfWeek ?? 0]} hằng tuần";
 
         return $"<h2>Lịch họp đã được chốt</h2>" +
                $"<p>Sự kiện <strong>{title}</strong> đã có lịch chính thức.</p>" +
@@ -281,6 +293,8 @@ public sealed class EventService(
     {
         if (request.StartTime >= request.EndTime)
             throw new EventException(422, "startTime must be before endTime.");
+        if (!InputLimits.IsOnSlotBoundary(request.StartTime) || !InputLimits.IsOnSlotBoundary(request.EndTime))
+            throw new EventException(422, $"Final time must be on {InputLimits.SlotMinutes}-minute steps.");
         if (request.StartTime < entity.DailyStartTime || request.EndTime > entity.DailyEndTime)
             throw new EventException(422, "Final time is outside the event hours.");
 
@@ -310,9 +324,40 @@ public sealed class EventService(
         entity.FinalEndTime = request.EndTime;
     }
     private static string Format(TimeOnly time) => time.ToString("HH:mm");
-    private static string Required(string? value, string name) => !string.IsNullOrWhiteSpace(value) ? value.Trim() : throw new EventException(422, $"{name} is required.");
-    private static void ValidateHours(Events entity) { if (entity.DailyStartTime >= entity.DailyEndTime) throw new EventException(422, "dailyStartTime must be before dailyEndTime."); }
-    private static void Verify(EventParticipants participant, string? password) { if (participant.PasswordHash is not null && (string.IsNullOrEmpty(password) || PasswordHasher.VerifyHashedPassword(participant, participant.PasswordHash, password) == PasswordVerificationResult.Failed)) throw new EventException(401, "Password is invalid."); }
+    private static string Text(string? value, string name, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value)) throw new EventException(422, $"{name} is required.");
+        var trimmed = value.Trim();
+        return trimmed.Length <= maxLength ? trimmed : throw new EventException(422, $"{name} must be at most {maxLength} characters.");
+    }
+
+    /// <summary>Trả null khi không nhập (và không bắt buộc); không trim để giữ nguyên mật khẩu người dùng gõ.</summary>
+    private static string? Password(string? value, string name, bool required)
+    {
+        if (string.IsNullOrEmpty(value))
+            return required ? throw new EventException(422, $"{name} is required.") : null;
+        if (value.Length < InputLimits.PasswordMinLength || value.Length > InputLimits.PasswordMaxLength)
+            throw new EventException(422, $"{name} must be {InputLimits.PasswordMinLength}-{InputLimits.PasswordMaxLength} characters.");
+        return value;
+    }
+    private static void ValidateHours(Events entity)
+    {
+        if (entity.DailyStartTime >= entity.DailyEndTime) throw new EventException(422, "dailyStartTime must be before dailyEndTime.");
+        if (!InputLimits.IsOnSlotBoundary(entity.DailyStartTime) || !InputLimits.IsOnSlotBoundary(entity.DailyEndTime))
+            throw new EventException(422, $"Daily times must be on {InputLimits.SlotMinutes}-minute steps.");
+    }
+    private static void Verify(EventParticipants participant, string? password)
+    {
+        if (participant.PasswordHash is null)
+        {
+            // Event cũ có admin không mật khẩu: chặn để không ai mạo danh admin chỉ bằng username
+            if (participant.IsAdmin) throw new EventException(403, "This admin account has no password and can no longer be accessed.");
+            return;
+        }
+        if (string.IsNullOrEmpty(password) ||
+            PasswordHasher.VerifyHashedPassword(participant, participant.PasswordHash, password) == PasswordVerificationResult.Failed)
+            throw new EventException(401, "Password is invalid.");
+    }
 }
 
 public sealed class EventException(int statusCode, string message) : Exception(message)

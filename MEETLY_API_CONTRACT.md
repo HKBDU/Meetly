@@ -132,12 +132,12 @@ Tạo Event mới đồng thời tạo `EventParticipant` đầu tiên với `Is
   "dailyEndTime": "17:00",
   "admin": {
     "username": "Huy",
-    "password": "123"
+    "password": "1234"
   }
 }
 ```
 
-`password` có thể là `null` hoặc chuỗi rỗng.
+`admin.password` **bắt buộc**, dài 4-100 ký tự (nếu thiếu, ai biết username của admin cũng lấy được token admin). Giới hạn khác: `title` ≤ 255 ký tự, `admin.username` ≤ 50, tối đa 62 ngày, `dailyStartTime`/`dailyEndTime` theo bước 15 phút (`00:00`-`23:45`). Sai giới hạn trả `422`.
 
 ### Request - EventType = Weekdays
 
@@ -151,7 +151,7 @@ Tạo Event mới đồng thời tạo `EventParticipant` đầu tiên với `Is
   "dailyEndTime": "17:00",
   "admin": {
     "username": "Huy",
-    "password": null
+    "password": "1234"
   }
 }
 ```
@@ -983,3 +983,14 @@ Status = 3 (Closed)
 ```
 
 Status này được giữ trong DB để mở rộng sau.
+
+## Giới hạn tần suất (rate limit)
+
+Vượt giới hạn trả `429` (envelope `ApiResponse`, có header `Retry-After`).
+
+| Phạm vi | Giới hạn |
+| :--- | :--- |
+| Mọi request, theo IP | 300 / phút |
+| `POST /events` | 10 / 10 phút / IP |
+| `POST /events/{shortCode}/participants/access` | 10 / phút / IP + shortCode |
+| Ghi dữ liệu đã đăng nhập (lưu lịch, sửa, chốt) | 120 / phút / IP |

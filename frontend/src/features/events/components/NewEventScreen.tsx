@@ -20,8 +20,9 @@ import type {
 } from '../types'
 
 const credentialsSchema = z.object({
-  adminUsername: z.string().min(1, 'Username is required.'),
-  adminPassword: z.string(),
+  adminUsername: z.string().trim().min(1, 'Username is required.').max(50, 'Username must be at most 50 characters.'),
+  // BE bắt buộc mật khẩu admin để không ai mạo danh admin chỉ bằng username
+  adminPassword: z.string().min(4, 'Password must be at least 4 characters.').max(100, 'Password must be at most 100 characters.'),
 })
 
 export function NewEventScreen() {
@@ -135,7 +136,7 @@ function CredentialsStep({
         className={cn(eventUi.form, compact && eventUi.mobileForm)}
         onSubmit={methods.handleSubmit(onSubmit)}
       >
-        <CredentialsFields title="Admin credentials" usernameRequired />
+        <CredentialsFields title="Admin credentials" usernameRequired passwordRequired />
         <div>
           <p>Enter the admin credentials for this event before continuing.</p>
         </div>

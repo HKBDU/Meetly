@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Meetly.Repository.Availability;
 using Meetly.Repository.Entity;
 using Meetly.Repository.Enum;
+using Meetly.Service.Common;
 using Meetly.Service.Realtime;
 
 namespace Meetly.Service.Availability;
@@ -42,6 +43,10 @@ public sealed class AvailabilityService : IAvailabilityService
 
         ValidateEmail(request.Email);
 
+        var maxRanges = Math.Max(1, eventEntity.AvailableDates.Count) * InputLimits.MaxRangesPerDay;
+        if (request.TimeSlots.Count > maxRanges)
+            throw new AvailabilityException(422, $"Quá nhiều time slot (tối đa {maxRanges}).");
+
         var slots = request.TimeSlots.Select(slot =>
         {
             ValidateSlot(eventEntity, slot);
@@ -72,6 +77,9 @@ public sealed class AvailabilityService : IAvailabilityService
         if (slot.StartTime >= slot.EndTime)
             throw new AvailabilityException(422, "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.");
 
+        if (!InputLimits.IsOnSlotBoundary(slot.StartTime) || !InputLimits.IsOnSlotBoundary(slot.EndTime))
+            throw new AvailabilityException(422, $"Time slot phải theo bước {InputLimits.SlotMinutes} phút.");
+
         if (slot.StartTime < eventEntity.DailyStartTime ||
             slot.EndTime > eventEntity.DailyEndTime)
             throw new AvailabilityException(422, "Time slot nằm ngoài khung giờ của sự kiện.");
@@ -99,6 +107,9 @@ public sealed class AvailabilityService : IAvailabilityService
     {
         if (string.IsNullOrWhiteSpace(email))
             return;
+
+        if (email.Trim().Length > InputLimits.EmailMaxLength)
+            throw new AvailabilityException(422, "Email quá dài.");
 
         try
         {
