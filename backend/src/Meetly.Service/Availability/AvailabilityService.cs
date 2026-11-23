@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Meetly.Repository.Availability;
 using Meetly.Repository.Entity;
 using Meetly.Repository.Enum;
+using Meetly.Service.Common;
 using Meetly.Service.Realtime;
 
 namespace Meetly.Service.Availability;
@@ -30,6 +31,7 @@ public sealed class AvailabilityService : IAvailabilityService
         if (!Guid.TryParse(participantClaim, out var participantId))
             throw new AvailabilityException(401, "Access token không chứa participantId hợp lệ.");
 
+        shortCode = shortCode.Trim().ToUpperInvariant();
         var eventEntity = await _repository.GetEventAsync(shortCode, cancellationToken)
             ?? throw new AvailabilityException(404, "Không tìm thấy sự kiện.");
 
@@ -41,6 +43,10 @@ public sealed class AvailabilityService : IAvailabilityService
             throw new AvailabilityException(409, "Sự kiện không còn mở để cập nhật lịch.");
 
         ValidateEmail(request.Email);
+
+        var maxRanges = Math.Max(1, eventEntity.AvailableDates.Count) * InputLimits.MaxRangesPerDay;
+        if (request.TimeSlots.Count > maxRanges)
+            throw new AvailabilityException(422, $"Quá nhiều time slot (tối đa {maxRanges}).");
 
         var slots = request.TimeSlots.Select(slot =>
         {
@@ -62,7 +68,8 @@ public sealed class AvailabilityService : IAvailabilityService
         }).ToArray();
 
         var revision = await _repository.ReplaceAsync(
-            eventEntity, participant, slots, request.Email, cancellationToken);
+                eventEntity, participant, slots, request.Email, cancellationToken)
+            ?? throw new AvailabilityException(409, "Sự kiện không còn mở để cập nhật lịch.");
         await _notifier.NotifyHeatmapUpdatedAsync(shortCode, revision, cancellationToken);
         return revision;
     }
@@ -71,6 +78,9 @@ public sealed class AvailabilityService : IAvailabilityService
     {
         if (slot.StartTime >= slot.EndTime)
             throw new AvailabilityException(422, "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.");
+
+        if (!InputLimits.IsOnSlotBoundary(slot.StartTime) || !InputLimits.IsOnSlotBoundary(slot.EndTime))
+            throw new AvailabilityException(422, $"Time slot phải theo bước {InputLimits.SlotMinutes} phút.");
 
         if (slot.StartTime < eventEntity.DailyStartTime ||
             slot.EndTime > eventEntity.DailyEndTime)
@@ -99,6 +109,9 @@ public sealed class AvailabilityService : IAvailabilityService
     {
         if (string.IsNullOrWhiteSpace(email))
             return;
+
+        if (email.Trim().Length > InputLimits.EmailMaxLength)
+            throw new AvailabilityException(422, "Email quá dài.");
 
         try
         {

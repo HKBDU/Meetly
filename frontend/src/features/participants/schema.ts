@@ -5,9 +5,10 @@ export const loginSchema = z.object({
     .trim()
     .min(2, 'Display name must be at least 2 characters')
     .max(50, 'Display name must be at most 50 characters'),
+  // Không trim: BE so khớp mật khẩu nguyên văn
   password: z
     .string()
-    .trim()
+    .min(4, 'Password must be at least 4 characters')
     .max(100, 'Password must be at most 100 characters')
     .optional()
     .or(z.literal('')),

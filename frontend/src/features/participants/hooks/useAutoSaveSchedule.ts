@@ -1,62 +1,54 @@
-import { useCallback, useState } from "react"
-import { useMutation } from "@tanstack/react-query"
-import { toast } from "sonner"
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { toast } from 'sonner'
 
-import { getApiErrorMessage } from "@/lib/axios"
-
-import { mergeFreeSlotIdsIntoRanges, resolveFreeSlotIds } from "@/features/participants/gridUtils"
-import { saveAvailability } from "@/features/participants/services"
-import { useParticipantStore } from "@/features/participants/store"
-import { useDebouncedCallback } from "@/shared/hooks"
+import { saveAvailability } from '@/shared/api/events'
+import { useDebouncedCallback } from '@/shared/hooks'
+import { mergeFreeSlotIdsIntoRanges, resolveFreeSlotIds } from '@/features/participants/gridUtils'
+import type { ScheduleGrid } from '@/features/participants/hooks/useScheduleGrid'
+import { useParticipantStore } from '@/features/participants/store'
 
 /** Gộp nhiều lần nhả chuột liên tiếp thành 1 lần lưu */
 const AUTO_SAVE_DEBOUNCE_MS = 600
 
+/** Lịch rảnh hiện tại dạng khoảng, sẵn để gửi BE */
+export function currentTimeSlots(grid: ScheduleGrid) {
+  const { selectedSlotIds, paintMode } = useParticipantStore.getState()
+  return mergeFreeSlotIdsIntoRanges(resolveFreeSlotIds(selectedSlotIds, paintMode, grid.allSlotIds), grid.columns)
+}
+
 /**
- * Tự lưu lịch rảnh sau khi người dùng dừng kéo thả. Lần lưu thành công đầu
- * tiên sẽ mở popup xin email. Trước khi gửi, tập ô tô được đổi thành slot rảnh
- * theo paintMode rồi gộp thành các khoảng liên tục.
+ * Tự lưu lịch rảnh sau khi người dùng dừng thao tác. Lần lưu thành công đầu tiên
+ * mở popup xin email. Gọi 1 lần ở màn lịch cá nhân để mọi nơi sửa lịch dùng chung debounce.
  */
-export function useAutoSaveSchedule() {
-  const markSavedOnce = useParticipantStore((s) => s.markSavedOnce)
-  const openEmailDialog = useParticipantStore((s) => s.openEmailDialog)
-  /** true khi đã nhả chuột nhưng chưa tới lúc gọi API */
+export function useAutoSaveSchedule(shortCode: string, grid: ScheduleGrid | null) {
   const [isSavePending, setIsSavePending] = useState(false)
+  // Đọc lưới mới nhất lúc debounce chạy, không phải lưới lúc bắt đầu kéo
+  const gridRef = useRef(grid)
+  useEffect(() => {
+    gridRef.current = grid
+  }, [grid])
 
-  const mutation = useMutation({
-    mutationFn: (freeSlotIds: string[]) => {
-      const { auth, scheduleConfig } = useParticipantStore.getState()
-      if (!auth) throw new Error("Participant not authenticated")
-      if (!scheduleConfig) throw new Error("Schedule config not loaded")
-
-      const timeSlots = mergeFreeSlotIdsIntoRanges(freeSlotIds, scheduleConfig)
-      return saveAvailability(scheduleConfig.shortCode, { timeSlots })
-    },
+  const { mutate, isPending } = useMutation({
+    mutationFn: (timeSlots: ReturnType<typeof currentTimeSlots>) => saveAvailability(shortCode, { timeSlots }),
     onSuccess: () => {
-      const { hasSavedOnce, hasEmailSubscribed } = useParticipantStore.getState()
-      toast.success("Availability saved", { id: "auto-save-schedule", duration: 1500 })
-
+      const { hasSavedOnce, hasEmailSubscribed, markSavedOnce, openEmailDialog } = useParticipantStore.getState()
+      toast.success('Availability saved', { id: 'auto-save-schedule', duration: 1500 })
       if (!hasSavedOnce) {
         markSavedOnce()
         if (!hasEmailSubscribed) openEmailDialog()
       }
     },
     onError: (error) => {
-      toast.error(getApiErrorMessage(error, "Failed to save, please try again"), {
-        id: "auto-save-schedule",
-      })
+      toast.error(error.message, { id: 'auto-save-schedule' })
     },
   })
 
-  const { mutate } = mutation
-
   const saveNow = useCallback(() => {
-    const { selectedSlotIds, paintMode, scheduleConfig, isFinalized } =
-      useParticipantStore.getState()
     setIsSavePending(false)
-    if (isFinalized || !scheduleConfig) return
-
-    mutate(resolveFreeSlotIds(selectedSlotIds, paintMode, scheduleConfig))
+    const current = gridRef.current
+    if (!current || current.isLocked) return
+    mutate(currentTimeSlots(current))
   }, [mutate])
 
   const debouncedSaveNow = useDebouncedCallback(saveNow, AUTO_SAVE_DEBOUNCE_MS)
@@ -66,8 +58,5 @@ export function useAutoSaveSchedule() {
     debouncedSaveNow()
   }, [debouncedSaveNow])
 
-  return {
-    triggerAutoSave,
-    isSaving: isSavePending || mutation.isPending,
-  }
+  return { triggerAutoSave, isSaving: isSavePending || isPending }
 }

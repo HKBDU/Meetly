@@ -1,153 +1,101 @@
-import { EventFormActions } from './EventFormActions'
-import { AvailabilitySelector } from './AvailabilitySelector'
-import { EventTitleField } from './EventTitleField'
-import { EventTypeSelect } from './EventTypeSelect'
-import { TimeRangeFields } from './TimeRangeFields'
-import { eventUi } from '../../../shared/components/ui/styles'
-import { cn } from '@/lib/utils'
-import { useForm, Controller, FormProvider } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import type { EventFormProps, EventFormValues, EventType } from '../types'
-import { eventFormSchema } from '../schema'
 
-const INITIAL_VALUES: Partial<EventFormValues> = {
-  title: '',
-  eventType: 2,
-  availableDates: ['Mon'],
-  dailyStartTime: '09:00',
-  dailyEndTime: '17:00',
+import { cn } from '@/lib/utils'
+import { Button } from '@/shared/components/ui/button'
+import { FieldError, FieldLabel } from '@/shared/components/ui/field'
+import { Input } from '@/shared/components/ui/input'
+import { DEFAULT_EVENT_VALUES, eventFormSchema, type EventFormValues } from '../schema'
+import { DaysField } from './DaysField'
+import { HoursField } from './HoursField'
+
+interface EventFormProps {
+  initialValues?: EventFormValues
+  onSubmit: (values: EventFormValues) => void | Promise<void>
+  onCancel?: () => void
+  submitLabel?: string
+  submitting?: boolean
+  error?: string
+  className?: string
 }
 
+/** Form sửa tên, ngày và khung giờ của event (dialog Edit Event) */
 export function EventForm({
-  compact = false,
-  onCancel,
+  initialValues = DEFAULT_EVENT_VALUES,
   onSubmit,
-  adminUsername,
-  adminPassword,
+  onCancel,
+  submitLabel = 'Save',
   submitting = false,
   error,
-  initialValues,
-  submitLabel,
+  className,
 }: EventFormProps) {
-    const methods = useForm<EventFormValues>({
+  const {
+    control,
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors, isSubmitting, isSubmitted },
+  } = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
-    defaultValues: {
-      ...INITIAL_VALUES,
-      ...initialValues,
-      adminUsername,
-      adminPassword,
-    },
+    defaultValues: initialValues,
   })
-
-const {
-      control,
-      handleSubmit,
-      setValue,
-      watch,
-      formState: { errors, isSubmitting },
-  } = methods
-
-const currentEventType = watch("eventType");
-
-
-// Dates and weekdays are different value domains. Do not carry a value
-// from one mode into the other.
-  function handleChangeEventType(newType: EventType) {
-    setValue("eventType", newType);
-    setValue("availableDates", [], { shouldValidate: true});
-  }
-
-  const onFormSubmit = async(data: EventFormValues) => {
-    await onSubmit?.(data);
-  }
+  const [eventType, dates, weekdays, dailyStartTime, dailyEndTime] = useWatch({
+    control,
+    name: ['eventType', 'dates', 'weekdays', 'dailyStartTime', 'dailyEndTime'],
+  })
+  const busy = submitting || isSubmitting
+  const validate = { shouldValidate: isSubmitted }
 
   return (
-    <FormProvider {...methods}>
-   <form
-      className={cn(eventUi.form, compact && eventUi.mobileForm)}
-      onSubmit={handleSubmit(onFormSubmit)}
-    >
-      <input type="hidden" {...methods.register('adminUsername')} />
-      <input type="hidden" {...methods.register('adminPassword')} />
-      <section className={eventUi.formContent}>
-        {/* Title Field */}
+    <form className={cn('grid gap-6', className)} onSubmit={handleSubmit(onSubmit)} noValidate>
+      <div className="grid gap-2">
+        <FieldLabel htmlFor="event-name">Event name</FieldLabel>
+        <Input id="event-name" aria-invalid={Boolean(errors.title)} {...register('title')} />
+        {errors.title && <FieldError>{errors.title.message}</FieldError>}
+      </div>
 
-
-        <Controller
-          control={control}
-          name="title"
-          render={({ field }) => (
-            <EventTitleField
-              error={errors.title?.message}
-              onChange={field.onChange}
-              value={field.value}
-            />
-          )}
+      <div className="grid gap-2">
+        <FieldLabel>Days</FieldLabel>
+        <DaysField
+          eventType={eventType}
+          dates={dates}
+          weekdays={weekdays}
+          onEventTypeChange={(type) => setValue('eventType', type, validate)}
+          onDatesChange={(next) => setValue('dates', next, validate)}
+          onWeekdaysChange={(next) => setValue('weekdays', next, validate)}
+          error={errors.dates?.message ?? errors.weekdays?.message}
         />
+      </div>
 
-        {/* Event Type Select */}
-        <Controller
-          control={control}
-          name="eventType"
-          render={({ field }) => (
-            <EventTypeSelect
-              onChange={(type) => {
-                field.onChange(type)
-                handleChangeEventType(type)
-              }}
-              value={field.value}
-            />
-          )}
+      <div className="grid gap-2">
+        <FieldLabel>Hours</FieldLabel>
+        <HoursField
+          start={dailyStartTime}
+          end={dailyEndTime}
+          onChange={(start, end) => {
+            setValue('dailyStartTime', start, validate)
+            setValue('dailyEndTime', end, validate)
+          }}
+          error={errors.dailyEndTime?.message}
         />
-
-        {/* Availability Selector */}
-        <Controller
-          control={control}
-          name="availableDates"
-          render={({ field }) => (
-            <AvailabilitySelector
-              error={errors.availableDates?.message}
-              eventType={currentEventType}
-              onChange={field.onChange}
-              value={field.value}
-            />
-          )}
-        />
-
-        {/* Time Range Fields */}
-        <Controller
-          control={control}
-          name="dailyStartTime"
-          render={({ field: startField }) => (
-            <Controller
-              control={control}
-              name="dailyEndTime"
-              render={({ field: endField }) => (
-                <TimeRangeFields
-                  end={endField.value}
-                  error={errors.dailyEndTime?.message}
-                  onEndChange={endField.onChange}
-                  onStartChange={startField.onChange}
-                  start={startField.value}
-                />
-              )}
-            />
-          )}
-        />
-      </section>
+      </div>
 
       {error && (
-        <div className={eventUi.submitError} role="alert">
+        <p role="alert" className="text-sm text-destructive">
           {error}
-        </div>
+        </p>
       )}
 
-      <EventFormActions
-        onCancel={onCancel ?? (() => undefined)}
-        submitLabel={submitLabel}
-        submitting={submitting || isSubmitting}
-      />
+      <footer className="flex gap-2.5 sm:justify-end">
+        {onCancel && (
+          <Button type="button" variant="outline" size="lg" className="flex-1 sm:flex-none" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
+        <Button type="submit" size="lg" className="flex-1 sm:min-w-36 sm:flex-none" disabled={busy}>
+          {busy ? 'Saving…' : submitLabel}
+        </Button>
+      </footer>
     </form>
-    </FormProvider>
   )
 }

@@ -1,19 +1,14 @@
 using Meetly.Repository.Entity;
+using Meetly.Repository.EventScheduling;
 using Microsoft.EntityFrameworkCore;
 
 namespace Meetly.Repository.Availability;
 
-public sealed class AvailabilityRepository : IAvailabilityRepository
+public sealed class AvailabilityRepository(AppDbContext dbContext, IEventRepository events) : IAvailabilityRepository
 {
-    private readonly AppDbContext _dbContext;
-
-    public AvailabilityRepository(AppDbContext dbContext)
-    {
-        _dbContext = dbContext;
-    }
-
     public Task<Events?> GetEventAsync(string shortCode, CancellationToken cancellationToken) =>
-        _dbContext.Events
+        dbContext.Events
+            .AsNoTracking()
             .Include(x => x.AvailableDates)
             .SingleOrDefaultAsync(x => x.ShortCode == shortCode, cancellationToken);
 
@@ -21,52 +16,52 @@ public sealed class AvailabilityRepository : IAvailabilityRepository
         Guid eventId,
         Guid participantId,
         CancellationToken cancellationToken) =>
-        _dbContext.EventParticipants.SingleOrDefaultAsync(
+        dbContext.EventParticipants.AsNoTracking().SingleOrDefaultAsync(
             x => x.EventId == eventId && x.Id == participantId,
             cancellationToken);
 
-    public async Task<long> ReplaceAsync(
+    public async Task<long?> ReplaceAsync(
         Events eventEntity,
         EventParticipants participant,
         IReadOnlyCollection<TimeSlots> timeSlots,
         string? email,
         CancellationToken cancellationToken)
     {
-        await using var transaction = await _dbContext.Database
-            .BeginTransactionAsync(cancellationToken);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        var oldTimeSlots = await _dbContext.TimeSlots
+        // Bump trước để khoá dòng event: các lần lưu đồng thời xếp hàng và có revision riêng,
+        // và nếu admin vừa chốt lịch thì dừng lại thay vì ghi đè lên event đã khoá.
+        var revision = await events.TryBumpRevisionAsync(eventEntity.Id, requireOpen: true, cancellationToken);
+        if (revision is null)
+            return null;
+
+        await dbContext.TimeSlots
             .Where(x => x.EventId == eventEntity.Id && x.ParticipantId == participant.Id)
-            .ToListAsync(cancellationToken);
-
-        _dbContext.TimeSlots.RemoveRange(oldTimeSlots);
-        await _dbContext.TimeSlots.AddRangeAsync(timeSlots, cancellationToken);
+            .ExecuteDeleteAsync(cancellationToken);
+        dbContext.TimeSlots.AddRange(timeSlots);
 
         if (!string.IsNullOrWhiteSpace(email))
         {
             var normalizedEmail = email.Trim();
-            var exists = await _dbContext.EventEmails.AnyAsync(
+            var exists = await dbContext.EventEmails.AnyAsync(
                 x => x.EventId == eventEntity.Id && x.Email == normalizedEmail,
                 cancellationToken);
 
             if (!exists)
             {
-                await _dbContext.EventEmails.AddAsync(new EventEmails
+                dbContext.EventEmails.Add(new EventEmails
                 {
                     Id = Guid.NewGuid(),
                     EventId = eventEntity.Id,
                     Email = normalizedEmail,
                     CreatedAt = DateTimeOffset.UtcNow
-                }, cancellationToken);
+                });
             }
         }
 
-        eventEntity.Revision++;
-        eventEntity.UpdatedAt = DateTimeOffset.UtcNow;
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        return eventEntity.Revision;
+        return revision;
     }
 }

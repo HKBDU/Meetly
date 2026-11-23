@@ -5,7 +5,7 @@ import type { AvailabilityDetailsProps } from '../types';
 export function AvailabilityDetails({
   details,
   participants,
-  keyParticipant,
+  highlighted,
   onMouseEnter,
   onMouseLeave,
 }: AvailabilityDetailsProps) {
@@ -31,7 +31,7 @@ export function AvailabilityDetails({
       <CardContent className="px-5 pb-5">
         <ScrollArea className="h-72 pr-3 lg:h-[min(24rem,55vh)]">
           <section aria-labelledby="available-participants-heading">
-            <Badge variant="secondary" className="bg-primary/10 text-primary">
+            <Badge variant="secondary" className="bg-brand-soft text-brand">
               <span id="available-participants-heading">Available</span> · {available.length}/
               {participants.length}
             </Badge>
@@ -39,17 +39,17 @@ export function AvailabilityDetails({
               {available.map((person) => (
                 <li key={person.username} className="flex items-center gap-2">
                   {person.username}
-                  {person.username === keyParticipant && (
+                  {highlighted.includes(person.username) && (
                     <Star
                       size={14}
-                      className="fill-amber-300 text-amber-500"
-                      aria-label="Key Participant"
+                      className="fill-highlight/60 text-highlight"
+                      aria-label="Must include"
                     />
                   )}
                 </li>
               ))}
             </ul>
-            {available.length === 0 && <p className="mt-2 text-sm text-slate-500">None.</p>}
+            {available.length === 0 && <p className="mt-2 text-sm text-muted-foreground">None.</p>}
           </section>
           <Separator className="my-4" />
           <section aria-labelledby="unavailable-participants-heading">
@@ -61,17 +61,17 @@ export function AvailabilityDetails({
               {busy.map((person) => (
                 <li key={person.username} className="flex items-center gap-2">
                   {person.username}
-                  {person.username === keyParticipant && (
+                  {highlighted.includes(person.username) && (
                     <Star
                       size={14}
-                      className="fill-amber-300 text-amber-500"
-                      aria-label="Key Participant"
+                      className="fill-highlight/60 text-highlight"
+                      aria-label="Must include"
                     />
                   )}
                 </li>
               ))}
             </ul>
-            {busy.length === 0 && <p className="mt-2 text-sm text-slate-500">None.</p>}
+            {busy.length === 0 && <p className="mt-2 text-sm text-muted-foreground">None.</p>}
           </section>
         </ScrollArea>
       </CardContent>

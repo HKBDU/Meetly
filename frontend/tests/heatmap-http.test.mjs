@@ -35,7 +35,7 @@ test('SignalR uses the configured events hub', async () => {
   try {
     const { env } = await server.ssrLoadModule('/src/lib/env.ts');
     const { shouldApplyRealtimePayload } = await server.ssrLoadModule(
-      '/src/features/heatmap/hooks/useEventRealtime.ts',
+      '/src/shared/hooks/useEventRealtime.ts',
     );
 
     assert.equal(env.signalRHubUrl, 'http://backend.test/hubs/events');
@@ -47,21 +47,20 @@ test('SignalR uses the configured events hub', async () => {
   }
 });
 
-test('Heatmap services unwrap responses and pass params and event token to Axios', async () => {
+test('Event API attaches the signed-in participant token and encodes the short code', async () => {
   const server = await createTestServer();
   try {
     const { api } = await server.ssrLoadModule('/src/lib/axios.ts');
-    const { getSuggestions } = await server.ssrLoadModule('/src/features/heatmap/services.ts');
+    const { useParticipantStore } = await server.ssrLoadModule('/src/features/participants/store.ts');
+    const { saveAvailability } = await server.ssrLoadModule('/src/shared/api/events.ts');
+    useParticipantStore.setState({
+      auth: { shortCode: 'A/B', participantId: 'p1', username: 'Huy', isAdmin: false, accessToken: 'event-token' },
+    });
     let requestConfig;
     api.defaults.adapter = async (config) => {
       requestConfig = config;
       return {
-        data: {
-          isSuccess: true,
-          code: 200,
-          message: 'Success',
-          value: { suggestedSlots: [] },
-        },
+        data: { isSuccess: true, code: 200, message: 'Success', value: { revision: 7 } },
         status: 200,
         statusText: 'OK',
         headers: {},
@@ -69,23 +68,11 @@ test('Heatmap services unwrap responses and pass params and event token to Axios
       };
     };
 
-    assert.deepEqual(
-      await getSuggestions('A/B', { keyParticipant: ' Huy ', minDuration: 60 }, 'event-token'),
-      [],
-    );
-    assert.equal(requestConfig.url, '/events/A%2FB/suggestions');
-    assert.deepEqual(requestConfig.params, { keyParticipant: 'Huy', minDuration: 60 });
+    const timeSlots = [{ specificDate: null, dayOfWeek: 1, startTime: '09:00', endTime: '10:00' }];
+    assert.deepEqual(await saveAvailability('A/B', { timeSlots }), { revision: 7 });
+    assert.equal(requestConfig.url, '/events/A%2FB/participants/me/availability');
     assert.equal(requestConfig.headers.Authorization, 'Bearer event-token');
-    assert.equal(
-      api.getUri(requestConfig),
-      'http://backend.test/api/v1/events/A%2FB/suggestions?keyParticipant=Huy&minDuration=60',
-    );
-
-    await getSuggestions('ABC', { minDuration: 90 }, 'event-token');
-    assert.equal(
-      api.getUri(requestConfig),
-      'http://backend.test/api/v1/events/ABC/suggestions?minDuration=90',
-    );
+    assert.deepEqual(JSON.parse(requestConfig.data), { timeSlots });
   } finally {
     await server.close();
   }
@@ -95,7 +82,7 @@ test('Heatmap services show an English message for a failed response', async () 
   const server = await createTestServer();
   try {
     const { api } = await server.ssrLoadModule('/src/lib/axios.ts');
-    const { getEvent } = await server.ssrLoadModule('/src/features/heatmap/services.ts');
+    const { getEvent } = await server.ssrLoadModule('/src/shared/api/events.ts');
     api.defaults.adapter = async (config) => {
       const response = {
         data: { isSuccess: false, code: 404, message: 'Evento no encontrado', value: null },
@@ -117,7 +104,7 @@ test('Update event sends only the event fields and reports a generic error when 
   const server = await createTestServer();
   try {
     const { api } = await server.ssrLoadModule('/src/lib/axios.ts');
-    const { updateEvent } = await server.ssrLoadModule('/src/features/heatmap/services.ts');
+    const { updateEvent } = await server.ssrLoadModule('/src/shared/api/events.ts');
     const payload = {
       title: 'Team sync',
       eventType: 1,
@@ -138,7 +125,7 @@ test('Update event sends only the event fields and reports a generic error when 
         config,
       };
     };
-    await updateEvent('ABC', payload, 'event-token');
+    await updateEvent('ABC', payload);
     assert.deepEqual(sent, payload);
 
     api.defaults.adapter = async (config) => {
@@ -152,7 +139,7 @@ test('Update event sends only the event fields and reports a generic error when 
       throw new AxiosError('Request failed', AxiosError.ERR_BAD_REQUEST, config, null, response);
     };
     await assert.rejects(
-      () => updateEvent('ABC', payload, 'event-token'),
+      () => updateEvent('ABC', payload),
       /You don't have permission to do this/,
     );
   } finally {
