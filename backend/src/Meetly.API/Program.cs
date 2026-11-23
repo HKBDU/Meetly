@@ -15,7 +15,9 @@ using Meetly.Service.JwtService;
 using Meetly.Service.Realtime;
 using Meetly.Service.SuggestionSlots;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,7 +26,19 @@ builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 
 
 builder.Services.AddControllers()
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new TimeOnlyJsonConverter()));
-builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 32 * 1024);
+var signalR = builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 32 * 1024);
+// Chạy nhiều instance thì cần backplane để broadcast tới client đang nối vào instance khác
+var redisConnection = builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrWhiteSpace(redisConnection))
+    signalR.AddStackExchangeRedis(redisConnection, options => options.Configuration.ChannelPrefix = RedisChannel.Literal("meetly"));
+
+// JSON heatmap lặp nhiều tên người nên nén rất tốt
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+});
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? ["http://localhost:5173", "https://meetly-soon.vercel.app"];
@@ -61,9 +75,16 @@ builder.Services.AddHttpClient<IEmailService, ResendEmailService>(client =>
     client.Timeout = TimeSpan.FromSeconds(15);
 });
 
-builder.Services.AddDbContext<AppDbContext>(options =>
+// Pool tái dùng instance DbContext giữa các request (AppDbContext không giữ state riêng)
+builder.Services.AddDbContextPool<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")
         ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is missing.")));
+builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
+
+builder.Services.AddSingleton<HeatmapBroadcaster>();
+builder.Services.AddSingleton<BackgroundEmailQueue>();
+builder.Services.AddSingleton<IEmailQueue>(provider => provider.GetRequiredService<BackgroundEmailQueue>());
+builder.Services.AddHostedService(provider => provider.GetRequiredService<BackgroundEmailQueue>());
 
 builder.Services.AddJwtService(builder.Configuration);
 
@@ -87,6 +108,7 @@ var app = builder.Build();
 if (useForwardedHeaders)
     app.UseForwardedHeaders();
 
+app.UseResponseCompression();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
@@ -117,6 +139,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<EventHub>("/hubs/events");
+app.MapHealthChecks("/health").DisableRateLimiting();
 
 app.MapGet("/", () => Results.Ok(new
 {

@@ -10,6 +10,7 @@ import type {
   EventType,
   FinalSchedule,
   HeatmapCellData,
+  Participant,
 } from '@/shared/types'
 
 interface RealtimePayload {
@@ -19,6 +20,8 @@ interface RealtimePayload {
 
 export interface HeatmapUpdatedPayload extends RealtimePayload {
   heatmapGrid: HeatmapCellData[]
+  /** Có khi BE gộp broadcast; đổi khi có người mới tham gia */
+  participants?: Participant[]
 }
 
 export interface EventUpdatedPayload extends RealtimePayload {
@@ -68,7 +71,11 @@ export function useEventRealtime(shortCode: string, accessToken: string | undefi
     }
 
     const onHeatmapUpdated = (payload: HeatmapUpdatedPayload) => {
-      apply(payload, (event) => ({ ...event, heatmapGrid: payload.heatmapGrid }))
+      apply(payload, (event) => ({
+        ...event,
+        heatmapGrid: payload.heatmapGrid,
+        participants: payload.participants ?? event.participants,
+      }))
     }
 
     const onEventUpdated = (payload: EventUpdatedPayload) => {

@@ -78,9 +78,14 @@ internal sealed class NoopNotifier : IEventRealtimeNotifier
     public Task NotifyEventFinalizedAsync(string shortCode, FinalizeEventResponse response, CancellationToken cancellationToken) => Task.CompletedTask;
 }
 
-internal sealed class NoopEmailService : IEmailService
+internal sealed class FakeEmailQueue : IEmailQueue
 {
-    public Task SendAsync(IReadOnlyCollection<string> recipients, string subject, string html, CancellationToken cancellationToken) => Task.CompletedTask;
+    public List<EmailMessage> Messages { get; } = [];
+    public bool Enqueue(EmailMessage message)
+    {
+        Messages.Add(message);
+        return true;
+    }
 }
 
 internal static class TestServices
@@ -97,7 +102,7 @@ internal static class TestServices
         repository,
         Jwt(),
         new NoopNotifier(),
-        new NoopEmailService(),
+        new FakeEmailQueue(),
         Options.Create(new AppOptions { FrontendBaseUrl = "https://app.test" }),
         NullLogger<EventService>.Instance);
 

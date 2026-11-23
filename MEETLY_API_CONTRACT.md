@@ -704,7 +704,10 @@ FE connect bằng `accessToken`.
 
 ```text
 PUT /events/{shortCode}/participants/me/availability
+POST /events/{shortCode}/participants/access   (khi có participant mới)
 ```
+
+BE gộp các thay đổi của cùng event trong cửa sổ ~300ms rồi mới gửi một lần, với `revision` mới nhất trong DB. Vì vậy client có thể không nhận đủ mọi revision trung gian; chỉ cần áp payload có `revision` lớn hơn bản đang có.
 
 ### Payload
 
@@ -712,6 +715,7 @@ PUT /events/{shortCode}/participants/me/availability
 {
   "shortCode": "A1B2C3",
   "revision": 13,
+  "participants": [{ "username": "Huy" }, { "username": "Uyên" }, { "username": "Bảo" }],
   "heatmapGrid": [
     {
       "specificDate": "2026-09-10",
@@ -746,9 +750,12 @@ PUT /events/{shortCode}
   "availableWeekdays": [],
   "dailyStartTime": "09:00",
   "dailyEndTime": "18:00",
+  "heatmapGrid": [],
   "revision": 14
 }
 ```
+
+`heatmapGrid` là lưới đã tính lại theo ngày/giờ mới (time slot thuộc ngày bị bỏ đã bị xoá).
 
 ## EventFinalized
 

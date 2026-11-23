@@ -8,22 +8,14 @@ namespace Meetly.API.Realtime;
 
 public sealed class EventRealtimeNotifier(
     IHubContext<EventHub> hub,
-    IEventRepository repository) : IEventRealtimeNotifier
+    IEventRepository repository,
+    HeatmapBroadcaster heatmapBroadcaster) : IEventRealtimeNotifier
 {
-    public async Task NotifyHeatmapUpdatedAsync(string shortCode, long revision, CancellationToken cancellationToken)
+    /// <summary>Gộp với các lần lưu khác trong cửa sổ ngắn; revision gửi đi là revision mới nhất trong DB.</summary>
+    public Task NotifyHeatmapUpdatedAsync(string shortCode, long revision, CancellationToken cancellationToken)
     {
-        var entity = await repository.GetReadOnlyAsync(shortCode.ToUpperInvariant(), cancellationToken);
-        if (entity is null) return;
-
-        await hub.Clients.Group(EventHub.GroupName(shortCode)).SendAsync(
-            "HeatmapUpdated",
-            new
-            {
-                shortCode = entity.ShortCode,
-                revision,
-                heatmapGrid = HeatmapBuilder.Build(entity)
-            },
-            cancellationToken);
+        heatmapBroadcaster.Schedule(shortCode);
+        return Task.CompletedTask;
     }
 
     public async Task NotifyEventUpdatedAsync(string shortCode, long revision, CancellationToken cancellationToken)

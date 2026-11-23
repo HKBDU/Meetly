@@ -19,7 +19,7 @@ public sealed class EventService(
     IEventRepository repository,
     IJwtService jwt,
     IEventRealtimeNotifier notifier,
-    IEmailService emailService,
+    IEmailQueue emailQueue,
     IOptions<AppOptions> appOptions,
     ILogger<EventService> logger) : IEventService
 {
@@ -96,8 +96,16 @@ public sealed class EventService(
                 IsAdmin = false,
                 CreatedAt = DateTimeOffset.UtcNow
             };
-            repository.Add(participant);
-            await repository.SaveChangesAsync(cancellationToken);
+            // Người mới làm đổi danh sách participant (tổng số trên heatmap) nên tăng revision và báo realtime
+            await using (var transaction = await repository.BeginTransactionAsync(cancellationToken))
+            {
+                entity.Revision = await repository.TryBumpRevisionAsync(entity.Id, requireOpen: false, cancellationToken)
+                    ?? throw new EventException(404, "Event not found.");
+                repository.Add(participant);
+                await repository.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            }
+            await notifier.NotifyHeatmapUpdatedAsync(entity.ShortCode, entity.Revision, cancellationToken);
         }
         else Verify(participant, password);
 
@@ -162,19 +170,11 @@ public sealed class EventService(
             entity.Revision);
         await notifier.NotifyEventFinalizedAsync(shortCode, response, cancellationToken);
 
-        try
-        {
-            await emailService.SendAsync(
-                await repository.GetEmailsAsync(entity.Id, cancellationToken),
-                $"Lịch họp đã được chốt: {entity.Title}",
-                BuildFinalizedEmail(entity, response),
-                cancellationToken);
-        }
-        catch (Exception exception)
-        {
-            // Sending mail must not undo an event that has already been finalized.
-            logger.LogError(exception, "Could not send finalized event email for {ShortCode}", shortCode);
-        }
+        // Gửi nền (có retry): lỗi email không được làm hỏng việc chốt lịch, cũng không bắt admin chờ
+        var recipients = await repository.GetEmailsAsync(entity.Id, cancellationToken);
+        if (recipients.Count > 0 &&
+            !emailQueue.Enqueue(new EmailMessage(recipients, $"Lịch họp đã được chốt: {entity.Title}", BuildFinalizedEmail(entity, response))))
+            logger.LogError("Could not queue finalized event email for {ShortCode}", shortCode);
 
         return response;
     }
