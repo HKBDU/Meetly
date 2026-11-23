@@ -1,7 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
-using System.Text.Encodings.Web;
 using Meetly.Repository.Entity;
 using Meetly.Repository.Enum;
 using Meetly.Repository.EventScheduling;
@@ -173,7 +172,7 @@ public sealed class EventService(
         // Gửi nền (có retry): lỗi email không được làm hỏng việc chốt lịch, cũng không bắt admin chờ
         var recipients = await repository.GetEmailsAsync(entity.Id, cancellationToken);
         if (recipients.Count > 0 &&
-            !emailQueue.Enqueue(new EmailMessage(recipients, $"Lịch họp đã được chốt: {entity.Title}", BuildFinalizedEmail(entity, response))))
+            !emailQueue.Enqueue(new EmailMessage(recipients, FinalizedEmailTemplate.Subject(entity.Title), BuildFinalizedEmail(entity, response))))
             logger.LogError("Could not queue finalized event email for {ShortCode}", shortCode);
 
         return response;
@@ -283,19 +282,18 @@ public sealed class EventService(
             Format(entity.FinalStartTime!.Value), Format(entity.FinalEndTime!.Value))
     };
 
-    private static readonly string[] VietnameseWeekdays = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
-
     private string BuildFinalizedEmail(Events entity, FinalizeEventResponse response)
     {
-        var title = HtmlEncoder.Default.Encode(entity.Title);
-        var url = HtmlEncoder.Default.Encode(appOptions.Value.EventUrl(entity.ShortCode));
         var schedule = response.FinalSchedule;
-        var date = schedule.SpecificDate ?? $"{VietnameseWeekdays[schedule.DayOfWeek ?? 0]} hằng tuần";
-
-        return $"<h2>Lịch họp đã được chốt</h2>" +
-               $"<p>Sự kiện <strong>{title}</strong> đã có lịch chính thức.</p>" +
-               $"<p><strong>Thời gian:</strong> {date}, {schedule.StartTime} - {schedule.EndTime}</p>" +
-               $"<p><a href=\"{url}\">Mở sự kiện Meetly</a></p>";
+        return FinalizedEmailTemplate.Render(new FinalizedEmailModel(
+            entity.Title,
+            schedule.SpecificDate,
+            schedule.DayOfWeek,
+            schedule.StartTime,
+            schedule.EndTime,
+            entity.Participants.Count,
+            appOptions.Value.EventUrl(entity.ShortCode),
+            appOptions.Value.FrontendBaseUrl));
     }
 
 
