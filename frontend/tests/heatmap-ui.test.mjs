@@ -21,7 +21,7 @@ async function createTestServer() {
 test('time rows stop before the configured end time', async () => {
   const server = await createTestServer();
   try {
-    const { buildRows } = await server.ssrLoadModule('/src/features/heatmap/time.ts');
+    const { buildRows } = await server.ssrLoadModule('/src/shared/grid/model.ts');
     assert.deepEqual(buildRows('08:00', '09:00'), [
       { startTime: '08:00', endTime: '08:15' },
       { startTime: '08:15', endTime: '08:30' },
@@ -36,7 +36,7 @@ test('time rows stop before the configured end time', async () => {
 test('column pages use stable desktop and mobile page sizes', async () => {
   const server = await createTestServer();
   try {
-    const { getColumnPage, getPageCount } = await server.ssrLoadModule('/src/features/heatmap/time.ts');
+    const { getColumnPage, getPageCount } = await server.ssrLoadModule('/src/shared/grid/model.ts');
     const { DESKTOP_COLUMNS_PER_PAGE, MOBILE_COLUMNS_PER_PAGE } = await server.ssrLoadModule(
       '/src/features/heatmap/constants.ts',
     );
@@ -92,7 +92,7 @@ test('historical event dates remain paginated and selectable in the Heatmap', as
     );
     const { mockDatesEvent } = await server.ssrLoadModule('/tests/fixtures/heatmapEvent.ts');
     const { buildRows, getColumnPage, getColumns } = await server.ssrLoadModule(
-      '/src/features/heatmap/time.ts',
+      '/src/shared/grid/model.ts',
     );
     const availableDates = [
       '2026-09-15',
@@ -207,7 +207,7 @@ test('inspected cell details can be shown by hover or tap and dismissed after le
     );
     const { mockDatesEvent } = await server.ssrLoadModule('/tests/fixtures/heatmapEvent.ts');
     const { buildRows, getColumns } = await server.ssrLoadModule(
-      '/src/features/heatmap/time.ts',
+      '/src/shared/grid/model.ts',
     );
     const point = {
       column: getColumns(mockDatesEvent)[0],
@@ -320,8 +320,8 @@ test('finalized schedule keeps the blue range on the Heatmap', async () => {
       }),
     );
 
-    assert.equal((html.match(/border-blue-400/g) ?? []).length, 8);
-    assert.equal((html.match(/border-red-500/g) ?? []).length, 0);
+    assert.equal((html.match(/border-finalized\/60/g) ?? []).length, 8);
+    assert.equal((html.match(/border-suggestion/g) ?? []).length, 0);
   } finally {
     await server.close();
   }

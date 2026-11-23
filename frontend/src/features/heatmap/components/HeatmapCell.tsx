@@ -1,9 +1,16 @@
 import { CalendarCheck2 } from 'lucide-react';
 import { timeToMinutes } from '@/lib/date-time';
 import { getAvailabilityClass } from '../availability';
-import { SLOT_MINUTES } from '../constants';
-import type { HeatmapCellProps } from '../types';
-import { containsCell, formatDay } from '../time';
+import { SLOT_MINUTES } from '@/shared/constants';
+import type { HeatmapCellData } from '@/shared/types';
+import type { HeatmapProps, SelectedCell } from '../types';
+
+export interface HeatmapCellProps extends HeatmapProps {
+  point: SelectedCell;
+  cell: HeatmapCellData | undefined;
+  total: number;
+}
+import { containsCell, formatDay } from '@/shared/grid/model';
 import { FinalizedSchedulePopover } from './FinalizedSchedulePopover';
 
 export function HeatmapCell({
@@ -44,15 +51,15 @@ export function HeatmapCell({
   const accessibilityLabel = `${formatDay(column)}, ${row.startTime} – ${row.endTime}: ${count} of ${total} participants available${matchingSuggestions.length ? ', suggested time' : ''}${isFinalized ? ', finalized meeting time' : ''}`;
   const minute = row.startTime.slice(3);
   const timeBoundaryClass = minute === '00'
-    ? 'border-t border-solid border-slate-300'
+    ? 'border-t border-solid border-grid-line'
     : minute === '30'
-      ? 'border-t border-dashed border-slate-200/70'
+      ? 'border-t border-dashed border-grid-line-soft'
       : '';
 
   const cellButton = (
     <button
       type="button"
-      className={`relative block h-5 w-full outline-offset-[-2px] hover:brightness-[0.98] focus-visible:z-20 focus-visible:outline-2 focus-visible:outline-blue-700 ${isFinalized ? 'z-10 bg-blue-600 text-white' : 'bg-transparent'} ${selecting ? 'touch-none cursor-crosshair select-none' : 'cursor-pointer'}`}
+      className={`relative block h-5 w-full outline-offset-[-2px] hover:brightness-[0.98] focus-visible:z-20 focus-visible:outline-2 focus-visible:outline-selection ${isFinalized ? 'z-10 bg-finalized text-finalized-foreground' : 'bg-transparent'} ${selecting ? 'touch-none cursor-crosshair select-none' : 'cursor-pointer'}`}
       aria-label={accessibilityLabel}
       title={accessibilityLabel}
       aria-pressed={isSelected || isFinalized}
@@ -87,13 +94,13 @@ export function HeatmapCell({
       {isFinalizedStart && finalizedSchedule && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-1 top-0 z-30 flex items-start gap-2 overflow-hidden rounded-md bg-gradient-to-b from-blue-500 to-blue-700 px-2 py-1 text-left text-[10px] font-semibold leading-tight text-white shadow-sm sm:text-xs"
+          className="pointer-events-none absolute inset-x-1 top-0 z-30 flex items-start gap-2 overflow-hidden rounded-md bg-gradient-to-b from-finalized/90 to-finalized px-2 py-1 text-left text-[10px] font-semibold leading-tight text-finalized-foreground shadow-sm sm:text-xs"
           style={{ height: `calc(${finalizedCellCount} * 1.25rem)` }}
         >
           <CalendarCheck2 className="mt-0.5 size-4 shrink-0" />
           <span>
             <span className="block whitespace-nowrap">{finalizedSchedule.startTime} – {finalizedSchedule.endTime}</span>
-            <span className="block text-blue-100">Finalized</span>
+            <span className="block text-finalized-foreground/80">Finalized</span>
           </span>
         </span>
       )}
@@ -101,7 +108,7 @@ export function HeatmapCell({
   );
 
   return (
-    <td className={`relative border-r border-slate-300/60 p-0 ${getAvailabilityClass(count, total)} ${timeBoundaryClass}`}>
+    <td className={`relative border-r border-grid-line/60 p-0 ${getAvailabilityClass(count, total)} ${timeBoundaryClass}`}>
       {isFinalized
         ? <FinalizedSchedulePopover event={event}>{cellButton}</FinalizedSchedulePopover>
         : cellButton}
@@ -109,19 +116,19 @@ export function HeatmapCell({
         <span
           key={`${slot.startTime}:${slot.endTime}:${index}`}
           aria-hidden="true"
-          className={`pointer-events-none absolute inset-0 border-x-2 border-red-500 ${slot.startTime === row.startTime ? 'border-t-2' : ''} ${slot.endTime === row.endTime ? 'border-b-2' : ''}`}
+          className={`pointer-events-none absolute inset-0 border-x-2 border-suggestion ${slot.startTime === row.startTime ? 'border-t-2' : ''} ${slot.endTime === row.endTime ? 'border-b-2' : ''}`}
         />
       ))}
       {isSelected && selected && !isFinalized && (
         <span
           aria-hidden="true"
-          className={`pointer-events-none absolute inset-0 border-x-2 border-blue-700 ${selected.startTime === row.startTime ? 'border-t-2' : ''} ${selected.endTime === row.endTime ? 'border-b-2' : ''}`}
+          className={`pointer-events-none absolute inset-0 border-x-2 border-selection ${selected.startTime === row.startTime ? 'border-t-2' : ''} ${selected.endTime === row.endTime ? 'border-b-2' : ''}`}
         />
       )}
       {isFinalized && finalizedSchedule && (
         <span
           aria-hidden="true"
-          className={`pointer-events-none absolute inset-0 z-20 border-x-2 border-blue-400 ${finalizedSchedule.startTime === row.startTime ? 'border-t-2' : ''} ${finalizedSchedule.endTime === row.endTime ? 'border-b-2' : ''}`}
+          className={`pointer-events-none absolute inset-0 z-20 border-x-2 border-finalized/60 ${finalizedSchedule.startTime === row.startTime ? 'border-t-2' : ''} ${finalizedSchedule.endTime === row.endTime ? 'border-b-2' : ''}`}
         />
       )}
     </td>

@@ -1,7 +1,6 @@
-import { Outlet } from "react-router-dom"
+import { Outlet } from 'react-router-dom'
 
-import { AppHeader } from "@/features/participants/components/AppHeader"
-import { AppFooter } from "@/shared/layouts"
+import { AppFooter, AppHeader } from '@/shared/layouts'
 
 /** Khung chung của mọi trang: nền ô vuông, header, nội dung, footer */
 export function RootLayout() {

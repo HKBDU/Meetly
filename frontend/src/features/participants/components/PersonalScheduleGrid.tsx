@@ -1,13 +1,13 @@
-import { memo, useLayoutEffect, useMemo, useRef, useState } from "react"
+import { memo, useLayoutEffect, useRef, useState } from "react"
 
-import { MOBILE_COLUMNS_PER_PAGE } from "@/features/heatmap/constants"
-import { getColumnPage, getPageCount } from "@/features/heatmap/time"
-import { formatDateLabel, getGridTimes, getSlotId } from "@/features/participants/gridUtils"
+import { getColumnPage, getPageCount, MOBILE_COLUMNS_PER_PAGE } from "@/shared/grid/model"
+import { getSlotId } from "@/features/participants/gridUtils"
 import { useOptimizedDrag } from "@/features/participants/hooks/useOptimizedDrag"
+import type { ScheduleGrid } from "@/features/participants/hooks/useScheduleGrid"
 import { useParticipantStore } from "@/features/participants/store"
 import { ColumnPager } from "@/shared/components/ColumnPager"
 import { cn } from "@/lib/utils"
-import { formatDate, formatHourLabel } from "@/lib/date-time"
+import { formatHourLabel } from "@/lib/date-time"
 
 /** Cột ngày không được nhỏ hơn mức này trước khi lưới chuyển sang trang kế tiếp. */
 const TIME_COLUMN_WIDTH = 44
@@ -19,8 +19,9 @@ const MOBILE_BREAKPOINT_QUERY = "(max-width: 767px)"
 
 interface ScheduleCellProps {
   slotId: string
-  date: string
+  column: string
   row: number
+  locked: boolean
   /** Ô đầu của giờ tròn (09:00, 10:00...) */
   isHourStart: boolean
   /** Ô đầu của mốc nửa giờ (09:30, 10:30...) */
@@ -36,8 +37,9 @@ interface ScheduleCellProps {
  */
 const ScheduleCell = memo(function ScheduleCell({
   slotId,
-  date,
+  column,
   row,
+  locked: isFinalized,
   isHourStart,
   isHalfHourStart,
   onPointerDown,
@@ -45,28 +47,27 @@ const ScheduleCell = memo(function ScheduleCell({
 }: ScheduleCellProps) {
   // "Được tô" chỉ là rảnh hay bận tuỳ paintMode, xem useAutoSaveSchedule
   const isPainted = useParticipantStore((s) => s.selectedSlotIds.has(slotId))
-  const isFinalized = useParticipantStore((s) => s.isFinalized)
 
   return (
     <td
       data-slot-id={slotId}
-      data-date={date}
+      data-column={column}
       data-row={row}
       onPointerDown={isFinalized ? undefined : onPointerDown}
       onPointerEnter={isFinalized ? undefined : onPointerEnter}
       className={cn(
-        "h-5 border-r border-slate-300/60 p-0 transition-colors duration-75",
+        "h-5 border-r border-grid-line/60 p-0 transition-colors duration-75",
         // Thiếu touch-none thì kéo ngang trên mobile bị hiểu thành cuộn trang
         !isFinalized && "touch-none select-none",
-        isHourStart && "border-t border-solid border-slate-300",
-        isHalfHourStart && "border-t border-dashed border-slate-200/70",
+        isHourStart && "border-t border-solid border-grid-line",
+        isHalfHourStart && "border-t border-dashed border-grid-line-soft",
         isFinalized
-          ? cn("cursor-not-allowed", isPainted ? "availability-level-5 opacity-50" : "bg-muted")
+          ? cn("cursor-not-allowed", isPainted ? "bg-heat-5 opacity-50" : "bg-muted")
           : cn(
               "cursor-pointer",
               isPainted
-                ? "availability-level-5 hover:brightness-95"
-                : "availability-level-0 hover:bg-accent"
+                ? "bg-heat-5 hover:brightness-95"
+                : "bg-heat-0 hover:bg-accent"
             )
       )}
     />
@@ -74,22 +75,24 @@ const ScheduleCell = memo(function ScheduleCell({
 })
 
 interface PersonalScheduleGridProps {
+  grid: ScheduleGrid
   /** Nhận từ cha để kéo chuột, "Chọn thủ công" và "Xoá hết" dùng chung 1 debounce lưu */
   triggerAutoSave: () => void
-  manualSelection: { date: string; requestId: number } | null
+  manualSelection: { columnKey: string; requestId: number } | null
 }
 
 export function PersonalScheduleGrid({
+  grid,
   triggerAutoSave,
   manualSelection,
 }: PersonalScheduleGridProps) {
-  const config = useParticipantStore((s) => s.scheduleConfig)
+  const { times, isLocked } = grid
 
   const { handleCellPointerDown, handleCellPointerEnter } = useOptimizedDrag({
+    times,
+    locked: isLocked,
     onDragEnd: triggerAutoSave,
   })
-
-  const times = useMemo(() => (config ? getGridTimes(config) : []), [config])
 
   const gridContainerRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(
@@ -98,7 +101,7 @@ export function PersonalScheduleGrid({
   const [containerWidth, setContainerWidth] = useState(0)
   const [page, setPage] = useState(0)
   const [appliedManualSelectionKey, setAppliedManualSelectionKey] = useState<string | null>(null)
-  const dates = useMemo(() => config?.dates ?? [], [config])
+  const dates = grid.columns
   const usesCompactLayout = !isMobile && dates.length <= COMPACT_LAYOUT_MAX_COLUMNS
   const columnsThatFit =
     containerWidth > TIME_COLUMN_WIDTH
@@ -113,13 +116,13 @@ export function PersonalScheduleGrid({
   const currentPage = Math.min(page, pageCount - 1)
   const visibleDates = getColumnPage(dates, currentPage, pageSize)
   const manualSelectionKey = manualSelection
-    ? `${manualSelection.requestId}:${manualSelection.date}:${pageSize}`
+    ? `${manualSelection.requestId}:${manualSelection.columnKey}:${pageSize}`
     : null
 
   // Điều chỉnh state ngay trong render có điều kiện để lần paint kế tiếp đã ở đúng page,
   // tránh một frame hiển thị trang cũ sau khi dialog đóng.
   if (manualSelection && manualSelectionKey !== appliedManualSelectionKey) {
-    const selectedDateIndex = dates.indexOf(manualSelection.date)
+    const selectedDateIndex = dates.findIndex((column) => column.key === manualSelection.columnKey)
     setAppliedManualSelectionKey(manualSelectionKey)
     if (selectedDateIndex >= 0) {
       setPage(Math.floor(selectedDateIndex / pageSize))
@@ -148,14 +151,6 @@ export function PersonalScheduleGrid({
     return () => resizeObserver.disconnect()
   }, [])
 
-  if (!config) {
-    return (
-      <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-        Loading schedule...
-      </div>
-    )
-  }
-
   return (
     <section className="p-3 sm:p-4" aria-label="My schedule">
       <ColumnPager
@@ -167,7 +162,7 @@ export function PersonalScheduleGrid({
 
       <div ref={gridContainerRef} className="overflow-x-auto">
         <div
-          className="mx-auto w-full border border-slate-300 bg-white"
+          className="mx-auto w-full border border-grid-line bg-card"
           style={
             usesCompactLayout
               ? {
@@ -177,29 +172,28 @@ export function PersonalScheduleGrid({
           }
         >
         <table className="w-full table-fixed border-collapse select-none">
-          <thead className="bg-white">
+          <thead className="bg-card">
             <tr>
               <th
                 scope="col"
                 style={{ width: TIME_COLUMN_WIDTH }}
-                className="border-b border-r border-slate-200 p-1 text-xs text-slate-500"
+                className="border-b border-r border-border p-1 text-xs text-muted-foreground"
               >
                 Time
               </th>
-              {visibleDates.map((date) => {
-                const { weekday } = formatDateLabel(date)
-                const detail =
-                  config.dateMode === "SPECIFIC_DATES" ? formatDate(date) : "Weekly"
+              {visibleDates.map((column) => {
+                const weekday = column.label
+                const detail = column.detail
                 return (
                   <th
                     scope="col"
-                    key={date}
+                    key={column.key}
                     title={`${weekday} ${detail}`}
-                    className="border-b border-r border-slate-200 px-1 py-2 text-xs font-semibold last:border-r-0 sm:py-3 sm:text-sm"
+                    className="border-b border-r border-border px-1 py-2 text-xs font-semibold last:border-r-0 sm:py-3 sm:text-sm"
                   >
                     <span className="sm:hidden">{weekday.slice(0, 3)}</span>
                     <span className="hidden sm:inline">{weekday}</span>
-                    <span className="mt-1 block truncate text-[10px] font-normal text-slate-500 sm:text-xs">
+                    <span className="mt-1 block truncate text-[10px] font-normal text-muted-foreground sm:text-xs">
                       {detail}
                     </span>
                   </th>
@@ -217,22 +211,23 @@ export function PersonalScheduleGrid({
                     scope="row"
                     aria-label={time}
                     className={cn(
-                      "border-r border-slate-200 bg-white px-1 text-left text-xs font-medium text-slate-500",
+                      "border-r border-border bg-card px-1 text-left text-xs font-medium text-muted-foreground",
                       isHourStart
-                        ? "border-t border-t-slate-300 align-top pt-1"
+                        ? "border-t border-t-grid-line align-top pt-1"
                         : "border-t border-t-transparent"
                     )}
                   >
                     {isHourStart ? formatHourLabel(time) : null}
                   </th>
-                  {visibleDates.map((date) => {
-                    const slotId = getSlotId(date, time)
+                  {visibleDates.map((column) => {
+                    const slotId = getSlotId(column, time)
                     return (
                       <ScheduleCell
                         key={slotId}
                         slotId={slotId}
-                        date={date}
+                        column={column.key}
                         row={rowIndex}
+                        locked={isLocked}
                         isHourStart={isHourStart}
                         isHalfHourStart={isHalfHourStart}
                         onPointerDown={handleCellPointerDown}

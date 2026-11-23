@@ -31,9 +31,8 @@ test('Admin suggestions have no manual trigger button', async () => {
     const { mockDatesEvent } = await server.ssrLoadModule('/tests/fixtures/heatmapEvent.ts');
     const html = renderToStaticMarkup(
       createElement(HeatmapPage, {
-        initialEvent: mockDatesEvent,
+        event: mockDatesEvent,
         isAdmin: true,
-        onSuggestions: async () => [],
       }),
     );
 

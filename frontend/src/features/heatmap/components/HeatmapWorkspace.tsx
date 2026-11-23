@@ -4,13 +4,13 @@ import { AvailabilityDetails } from './AvailabilityDetails';
 import { FinalizeDialog } from './FinalizeDialog';
 import { Heatmap } from './Heatmap';
 import { ScheduleControls } from './ScheduleControls';
-import { normalizeSelection } from '../selection';
-import { getColumns, isValidSchedule } from '../time';
+import { getColumns } from '@/shared/grid/model';
+import type { FinalSchedule } from '@/shared/types';
+import { isValidSchedule, normalizeSelection } from '../selection';
 import {
   HeatmapPendingAction,
   HeatmapSelectionMode,
   type CellDetails,
-  type FinalSchedule,
   type HeatmapWorkspaceProps,
   type SelectedCell,
 } from '../types';
@@ -22,7 +22,6 @@ export function HeatmapWorkspace({
   keyParticipant,
   pending,
   onFinalize,
-  onFinalized,
   onPendingChange,
 }: HeatmapWorkspaceProps) {
   const [details, setDetails] = useState<CellDetails | null>(null);
@@ -127,7 +126,7 @@ export function HeatmapWorkspace({
       }
       setDialogOpen(false);
       cancelSelection();
-      onFinalized(result);
+      toast.success('Meeting finalized. This event is now read-only.');
     } catch (failure) {
       if (active.current) {
         toast.error(failure instanceof Error ? failure.message : 'Unable to finalize the meeting. Please try again.');

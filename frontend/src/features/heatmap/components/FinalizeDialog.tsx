@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui';
 import type { FinalizeDialogProps } from '../types';
-import { formatDay } from '../time';
+import { formatDay } from '@/shared/grid/model';
 
 export function FinalizeDialog({
   open,
@@ -43,18 +43,18 @@ export function FinalizeDialog({
         >
           <DialogHeader>
           <DialogTitle>Finalize this meeting?</DialogTitle>
-          <DialogDescription className="leading-6 text-slate-600">
+          <DialogDescription className="leading-6 text-muted-foreground">
             Confirming will lock this event. Participants will no longer be able to edit their
             availability.
           </DialogDescription>
           </DialogHeader>
           {selected && (
-            <div className="my-5 rounded-lg bg-emerald-50 p-4">
+            <div className="my-5 rounded-lg bg-secondary p-4">
               <p className="font-medium">{formatDay(selected)}</p>
               <p className="mt-1 text-xl font-semibold">
                 {selected.startTime} – {selected.endTime}
               </p>
-              <p className="mt-2 text-xs text-slate-600">{timezone}</p>
+              <p className="mt-2 text-xs text-muted-foreground">{timezone}</p>
             </div>
           )}
           <DialogFooter>

@@ -8,8 +8,9 @@ import {
   MOBILE_COLUMNS_PER_PAGE,
 } from '../constants';
 import { getAvailabilityLevelClass } from '../availability';
-import type { HeatmapProps, TimeColumn, TimeRow } from '../types';
-import { buildRows, getColumnPage, getColumns, getPageCount } from '../time';
+import type { TimeColumn, TimeRow } from '@/shared/grid/model';
+import type { HeatmapProps } from '../types';
+import { buildRows, getColumnPage, getColumns, getPageCount } from '@/shared/grid/model';
 import { HeatmapCell } from './HeatmapCell';
 
 interface HeatmapTableProps extends Omit<HeatmapProps, 'event'> {
@@ -21,16 +22,16 @@ interface HeatmapTableProps extends Omit<HeatmapProps, 'event'> {
 
 function HeatmapTable({ columns, rows, event, compactHeaders = false, ...interaction }: HeatmapTableProps) {
   return (
-    <div className="w-full overflow-hidden border border-slate-300 bg-white">
+    <div className="w-full overflow-hidden border border-grid-line bg-card">
       <table className="w-full table-fixed border-collapse">
         <caption className="sr-only">
           Availability grid with 15-minute slots. Hover, tap, or use Tab to view details.
         </caption>
-        <thead className="bg-white">
+        <thead className="bg-card">
           <tr>
             <th
               scope="col"
-              className="w-14 border-b border-r border-slate-200 p-2 text-xs text-slate-500 sm:w-20"
+              className="w-14 border-b border-r border-border p-2 text-xs text-muted-foreground sm:w-20"
             >
               Time
             </th>
@@ -39,10 +40,10 @@ function HeatmapTable({ columns, rows, event, compactHeaders = false, ...interac
                 scope="col"
                 key={column.key}
                 title={`${column.label} ${column.detail}`}
-                className="border-b border-r border-slate-200 px-1 py-2 text-xs font-semibold last:border-r-0 sm:py-3 sm:text-sm"
+                className="border-b border-r border-border px-1 py-2 text-xs font-semibold last:border-r-0 sm:py-3 sm:text-sm"
               >
                 {compactHeaders ? column.label.slice(0, 3) : column.label}
-                <span className="mt-1 block truncate text-[10px] font-normal text-slate-500 sm:text-xs">
+                <span className="mt-1 block truncate text-[10px] font-normal text-muted-foreground sm:text-xs">
                   {column.detail}
                 </span>
               </th>
@@ -57,7 +58,7 @@ function HeatmapTable({ columns, rows, event, compactHeaders = false, ...interac
                 <th
                   scope="row"
                   aria-label={row.startTime}
-                  className={`w-14 border-r border-slate-200 bg-white px-1 text-left text-xs font-medium text-slate-500 sm:w-20 sm:px-2 ${hourBoundary ? 'border-t border-t-slate-300 align-top pt-1' : 'border-t border-t-transparent'}`}
+                  className={`w-14 border-r border-border bg-card px-1 text-left text-xs font-medium text-muted-foreground sm:w-20 sm:px-2 ${hourBoundary ? 'border-t border-t-grid-line align-top pt-1' : 'border-t border-t-transparent'}`}
                 >
                   {hourBoundary ? formatHourLabel(row.startTime) : null}
                 </th>
@@ -138,13 +139,13 @@ export function Heatmap({ event, ...interaction }: HeatmapProps) {
 
   if (columns.length === 0)
     return (
-      <p className="rounded-xl bg-slate-50 p-6 text-slate-500">
+      <p className="rounded-xl bg-muted p-6 text-muted-foreground">
         No dates available for the heatmap.
       </p>
     );
   if (rows.length === 0)
     return (
-      <p className="rounded-xl bg-slate-50 p-6 text-slate-500">No valid time slots available.</p>
+      <p className="rounded-xl bg-muted p-6 text-muted-foreground">No valid time slots available.</p>
     );
 
   return (
@@ -152,12 +153,12 @@ export function Heatmap({ event, ...interaction }: HeatmapProps) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2
           id="heatmap-heading"
-          className="text-sm font-semibold uppercase tracking-wide text-slate-500"
+          className="text-sm font-semibold uppercase tracking-wide text-muted-foreground"
         >
           Group Availability
         </h2>
         <div
-          className="flex items-center gap-1 text-xs text-slate-500"
+          className="flex items-center gap-1 text-xs text-muted-foreground"
           aria-label="Availability scale from fewer to more participants"
         >
           <span className="mr-1">Less</span>
@@ -168,10 +169,10 @@ export function Heatmap({ event, ...interaction }: HeatmapProps) {
         </div>
       </div>
       {event.participants.length === 0 && (
-        <p className="mb-3 text-sm text-slate-500">No participants yet.</p>
+        <p className="mb-3 text-sm text-muted-foreground">No participants yet.</p>
       )}
       {event.heatmapGrid.length === 0 && (
-        <p className="mb-3 text-sm text-slate-500">No availability data yet.</p>
+        <p className="mb-3 text-sm text-muted-foreground">No availability data yet.</p>
       )}
       <div className="md:hidden">
         <PaginatedHeatmap

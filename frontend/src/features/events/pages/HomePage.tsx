@@ -1,104 +1,83 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+
 import { Button } from '@/shared/components/ui/button'
-import { eventUi } from '@/shared/components/ui/styles'
-import { cn } from '@/lib/utils'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/shared/components/ui/dialog'
+import { FieldError, FieldLabel } from '@/shared/components/ui/field'
+import { Input } from '@/shared/components/ui/input'
 
 export function HomePage() {
   const navigate = useNavigate()
-  const [shortCode, setShortCode] = useState('')
   const [isJoinOpen, setIsJoinOpen] = useState(false)
+  const [shortCode, setShortCode] = useState('')
   const [joinError, setJoinError] = useState('')
 
-  const handleJoin = (e: React.FormEvent) => {
-    e.preventDefault()
-    const trimmed = shortCode.trim()
-    if (!trimmed) {
+  function handleJoin(event: React.FormEvent) {
+    event.preventDefault()
+    // ShortCode lưu chữ hoa; bỏ khoảng trắng người dùng dán kèm
+    const code = shortCode.replace(/\s+/g, '').toUpperCase()
+    if (!code) {
       setJoinError('Please enter the Event ID.')
       return
     }
-    navigate(`/e/${trimmed}`)
+    navigate(`/e/${encodeURIComponent(code)}`)
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] p-6">
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
-        <Button
-          onClick={() => navigate('/create')}
-          className={cn(eventUi.primaryButton, "h-12 px-6 text-base font-semibold min-w-[200px]")}
-        >
-          Create New Event
-        </Button>
+    <div className="flex min-h-[70vh] flex-col items-center justify-center gap-4 p-6 sm:flex-row">
+      <Button size="lg" className="h-12 min-w-52 text-base" onClick={() => navigate('/create')}>
+        Create New Event
+      </Button>
+      <Button size="lg" variant="outline" className="h-12 min-w-52 text-base" onClick={() => setIsJoinOpen(true)}>
+        Join With ID
+      </Button>
 
-        <Button
-          onClick={() => setIsJoinOpen(true)}
-          variant="outline"
-          className="h-12 px-6 text-base font-semibold border-[#6b7280] text-[#0b1c30] min-w-[200px]"
-        >
-          Join With ID
-        </Button>
-      </div>
-
-      {/* Join with ID Modal */}
-      {isJoinOpen && (
-        <div className={eventUi.updateWarningBackdrop} role="presentation">
-          <div className="w-[min(100%,420px)] rounded-2xl bg-white p-6 shadow-xl border border-gray-100 space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="text-lg font-bold text-[#0b1c30]">
-                Join with ID
-              </h3>
-              <button
-                onClick={() => {
-                  setIsJoinOpen(false)
+      <Dialog
+        open={isJoinOpen}
+        onOpenChange={(open) => {
+          setIsJoinOpen(open)
+          if (!open) setJoinError('')
+        }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Join with ID</DialogTitle>
+            <DialogDescription>Enter the event code you received from the host.</DialogDescription>
+          </DialogHeader>
+          <form className="grid gap-4" onSubmit={handleJoin} noValidate>
+            <div className="grid gap-2">
+              <FieldLabel htmlFor="join-short-code">Event ID</FieldLabel>
+              <Input
+                id="join-short-code"
+                placeholder="e.g. ABC123"
+                autoComplete="off"
+                autoFocus
+                className="uppercase"
+                value={shortCode}
+                aria-invalid={Boolean(joinError)}
+                onChange={(event) => {
+                  setShortCode(event.target.value)
                   setJoinError('')
                 }}
-                className="text-gray-400 hover:text-gray-600 text-sm font-semibold"
-              >
-                ✕
-              </button>
+              />
+              {joinError && <FieldError>{joinError}</FieldError>}
             </div>
-            <form onSubmit={handleJoin} className="space-y-4 pt-2">
-              <div className={eventUi.field}>
-                <label className={eventUi.label} htmlFor="shortCodeInput">
-                  Event ID (Short Code)
-                </label>
-                <input
-                  id="shortCodeInput"
-                  type="text"
-                  placeholder="Example: ABC123"
-                  value={shortCode}
-                  onChange={(e) => {
-                    setShortCode(e.target.value)
-                    setJoinError('')
-                  }}
-                  className={eventUi.input}
-                  autoFocus
-                />
-                {joinError && <span className={eventUi.fieldError}>{joinError}</span>}
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsJoinOpen(false)
-                    setJoinError('')
-                  }}
-                  className="h-9 px-4"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className={cn(eventUi.primaryButton, "h-9 px-5 sm:min-w-0")}
-                >
-                  Join
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsJoinOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Join</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

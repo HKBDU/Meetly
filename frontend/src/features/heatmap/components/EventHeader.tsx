@@ -46,7 +46,7 @@ export function EventHeader({
         </h1>
         <div className="mt-4 flex min-w-0 flex-wrap items-center gap-3">
           {canEdit ? (
-            <div className="flex items-center gap-3 rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-500">
+            <div className="flex items-center gap-3 rounded-md border border-border px-3 py-2 text-xs font-semibold text-muted-foreground">
               <span>MEETING DURATION</span>
               <Select
                 value={duration === undefined ? '' : String(duration)}
@@ -69,7 +69,7 @@ export function EventHeader({
               </Select>
             </div>
           ) : (
-            <span className="rounded-md bg-slate-100 px-3 py-2 text-xs text-slate-600">
+            <span className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
               {event.status === 1 ? 'Overview · Read-only' : 'Event locked · Read-only'}
             </span>
           )}
@@ -81,7 +81,7 @@ export function EventHeader({
             />
           )}
         </div>
-        <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-600">
+        <div className="mt-4 flex flex-wrap gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-2">
             <Users size={15} aria-hidden="true" />
             {event.participants.length} participants
@@ -93,7 +93,7 @@ export function EventHeader({
         </div>
       </div>
       <div className="min-w-0 w-full shrink-0 space-y-3 sm:w-72">
-        <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-2">
+        <div className="flex items-center gap-2 rounded-md border border-border bg-muted p-2">
           <Link2 size={14} className="shrink-0 text-primary" aria-hidden="true" />
           <Input
             aria-label="Event share link"
@@ -101,7 +101,7 @@ export function EventHeader({
             value={shareUrl}
             readOnly
             onFocus={(focusEvent) => focusEvent.currentTarget.select()}
-            className="h-auto min-w-0 flex-1 truncate border-0 bg-transparent p-0 text-xs text-slate-600 focus:ring-0"
+            className="h-auto min-w-0 flex-1 truncate border-0 bg-transparent p-0 text-xs text-muted-foreground focus:ring-0"
           />
           <Button
             size="sm"
@@ -111,13 +111,13 @@ export function EventHeader({
               'Event link copied.',
               'Unable to copy. Select and copy the link from the field.',
             )}
-            className="bg-white text-primary hover:bg-white hover:text-primary"
+            className="bg-card text-primary hover:bg-card hover:text-primary"
           >
             <Copy size={13} aria-hidden="true" />
             Copy
           </Button>
         </div>
-        <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 p-2">
+        <div className="flex items-center gap-2 rounded-md border border-border bg-muted p-2">
           <Hash size={14} className="shrink-0 text-primary" aria-hidden="true" />
           <Input
             aria-label="Event code"
@@ -125,7 +125,7 @@ export function EventHeader({
             value={event.shortCode}
             readOnly
             onFocus={(focusEvent) => focusEvent.currentTarget.select()}
-            className="h-auto min-w-0 flex-1 border-0 bg-transparent p-0 text-xs font-semibold tracking-wide text-slate-700 focus:ring-0"
+            className="h-auto min-w-0 flex-1 border-0 bg-transparent p-0 text-xs font-semibold tracking-wide text-foreground focus:ring-0"
           />
           <Button
             size="sm"
@@ -135,7 +135,7 @@ export function EventHeader({
               'Event code copied.',
               'Unable to copy. Select and copy the event code from the field.',
             )}
-            className="bg-white text-primary hover:bg-white hover:text-primary"
+            className="bg-card text-primary hover:bg-card hover:text-primary"
           >
             <Copy size={13} aria-hidden="true" />
             Copy

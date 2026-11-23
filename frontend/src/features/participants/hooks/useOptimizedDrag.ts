@@ -1,67 +1,65 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef } from 'react'
 
-import { usePaintSlots } from "@/features/participants/hooks/usePaintSlots"
-import { useParticipantStore } from "@/features/participants/store"
+import { getSlotId } from '@/features/participants/gridUtils'
+import { useParticipantStore } from '@/features/participants/store'
 
 interface UseOptimizedDragOptions {
+  /** Giờ của từng hàng, để lấp đầy các ô bị bỏ sót khi con trỏ di chuyển nhanh */
+  times: readonly string[]
+  locked: boolean
   /** Gọi khi nhả chuột để trigger auto-save */
   onDragEnd: () => void
 }
 
 interface LastCell {
   slotId: string
-  date: string
+  column: string
   row: number
 }
 
 /**
- * Xử lý kéo thả tô lịch mà không re-render cả lưới: trạng thái kéo nằm trong
- * ref, handler có tham chiếu ổn định, mỗi ô tự subscribe boolean của mình.
+ * Kéo thả tô lịch mà không re-render cả lưới: trạng thái kéo nằm trong ref, handler
+ * có tham chiếu ổn định, mỗi ô tự subscribe boolean của mình.
  *
  * - Tô hay xoá cả lượt kéo được chốt lúc pointerdown theo trạng thái ô đầu tiên.
- * - Khi con trỏ nhảy cóc, tự lấp đầy các ô bị bỏ sót cùng cột ngày.
+ * - Khi con trỏ nhảy cóc, tự lấp đầy các ô bị bỏ sót cùng cột.
  * - Dùng Pointer Events để chạy được cả cảm ứng; phải `releasePointerCapture`
  *   ngay pointerdown, nếu không `pointerenter` không bắn sang ô khác.
  */
-export function useOptimizedDrag({ onDragEnd }: UseOptimizedDragOptions) {
-  const [isDragging, setIsDragging] = useState(false)
+export function useOptimizedDrag({ times, locked, onDragEnd }: UseOptimizedDragOptions) {
   const isDraggingRef = useRef(false)
   const lastCellRef = useRef<LastCell | null>(null)
   /** true = lượt kéo đang tô, false = đang xoá */
-  const dragPaintValueRef = useRef(true)
+  const paintValueRef = useRef(true)
+  const optionsRef = useRef({ times, locked, onDragEnd })
 
-  const { paintSlot, paintRowRange } = usePaintSlots()
+  useEffect(() => {
+    optionsRef.current = { times, locked, onDragEnd }
+  })
 
   const endDrag = useCallback(() => {
     if (!isDraggingRef.current) return
     isDraggingRef.current = false
     lastCellRef.current = null
-    setIsDragging(false)
-    onDragEnd()
-  }, [onDragEnd])
+    optionsRef.current.onDragEnd()
+  }, [])
 
-  const handleCellPointerDown = useCallback(
-    (event: React.PointerEvent<HTMLElement>) => {
-      const { isFinalized, selectedSlotIds } = useParticipantStore.getState()
-      if (isFinalized || event.button !== 0) return
-      const { slotId, date, row } = event.currentTarget.dataset
-      if (!slotId || !date || row === undefined) return
+  const handleCellPointerDown = useCallback((event: React.PointerEvent<HTMLElement>) => {
+    if (optionsRef.current.locked || event.button !== 0) return
+    const { slotId, column, row } = event.currentTarget.dataset
+    if (!slotId || !column || row === undefined) return
 
-      event.preventDefault()
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId)
-      }
+    event.preventDefault()
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
 
-      const paintValue = !selectedSlotIds.has(slotId)
-      dragPaintValueRef.current = paintValue
-
-      isDraggingRef.current = true
-      lastCellRef.current = { slotId, date, row: Number(row) }
-      setIsDragging(true)
-      paintSlot(slotId, paintValue)
-    },
-    [paintSlot]
-  )
+    const { selectedSlotIds, setSlotPainted } = useParticipantStore.getState()
+    paintValueRef.current = !selectedSlotIds.has(slotId)
+    isDraggingRef.current = true
+    lastCellRef.current = { slotId, column, row: Number(row) }
+    setSlotPainted(slotId, paintValueRef.current)
+  }, [])
 
   const handleCellPointerEnter = useCallback(
     (event: React.PointerEvent<HTMLElement>) => {
@@ -73,38 +71,36 @@ export function useOptimizedDrag({ onDragEnd }: UseOptimizedDragOptions) {
         return
       }
 
-      const { slotId, date, row } = event.currentTarget.dataset
-      if (!slotId || !date || row === undefined || slotId === lastCellRef.current?.slotId) {
-        return
-      }
+      const { slotId, column, row } = event.currentTarget.dataset
+      const last = lastCellRef.current
+      if (!slotId || !column || row === undefined || slotId === last?.slotId) return
 
       const rowIndex = Number(row)
-      const last = lastCellRef.current
-      const paintValue = dragPaintValueRef.current
-      if (last && last.date === date) {
-        paintRowRange(date, last.row, rowIndex, paintValue)
+      const { setSlotPainted, setSlotsPainted } = useParticipantStore.getState()
+      if (last && last.column === column) {
+        const [from, to] = last.row <= rowIndex ? [last.row, rowIndex] : [rowIndex, last.row]
+        const ids = optionsRef.current.times
+          .slice(from, to + 1)
+          .map((time) => getSlotId({ key: column }, time))
+        setSlotsPainted(ids, paintValueRef.current)
       } else {
-        paintSlot(slotId, paintValue)
+        setSlotPainted(slotId, paintValueRef.current)
       }
 
-      lastCellRef.current = { slotId, date, row: rowIndex }
+      lastCellRef.current = { slotId, column, row: rowIndex }
     },
-    [paintSlot, paintRowRange, endDrag]
+    [endDrag],
   )
 
   // Bắt trên window để không kẹt trạng thái kéo khi nhả ngoài lưới
   useEffect(() => {
-    window.addEventListener("pointerup", endDrag)
-    window.addEventListener("pointercancel", endDrag)
+    window.addEventListener('pointerup', endDrag)
+    window.addEventListener('pointercancel', endDrag)
     return () => {
-      window.removeEventListener("pointerup", endDrag)
-      window.removeEventListener("pointercancel", endDrag)
+      window.removeEventListener('pointerup', endDrag)
+      window.removeEventListener('pointercancel', endDrag)
     }
   }, [endDrag])
 
-  return {
-    isDragging,
-    handleCellPointerDown,
-    handleCellPointerEnter,
-  }
+  return { handleCellPointerDown, handleCellPointerEnter }
 }

@@ -1,16 +1,9 @@
-import { useEffect, useMemo } from "react"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { useEffect, useMemo } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
 
-import {
-  buildSlotIdsInRange,
-  formatDateLabel,
-  getGridTimes,
-  getManualRangeEndTimeOptions,
-} from "@/features/participants/gridUtils"
-import { manualRangeSchema, type ManualRangeFormValues } from "@/features/participants/schema"
-import { useParticipantStore } from "@/features/participants/store"
-import { PAINT_MODE_LABEL } from "@/features/participants/types"
+import { minutesToTime, timeToMinutes } from '@/lib/date-time'
+import { SLOT_MINUTES } from '@/shared/constants'
 import {
   Button,
   Dialog,
@@ -30,60 +23,48 @@ import {
   SelectTrigger,
   SelectValue,
   Slider,
-} from "@/shared/components/ui"
+} from '@/shared/components/ui'
+import { buildSlotIdsInRange } from '@/features/participants/gridUtils'
+import type { ScheduleGrid } from '@/features/participants/hooks/useScheduleGrid'
+import { manualRangeSchema, type ManualRangeFormValues } from '@/features/participants/schema'
+import { useParticipantStore } from '@/features/participants/store'
+import { PAINT_MODE_LABEL } from '@/features/participants/types'
 
 interface ManualRangeDialogProps {
+  grid: ScheduleGrid
   open: boolean
   onOpenChange: (open: boolean) => void
   triggerAutoSave: () => void
-  onRangeApplied: (date: string) => void
+  onRangeApplied: (columnKey: string) => void
 }
 
-/** "2026-09-14" -> "Mon, Sep 14" hoặc "Monday" (DAYS_OF_WEEK) */
-function formatDateOptionLabel(dateISO: string, isSpecificDates: boolean): string {
-  const { weekday, dayMonth } = formatDateLabel(dateISO)
-  return isSpecificDates ? `${weekday}, ${dayMonth}` : weekday
-}
-
-/** Chọn 1 ngày và khoảng giờ bằng slider để tô hàng loạt, theo `paintMode` hiện tại */
-export function ManualRangeDialog({
-  open,
-  onOpenChange,
-  triggerAutoSave,
-  onRangeApplied,
-}: ManualRangeDialogProps) {
-  const config = useParticipantStore((s) => s.scheduleConfig)
+/** Chọn 1 cột và khoảng giờ bằng slider để tô hàng loạt, theo `paintMode` hiện tại */
+export function ManualRangeDialog({ grid, open, onOpenChange, triggerAutoSave, onRangeApplied }: ManualRangeDialogProps) {
   const paintMode = useParticipantStore((s) => s.paintMode)
-  const addPaintedSlots = useParticipantStore((s) => s.addPaintedSlots)
+  const setSlotsPainted = useParticipantStore((s) => s.setSlotsPainted)
 
-  // Mốc giờ biên (N ô có N+1 mốc); slider chọn cặp chỉ số vào mảng này
+  // N ô có N+1 mốc; slider chọn cặp chỉ số vào mảng này
   const boundaries = useMemo(() => {
-    if (!config) return []
-    const startTimes = getGridTimes(config)
-    const endTimes = getManualRangeEndTimeOptions(config)
-    return [...startTimes, endTimes[endTimes.length - 1]]
-  }, [config])
+    const last = grid.times[grid.times.length - 1]
+    return last ? [...grid.times, minutesToTime(timeToMinutes(last) + SLOT_MINUTES)] : []
+  }, [grid.times])
 
   const form = useForm<ManualRangeFormValues>({
     resolver: zodResolver(manualRangeSchema),
-    defaultValues: { date: "", range: [0, 0] },
+    defaultValues: { date: '', range: [0, 0] },
   })
+  const { reset } = form
 
-  // Mỗi lần mở là một lượt chọn mới: ngày đầu tiên, trọn khung giờ
+  // Mỗi lần mở là một lượt chọn mới: cột đầu tiên, trọn khung giờ
   useEffect(() => {
-    if (open && config && boundaries.length > 0) {
-      form.reset({ date: config.dates[0], range: [0, boundaries.length - 1] })
+    if (open && grid.columns.length > 0 && boundaries.length > 0) {
+      reset({ date: grid.columns[0].key, range: [0, boundaries.length - 1] })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open])
-
-  if (!config) return null
+  }, [open, grid.columns, boundaries.length, reset])
 
   function handleSave(values: ManualRangeFormValues) {
     const [startIndex, endIndex] = values.range
-    addPaintedSlots(
-      buildSlotIdsInRange(values.date, boundaries[startIndex], boundaries[endIndex], config!)
-    )
+    setSlotsPainted(buildSlotIdsInRange({ key: values.date }, boundaries[startIndex], boundaries[endIndex]), true)
     onRangeApplied(values.date)
     triggerAutoSave()
     onOpenChange(false)
@@ -94,9 +75,7 @@ export function ManualRangeDialog({
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>Manual Range Entry</DialogTitle>
-          <DialogDescription>
-            Add a continuous block of {PAINT_MODE_LABEL[paintMode]}
-          </DialogDescription>
+          <DialogDescription>Add a continuous block of {PAINT_MODE_LABEL[paintMode]}</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -114,9 +93,9 @@ export function ManualRangeDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {config.dates.map((date) => (
-                        <SelectItem key={date} value={date}>
-                          {formatDateOptionLabel(date, config.dateMode === "SPECIFIC_DATES")}
+                      {grid.columns.map((column) => (
+                        <SelectItem key={column.key} value={column.key}>
+                          {column.specificDate ? `${column.label}, ${column.detail}` : column.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -132,14 +111,14 @@ export function ManualRangeDialog({
                 <FormItem className="space-y-3">
                   <div className="flex items-center justify-between">
                     <FormLabel>Time Range</FormLabel>
-                    <span className="text-sm font-medium text-foreground">
+                    <span className="text-sm font-medium tabular-nums">
                       {boundaries[field.value[0]]} – {boundaries[field.value[1]]}
                     </span>
                   </div>
                   <FormControl>
                     <Slider
                       min={0}
-                      max={boundaries.length - 1}
+                      max={Math.max(1, boundaries.length - 1)}
                       step={1}
                       minStepsBetweenThumbs={1}
                       value={field.value}

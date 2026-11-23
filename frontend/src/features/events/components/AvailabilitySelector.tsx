@@ -1,326 +1,191 @@
-import { useCallback, useEffect, useRef, useMemo, useState } from 'react'
+import { createContext, useContext, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
 import { DayButton, type DayButtonProps } from 'react-day-picker'
-import { eventUi } from '../../../shared/components/ui/styles'
-import { Button } from '@/shared/components/ui/button'
+
 import { cn } from '@/lib/utils'
+import { fromIsoDate, toIsoDate } from '@/lib/date-time'
+import { WEEKDAYS_MONDAY_FIRST } from '@/shared/constants'
+import { Button } from '@/shared/components/ui/button'
 import { Calendar } from '@/shared/components/ui/calendar'
-import { WEEKDAY_OPTIONS } from '../types'
-import type { AvailabilitySelectorProps } from '../types'
-import { getDateKey } from '../utils/date.utils'
+import { FieldError, FieldLabel } from '@/shared/components/ui/field'
+import { useDragSelection } from '../hooks/useDragSelection'
 
-const getCurrentTime = () => Date.now()
+function tomorrow(): Date {
+  const date = new Date()
+  date.setHours(0, 0, 0, 0)
+  date.setDate(date.getDate() + 1)
+  return date
+}
 
-export function AvailabilitySelector({
-  eventType,
-  value,
-  onChange,
-  error,
-}: AvailabilitySelectorProps) {
-  const [isDragging, setIsDragging] = useState(false)
-  const valueRef = useRef(value)
-  const dragModeRef = useRef<'add' | 'remove' | null>(null)
-  const dragVisitedRef = useRef<Set<string>>(new Set())
-
-  const touchStartPosRef = useRef<{ x: number; y: number; key: string; isCalendar: boolean } | null>(null)
-  const gestureDirectionRef = useRef<'horizontal' | 'vertical' | null>(null)
-  const lastTouchTimeRef = useRef<number>(0)
-
-  const firstSelectableDate = useMemo(() => {
-    const date = new Date()
-    date.setHours(0, 0, 0, 0)
-    date.setDate(date.getDate() + 1)
-    return date
-  }, [])
-
-  const startMonth = useMemo(
-    () => new Date(firstSelectableDate.getFullYear(), firstSelectableDate.getMonth(), 1),
-    [firstSelectableDate],
+function SelectorHeader({ label, count }: { label: string; count: number }) {
+  return (
+    <div className="flex items-center justify-between">
+      <FieldLabel>
+        {label} <span className="text-destructive">*</span>
+      </FieldLabel>
+      <span className="text-xs font-semibold text-primary">{count} selected</span>
+    </div>
   )
+}
 
-  const [month, setMonth] = useState(startMonth)
+interface WeekdayPickerProps {
+  value: number[]
+  onChange: (value: number[]) => void
+  error?: string
+}
 
-  const selectedDates = useMemo(
-    () => value.map((date) => new Date(`${date}T00:00:00`)),
-    [value],
-  )
-
-  useEffect(() => {
-    valueRef.current = value
-  }, [value])
-
-  const applyDay = useCallback((dateKey: string, mode: 'add' | 'remove') => {
-    const current = valueRef.current
-    const has = current.includes(dateKey)
-    if (mode === 'add' && !has) {
-      const next = [...current, dateKey]
-      valueRef.current = next
-      onChange(next)
-    } else if (mode === 'remove' && has) {
-      const next = current.filter((d) => d !== dateKey)
-      valueRef.current = next
-      onChange(next)
-    }
-  }, [onChange])
-
-  function extendDragByKey(key: string) {
-    const mode = dragModeRef.current
-    if (!mode) return
-    if (dragVisitedRef.current.has(key)) return
-    dragVisitedRef.current.add(key)
-    applyDay(key, mode)
-  }
-
-  useEffect(() => {
-    function finishMouseDrag() {
-      dragModeRef.current = null
-      dragVisitedRef.current = new Set()
-      setIsDragging(false)
-    }
-
-    function handleWindowTouchEnd() {
-      const start = touchStartPosRef.current
-      if (start && gestureDirectionRef.current === null) {
-        const mode = valueRef.current.includes(start.key) ? 'remove' : 'add'
-        applyDay(start.key, mode)
-      }
-
-      touchStartPosRef.current = null
-      gestureDirectionRef.current = null
-      dragModeRef.current = null
-      dragVisitedRef.current = new Set()
-      setIsDragging(false)
-    }
-
-    window.addEventListener('mouseup', finishMouseDrag)
-    window.addEventListener('touchend', handleWindowTouchEnd)
-    return () => {
-      window.removeEventListener('mouseup', finishMouseDrag)
-      window.removeEventListener('touchend', handleWindowTouchEnd)
-    }
-  }, [applyDay])
-
-  function handleMouseDown(key: string, dateObj: Date | null) {
-    if (getCurrentTime() - lastTouchTimeRef.current < 500) return
-    if (dateObj && dateObj < firstSelectableDate) return
-    const mode = valueRef.current.includes(key) ? 'remove' : 'add'
-    dragModeRef.current = mode
-    dragVisitedRef.current = new Set([key])
-    setIsDragging(true)
-    applyDay(key, mode)
-  }
-
-  function handleMouseEnter(key: string, dateObj: Date | null) {
-    if (getCurrentTime() - lastTouchTimeRef.current < 500) return
-    if (!dragModeRef.current) return
-    if (dateObj && dateObj < firstSelectableDate) return
-    extendDragByKey(key)
-  }
-
-  function handleTouchStart(key: string, dateObj: Date | null, e: React.TouchEvent, isCalendar: boolean) {
-    if (dateObj && dateObj < firstSelectableDate) return
-    const touch = e.touches[0]
-    if (!touch) return
-
-    lastTouchTimeRef.current = getCurrentTime()
-    touchStartPosRef.current = {
-      x: touch.clientX,
-      y: touch.clientY,
-      key,
-      isCalendar,
-    }
-    gestureDirectionRef.current = null
-  }
-
-  function handleTouchMove(e: React.TouchEvent) {
-    const start = touchStartPosRef.current
-    if (!start) return
-
-    const touch = e.touches[0]
-    if (!touch) return
-
-    const dx = touch.clientX - start.x
-    const dy = touch.clientY - start.y
-    const absDx = Math.abs(dx)
-    const absDy = Math.abs(dy)
-
-    if (gestureDirectionRef.current === null) {
-      if (absDx > 6 || absDy > 6) {
-        if (absDx > absDy * 1.2) {
-          gestureDirectionRef.current = 'horizontal'
-          setIsDragging(true)
-          const mode = valueRef.current.includes(start.key) ? 'remove' : 'add'
-          dragModeRef.current = mode
-          dragVisitedRef.current = new Set([start.key])
-          applyDay(start.key, mode)
-        } else {
-          gestureDirectionRef.current = 'vertical'
-        }
-      }
-    }
-
-    if (gestureDirectionRef.current === 'horizontal') {
-      if (e.cancelable) {
-        e.preventDefault()
-      }
-      const el = document.elementFromPoint(touch.clientX, touch.clientY)
-      const attrName = start.isCalendar ? 'data-date' : 'data-weekday'
-      const targetEl = el?.closest(`[${attrName}]`)
-      if (targetEl) {
-        const key = targetEl.getAttribute(attrName)
-        if (key) {
-          if (start.isCalendar) {
-            const dateObj = new Date(`${key}T00:00:00`)
-            if (dateObj >= firstSelectableDate) {
-              extendDragByKey(key)
-            }
-          } else {
-            extendDragByKey(key)
-          }
-        }
-      }
-    }
-  }
-
-  function resetDates() {
-    onChange([])
-  }
-
-  function shiftMonth(diff: number) {
-    setMonth((current) => new Date(current.getFullYear(), current.getMonth() + diff, 1))
-  }
-
-  const isPrevDisabled =
-    month.getFullYear() === startMonth.getFullYear() &&
-    month.getMonth() === startMonth.getMonth()
-
-  if (eventType === 2) {
-    return (
-      <div className={eventUi.field}>
-        <div className="flex items-center justify-between">
-          <div>
-            <label className={eventUi.label}>
-              Weekdays <span className={eventUi.requiredMark}>*</span>
-            </label>
-            <p className="hidden">Choose one or more weekdays for this event.</p>
-          </div>
-          <span className={eventUi.fieldHint}>{value.length} selected</span>
-        </div>
-        <div
-          className={cn(eventUi.weekdayOptions, 'select-none touch-pan-y')}
-          onTouchMove={handleTouchMove}
-        >
-          {WEEKDAY_OPTIONS.map((item) => (
-            <Button
-              className={cn(
-                eventUi.weekdayOption,
-                value.includes(item) && eventUi.weekdayOptionSelected,
-              )}
-              data-weekday={item}
-              key={item}
-              onMouseDown={() => handleMouseDown(item, null)}
-              onMouseEnter={() => isDragging && extendDragByKey(item)}
-              onTouchStart={(e) => handleTouchStart(item, null, e, false)}
-              type="button"
-              variant="ghost"
-            >
-              {item}
-            </Button>
-          ))}
-        </div>
-        {error && <span className={eventUi.fieldError}>{error}</span>}
-      </div>
-    )
-  }
-
-  function DragDayButton({ onMouseDown, ...props }: DayButtonProps) {
-    const dateKey = getDateKey(props.day.date)
-    const isDisabled = props.modifiers.disabled || props.day.date < firstSelectableDate
-
-    return (
-      <DayButton
-        {...props}
-        data-date={dateKey}
-        onMouseDown={(event) => {
-          onMouseDown?.(event)
-          if (!isDisabled) handleMouseDown(dateKey, props.day.date)
-        }}
-        onMouseEnter={() => {
-          if (!isDisabled) handleMouseEnter(dateKey, props.day.date)
-        }}
-        onTouchStart={(e) => {
-          if (!isDisabled) handleTouchStart(dateKey, props.day.date, e, true)
-        }}
-      />
-    )
-  }
+export function WeekdayPicker({ value, onChange, error }: WeekdayPickerProps) {
+  const drag = useDragSelection<number>({ value, onChange, dataAttribute: 'data-weekday', parseKey: Number })
 
   return (
-    <div className={eventUi.field}>
-      <div className="flex items-center justify-between">
-        <label className={eventUi.label}>
-          Date selection <span className={eventUi.requiredMark}>*</span>
-        </label>
-        <span className={eventUi.fieldHint}>{value.length} selected</span>
+    <div className="grid gap-2">
+      <SelectorHeader label="Weekdays" count={value.length} />
+      <div className="grid touch-pan-y select-none grid-cols-7 gap-1.5 sm:gap-2" onTouchMove={drag.onContainerTouchMove}>
+        {WEEKDAYS_MONDAY_FIRST.map((day) => {
+          const selected = value.includes(day.value)
+          return (
+            <button
+              key={day.value}
+              type="button"
+              data-weekday={day.value}
+              aria-pressed={selected}
+              onMouseDown={() => drag.onItemMouseDown(day.value)}
+              onMouseEnter={() => drag.onItemMouseEnter(day.value)}
+              onTouchStart={(event) => drag.onItemTouchStart(day.value, event)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  onChange(selected ? value.filter((item) => item !== day.value) : [...value, day.value])
+                }
+              }}
+              className={cn(
+                'aspect-square min-h-9 rounded-md border text-sm font-medium transition-colors',
+                'focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none',
+                selected
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-input bg-card text-foreground hover:bg-accent',
+              )}
+            >
+              {day.shortLabel}
+            </button>
+          )
+        })}
       </div>
-      <div className={eventUi.calendar}>
-        <div className={eventUi.calendarMonthCaption}>
-          <Button
-            className={eventUi.calendarToolbarButton}
-            disabled={isPrevDisabled}
-            onClick={() => shiftMonth(-1)}
-            size="icon"
-            type="button"
-            variant="ghost"
-          >
-            <ChevronLeft size={16} />
+      {error && <FieldError>{error}</FieldError>}
+    </div>
+  )
+}
+
+/** Handler kéo chọn cho các ô ngày; qua context để `DragDayButton` khai báo ngoài component, không bị mount lại mỗi lần render */
+const DayDragContext = createContext<ReturnType<typeof useDragSelection<string>> | null>(null)
+
+function DragDayButton({ day, modifiers, className, ...props }: DayButtonProps) {
+  const drag = useContext(DayDragContext)
+  const key = toIsoDate(day.date)
+  const disabled = Boolean(modifiers.disabled)
+
+  return (
+    <DayButton
+      {...props}
+      day={day}
+      modifiers={modifiers}
+      data-date={key}
+      className={cn(
+        'grid h-9 w-full place-items-center rounded-md text-sm transition-colors sm:h-10',
+        'focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none',
+        modifiers.selected
+          ? 'bg-primary font-semibold text-primary-foreground'
+          : 'text-foreground hover:bg-accent',
+        disabled && 'cursor-not-allowed text-muted-foreground opacity-50 hover:bg-transparent',
+        className,
+      )}
+      onMouseDown={(event) => {
+        props.onMouseDown?.(event)
+        if (!disabled) drag?.onItemMouseDown(key)
+      }}
+      onMouseEnter={(event) => {
+        props.onMouseEnter?.(event)
+        if (!disabled) drag?.onItemMouseEnter(key)
+      }}
+      onTouchStart={(event) => {
+        props.onTouchStart?.(event)
+        if (!disabled) drag?.onItemTouchStart(key, event)
+      }}
+    />
+  )
+}
+
+interface DatePickerProps {
+  value: string[]
+  onChange: (value: string[]) => void
+  error?: string
+}
+
+export function DatePicker({ value, onChange, error }: DatePickerProps) {
+  const [firstSelectable] = useState(tomorrow)
+  const firstMonth = useMemo(
+    () => new Date(firstSelectable.getFullYear(), firstSelectable.getMonth(), 1),
+    [firstSelectable],
+  )
+  const [month, setMonth] = useState(firstMonth)
+  const selected = useMemo(() => value.map(fromIsoDate), [value])
+  const drag = useDragSelection<string>({
+    value,
+    onChange,
+    dataAttribute: 'data-date',
+    parseKey: (raw) => raw,
+    isSelectable: (key) => fromIsoDate(key) >= firstSelectable,
+  })
+
+  const isFirstMonth =
+    month.getFullYear() === firstMonth.getFullYear() && month.getMonth() === firstMonth.getMonth()
+  const shiftMonth = (diff: number) => setMonth((current) => new Date(current.getFullYear(), current.getMonth() + diff, 1))
+
+  return (
+    <div className="grid gap-2">
+      <SelectorHeader label="Dates" count={value.length} />
+      <div className="rounded-lg bg-muted p-3 sm:p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <Button type="button" variant="ghost" size="icon" aria-label="Previous month" disabled={isFirstMonth} onClick={() => shiftMonth(-1)}>
+            <ChevronLeft />
           </Button>
-          <span className={eventUi.calendarToolbarTitle}>
+          <span className="text-base font-semibold" aria-live="polite">
             {month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </span>
-          <Button
-            className={eventUi.calendarToolbarButton}
-            onClick={() => shiftMonth(1)}
-            size="icon"
-            type="button"
-            variant="ghost"
-          >
-            <ChevronRight size={16} />
+          <Button type="button" variant="ghost" size="icon" aria-label="Next month" onClick={() => shiftMonth(1)}>
+            <ChevronRight />
           </Button>
         </div>
-        <div className="touch-pan-y select-none" onTouchMove={handleTouchMove}>
-          <Calendar
-            classNames={{
-              root: eventUi.calendarRoot,
-              months: eventUi.calendarMonths,
-              month: eventUi.calendarMonth,
-              month_caption: 'hidden',
-              month_grid: eventUi.calendarGrid,
-              weekday: eventUi.calendarWeekday,
-              day: eventUi.calendarDay,
-              day_button: eventUi.calendarDayButton,
-              selected: eventUi.calendarDaySelected,
-              outside: eventUi.calendarDayOutside,
-              disabled: eventUi.calendarDayDisabled,
-            }}
-            components={{ DayButton: DragDayButton }}
-            disabled={{ before: firstSelectableDate }}
-            hideNavigation
-            mode="multiple"
-            month={month}
-            onDayMouseEnter={(date) => isDragging && extendDragByKey(getDateKey(date))}
-            onMonthChange={setMonth}
-            onSelect={() => undefined}
-            selected={selectedDates}
-            showOutsideDays={false}
-            weekStartsOn={1}
-          />
-        </div>
-        <Button className={eventUi.calendarReset} onClick={resetDates} type="button" variant="ghost">
-          <RotateCcw size={13} /> Reset dates
+        <DayDragContext.Provider value={drag}>
+          <div className="touch-pan-y select-none" onTouchMove={drag.onContainerTouchMove}>
+            <Calendar
+              mode="multiple"
+              month={month}
+              onMonthChange={setMonth}
+              selected={selected}
+              onSelect={() => undefined}
+              disabled={{ before: firstSelectable }}
+              hideNavigation
+              showOutsideDays={false}
+              weekStartsOn={1}
+              components={{ DayButton: DragDayButton }}
+              classNames={{
+                root: 'w-full',
+                months: 'w-full',
+                month: 'w-full',
+                month_caption: 'hidden',
+                month_grid: 'w-full border-separate border-spacing-1',
+                weekday: 'py-1 text-center text-xs font-semibold text-muted-foreground',
+                day: 'p-0 text-center',
+              }}
+            />
+          </div>
+        </DayDragContext.Provider>
+        <Button type="button" variant="ghost" size="sm" className="mt-2 text-primary" onClick={() => onChange([])}>
+          <RotateCcw /> Reset dates
         </Button>
       </div>
-      {error && <span className={eventUi.fieldError}>{error}</span>}
+      {error && <FieldError>{error}</FieldError>}
     </div>
   )
 }

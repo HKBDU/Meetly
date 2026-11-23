@@ -21,11 +21,11 @@ export function KeyParticipantSelector({
 
   return (
     <section aria-labelledby="key-participant-heading" className="mb-7">
-      <h2 id="key-participant-heading" className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+      <h2 id="key-participant-heading" className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         Key Participant
       </h2>
       <div className="relative mb-3 max-w-sm">
-        <Search size={16} className="pointer-events-none absolute left-3 top-3 text-slate-400" aria-hidden="true" />
+        <Search size={16} className="pointer-events-none absolute left-3 top-3 text-muted-foreground" aria-hidden="true" />
         <Input
           type="search"
           aria-label="Search participants"
@@ -60,9 +60,9 @@ export function KeyParticipantSelector({
         })}
       </div>
       {normalizedSearch && matchingParticipants.length === 0 && (
-        <p className="text-sm text-slate-500">No participant found.</p>
+        <p className="text-sm text-muted-foreground">No participant found.</p>
       )}
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-muted-foreground">
         Select one participant, or click again to clear your selection.
       </p>
     </section>

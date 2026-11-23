@@ -1,12 +1,11 @@
-import type { AdminSuggestionControlsProps } from '../types';
-import { KeyParticipantSelector } from './KeyParticipantSelector';
+import type { AdminSuggestionControlsProps } from '../types'
+import { KeyParticipantSelector } from './KeyParticipantSelector'
 
 export function AdminSuggestionControls({
   participants,
   keyParticipant,
   disabled,
-  updating,
-  loaded,
+  hasFilters,
   suggestionCount,
   onKeyParticipantChange,
 }: AdminSuggestionControlsProps) {
@@ -18,28 +17,17 @@ export function AdminSuggestionControls({
         disabled={disabled}
         onChange={onKeyParticipantChange}
       />
-      <div className="mb-5 flex flex-wrap items-center gap-3">
-        {updating && (
-          <span role="status" className="text-sm text-slate-500">
-            Updating suggestions…
+      <div className="mb-5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground" role="status">
+        {suggestionCount > 0 ? (
+          <span>
+            {suggestionCount} best {suggestionCount === 1 ? 'time' : 'times'} · Shown in red after you click Select Final
+            Time
           </span>
+        ) : (
+          <span>{hasFilters ? 'No suggested times found.' : 'Pick a meeting duration to see suggested times.'}</span>
         )}
-        {suggestionCount > 0 && (
-          <span className="text-xs text-slate-500">
-            {suggestionCount} best {suggestionCount === 1 ? 'time' : 'times'} · Shown in red after you click Select Final Time
-          </span>
-        )}
-        {!updating && loaded && suggestionCount === 0 && (
-          <p role="status" className="text-sm text-slate-500">
-            No suggested times found.
-          </p>
-        )}
-        {!updating && !loaded && (
-          <p className="text-xs text-slate-500">
-            Suggestions update automatically when filters change.
-          </p>
-        )}
+        <span>Suggestions update automatically when filters change.</span>
       </div>
     </>
-  );
+  )
 }
