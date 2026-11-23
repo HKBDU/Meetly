@@ -68,12 +68,9 @@ if (useForwardedHeaders)
 builder.Services.AddMeetlyRateLimiting();
 builder.Services.AddHttpContextAccessor();
 builder.Services.Configure<AppOptions>(builder.Configuration.GetSection(AppOptions.SectionName));
-builder.Services.Configure<ResendOptions>(builder.Configuration.GetSection("Resend"));
-builder.Services.AddHttpClient<IEmailService, ResendEmailService>(client =>
-{
-    client.BaseAddress = new Uri("https://api.resend.com/");
-    client.Timeout = TimeSpan.FromSeconds(15);
-});
+builder.Services.Configure<BrevoOptions>(builder.Configuration.GetSection(BrevoOptions.SectionName));
+builder.Services.AddHttpClient<IEmailService, BrevoEmailService>(client =>
+    client.Timeout = TimeSpan.FromSeconds(15));
 
 // Pool tái dùng instance DbContext giữa các request (AppDbContext không giữ state riêng)
 builder.Services.AddDbContextPool<AppDbContext>(options =>
