@@ -9,6 +9,7 @@ import { expandRangesToSlotIds } from '@/features/participants/gridUtils'
 import { useAutoSaveSchedule } from '@/features/participants/hooks/useAutoSaveSchedule'
 import { useScheduleGrid } from '@/features/participants/hooks/useScheduleGrid'
 import { useParticipantStore } from '@/features/participants/store'
+import { PageLoader } from '@/shared/components/MeetlyLoader'
 import { useT } from '@/shared/i18n'
 import { useEventOutlet } from './eventOutlet'
 
@@ -42,10 +43,12 @@ export function MySchedulePage() {
   return (
     <div className="flex flex-col">
       <EventInfoBar event={event} locked={grid.isLocked} />
-      {needsSlots ? (
-        <p role={me.error ? 'alert' : 'status'} className="p-8 text-center text-sm text-muted-foreground">
-          {me.error ? me.error.message : t('schedule.loading')}
+      {needsSlots && me.error ? (
+        <p role="alert" className="p-8 text-center text-sm text-muted-foreground">
+          {me.error.message}
         </p>
+      ) : needsSlots ? (
+        <PageLoader label={t('schedule.loading')} className="min-h-[45dvh]" />
       ) : (
         <>
           <ScheduleActionsBar
