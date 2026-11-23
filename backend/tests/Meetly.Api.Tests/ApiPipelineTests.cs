@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 
@@ -14,18 +13,20 @@ namespace Meetly.Api.Tests;
 
 public class ApiPipelineTests
 {
+    /// <summary>
+    /// Dùng UseSetting thay vì ConfigureAppConfiguration: Program.cs đọc cấu hình (JwtOptions, CORS...)
+    /// ngay lúc dựng builder, khi đó nguồn cấu hình thêm bằng ConfigureAppConfiguration chưa có hiệu lực.
+    /// Máy dev có appsettings.json nên không lộ ra, còn CI thì không có file này.
+    /// </summary>
     private static WebApplicationFactory<Program> Factory() => new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
     {
         builder.UseEnvironment("Production");
-        builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            // Không có DB thật: request nào chạm DB sẽ lỗi, nhưng rate limit vẫn chạy trước đó
-            ["ConnectionStrings:DefaultConnection"] = "Host=127.0.0.1;Port=1;Database=none;Username=none;Password=none;Timeout=1",
-            ["JwtOptions:Issuer"] = "issuer",
-            ["JwtOptions:Audience"] = "audience",
-            ["JwtOptions:SecretKey"] = "a-long-enough-test-secret-key-1234567890",
-            ["JwtOptions:ExpirationMinutes"] = "60"
-        }));
+        // Không có DB thật: request nào chạm DB sẽ lỗi, nhưng rate limit vẫn chạy trước đó
+        builder.UseSetting("ConnectionStrings:DefaultConnection", "Host=127.0.0.1;Port=1;Database=none;Username=none;Password=none;Timeout=1");
+        builder.UseSetting("JwtOptions:Issuer", "issuer");
+        builder.UseSetting("JwtOptions:Audience", "audience");
+        builder.UseSetting("JwtOptions:SecretKey", "a-long-enough-test-secret-key-1234567890");
+        builder.UseSetting("JwtOptions:ExpirationMinutes", "60");
     });
 
     [Fact]
