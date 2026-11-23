@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import { columnKey, formatDay } from '@/shared/grid/model'
+import { t } from '@/shared/i18n'
 import type { FinalSchedule } from '@/shared/types'
 import { isValidSchedule, normalizeSelection } from '../selection'
 import {
@@ -150,7 +151,7 @@ export function HeatmapWorkspace({
   async function confirmSchedule() {
     if (!canEdit || !selected || !dialogOpen || busy.current || !onFinalize) return
     if (!isValidSchedule(event, selected)) {
-      toast.error('The selected time range is invalid.')
+      toast.error(t('finalize.invalid'))
       return
     }
     busy.current = true
@@ -159,14 +160,14 @@ export function HeatmapWorkspace({
       const result = await onFinalize(selected)
       if (!active.current) return
       if (result.status !== 2 || !isValidSchedule(event, result.finalSchedule)) {
-        throw new Error('The final schedule response is invalid.')
+        throw new Error(t('finalize.badResponse'))
       }
       setDialogOpen(false)
       cancelSelection()
-      toast.success('Meeting finalized. This event is now read-only.')
+      toast.success(t('finalize.success'))
     } catch (failure) {
       if (active.current) {
-        toast.error(failure instanceof Error ? failure.message : 'Unable to finalize the meeting. Please try again.')
+        toast.error(failure instanceof Error ? failure.message : t('api.finalize'))
       }
     } finally {
       busy.current = false

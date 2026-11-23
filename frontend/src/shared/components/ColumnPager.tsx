@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { Button } from '@/shared/components/ui';
+import { useT } from '@/shared/i18n';
 
 interface ColumnPagerProps {
   page: number;
@@ -11,6 +12,7 @@ interface ColumnPagerProps {
 
 /** Nút Previous / Next và số trang dùng chung cho các lưới nhiều cột */
 export function ColumnPager({ page, pageCount, onPageChange, label }: ColumnPagerProps) {
+  const t = useT();
   if (pageCount <= 1) return null;
 
   return (
@@ -23,7 +25,7 @@ export function ColumnPager({ page, pageCount, onPageChange, label }: ColumnPage
         onClick={() => onPageChange(Math.max(0, page - 1))}
       >
         <ChevronLeft aria-hidden="true" />
-        Previous
+        {t('pager.previous')}
       </Button>
       <span className="text-xs font-medium text-muted-foreground">
         {page + 1} / {pageCount}
@@ -35,7 +37,7 @@ export function ColumnPager({ page, pageCount, onPageChange, label }: ColumnPage
         disabled={page === pageCount - 1}
         onClick={() => onPageChange(Math.min(pageCount - 1, page + 1))}
       >
-        Next
+        {t('pager.next')}
         <ChevronRight aria-hidden="true" />
       </Button>
     </div>

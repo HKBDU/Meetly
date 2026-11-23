@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
 import { DayButton, type DayButtonProps } from 'react-day-picker'
+import { vi as viLocale } from 'react-day-picker/locale'
 
 import { cn } from '@/lib/utils'
 import { fromIsoDate, toIsoDate } from '@/lib/date-time'
@@ -8,6 +9,7 @@ import { WEEKDAYS_MONDAY_FIRST } from '@/shared/constants'
 import { Button } from '@/shared/components/ui/button'
 import { Calendar } from '@/shared/components/ui/calendar'
 import { FieldError } from '@/shared/components/ui/field'
+import { intlLocale, useLocale, useT } from '@/shared/i18n'
 import { useDragSelection } from '../hooks/useDragSelection'
 
 function tomorrow(): Date {
@@ -25,13 +27,14 @@ interface WeekdayPickerProps {
 
 /** Thanh 7 viên Mon … Sun trên nền xám nhạt; bấm hoặc kéo ngang để chọn nhiều thứ */
 export function WeekdayPicker({ value, onChange, error }: WeekdayPickerProps) {
+  const t = useT()
   const drag = useDragSelection<number>({ value, onChange, dataAttribute: 'data-weekday', parseKey: Number })
 
   return (
     <div className="grid gap-2">
       <div
         role="group"
-        aria-label="Days of the week"
+        aria-label={t('days.weekdays')}
         className="grid w-full touch-pan-y grid-cols-7 gap-1 rounded-full bg-muted p-1 select-none"
         onTouchMove={drag.onContainerTouchMove}
       >
@@ -73,7 +76,7 @@ export function WeekdayPicker({ value, onChange, error }: WeekdayPickerProps) {
         })}
       </div>
       <p className="text-xs text-muted-foreground">
-        {value.length === 0 ? 'Tap or drag across the days.' : `${value.length} ${value.length === 1 ? 'day' : 'days'} a week`}
+        {value.length === 0 ? t('days.tapDays') : t('days.perWeek', { count: value.length })}
       </p>
       {error && <FieldError>{error}</FieldError>}
     </div>
@@ -126,6 +129,8 @@ interface DatePickerProps {
 
 /** Lịch tháng; bấm hoặc kéo qua nhiều ngày để chọn, không chọn được ngày đã qua */
 export function DatePicker({ value, onChange, error }: DatePickerProps) {
+  const t = useT()
+  const { locale } = useLocale()
   const [firstSelectable] = useState(tomorrow)
   const firstMonth = useMemo(
     () => new Date(firstSelectable.getFullYear(), firstSelectable.getMonth(), 1),
@@ -149,13 +154,13 @@ export function DatePicker({ value, onChange, error }: DatePickerProps) {
     <div className="grid gap-2">
       <div className="rounded-2xl border bg-card p-3 shadow-soft sm:p-5">
         <div className="mb-2 flex items-center justify-between">
-          <Button type="button" variant="ghost" size="icon-sm" aria-label="Previous month" disabled={isFirstMonth} onClick={() => shiftMonth(-1)}>
+          <Button type="button" variant="ghost" size="icon-sm" aria-label={t('days.prevMonth')} disabled={isFirstMonth} onClick={() => shiftMonth(-1)}>
             <ChevronLeft />
           </Button>
           <span className="text-sm font-medium" aria-live="polite">
-            {month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            {month.toLocaleDateString(intlLocale(locale), { month: 'long', year: 'numeric' })}
           </span>
-          <Button type="button" variant="ghost" size="icon-sm" aria-label="Next month" onClick={() => shiftMonth(1)}>
+          <Button type="button" variant="ghost" size="icon-sm" aria-label={t('days.nextMonth')} onClick={() => shiftMonth(1)}>
             <ChevronRight />
           </Button>
         </div>
@@ -163,6 +168,7 @@ export function DatePicker({ value, onChange, error }: DatePickerProps) {
           <div className="touch-pan-y select-none" onTouchMove={drag.onContainerTouchMove}>
             <Calendar
               mode="multiple"
+              locale={locale === 'vi' ? viLocale : undefined}
               month={month}
               onMonthChange={setMonth}
               selected={selected}
@@ -186,11 +192,11 @@ export function DatePicker({ value, onChange, error }: DatePickerProps) {
         </DayDragContext.Provider>
         <div className="mt-2 flex items-center justify-between text-xs">
           <span className="text-muted-foreground">
-            {value.length === 0 ? 'Tap or drag across dates.' : `${value.length} ${value.length === 1 ? 'date' : 'dates'} picked`}
+            {value.length === 0 ? t('days.tapDates') : t('days.picked', { count: value.length })}
           </span>
           {value.length > 0 && (
             <Button type="button" variant="ghost" size="xs" onClick={() => onChange([])}>
-              <RotateCcw /> Clear
+              <RotateCcw /> {t('common.clear')}
             </Button>
           )}
         </div>

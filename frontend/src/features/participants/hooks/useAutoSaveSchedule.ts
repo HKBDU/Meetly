@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import { saveAvailability } from '@/shared/api/events'
+import { t } from '@/shared/i18n'
 import { useDebouncedCallback } from '@/shared/hooks'
 import { mergeFreeSlotIdsIntoRanges, resolveFreeSlotIds } from '@/features/participants/gridUtils'
 import type { ScheduleGrid } from '@/features/participants/hooks/useScheduleGrid'
@@ -33,7 +34,7 @@ export function useAutoSaveSchedule(shortCode: string, grid: ScheduleGrid | null
     mutationFn: (timeSlots: ReturnType<typeof currentTimeSlots>) => saveAvailability(shortCode, { timeSlots }),
     onSuccess: () => {
       const { hasSavedOnce, hasEmailSubscribed, markSavedOnce, openEmailDialog } = useParticipantStore.getState()
-      toast.success('Availability saved', { id: 'auto-save-schedule', duration: 1500 })
+      toast.success(t('schedule.saved'), { id: 'auto-save-schedule', duration: 1500 })
       if (!hasSavedOnce) {
         markSavedOnce()
         if (!hasEmailSubscribed) openEmailDialog()

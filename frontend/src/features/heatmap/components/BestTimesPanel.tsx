@@ -4,6 +4,7 @@ import { Check, Sparkles, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDay } from '@/shared/grid/model'
 import { Button } from '@/shared/components/ui/button'
+import { useT, type Translate } from '@/shared/i18n'
 import type { Participant } from '@/shared/types'
 import { DURATION_OPTIONS } from '../constants'
 import { rankedKey, type RankedTime } from '../suggestions'
@@ -11,7 +12,8 @@ import { rankedKey, type RankedTime } from '../suggestions'
 const PARTICIPANTS_COLLAPSED = 6
 
 /** 30 -> "30m", 60 -> "1h", 90 -> "1.5h" */
-const durationLabel = (minutes: number) => (minutes < 60 ? `${minutes}m` : `${minutes / 60}h`)
+const durationLabel = (t: Translate, minutes: number) =>
+  minutes < 60 ? t('duration.shortMinutes', { count: minutes }) : t('duration.shortHours', { count: minutes / 60 })
 
 function Chip({ active, onClick, children, label }: { active: boolean; onClick: () => void; children: React.ReactNode; label?: string }) {
   return (
@@ -59,6 +61,7 @@ export function BestTimesPanel({
   onPick,
   onChooseManually,
 }: BestTimesPanelProps) {
+  const t = useT()
   const [showAllPeople, setShowAllPeople] = useState(false)
   const total = participants.length
   const visiblePeople = showAllPeople ? participants : participants.slice(0, PARTICIPANTS_COLLAPSED)
@@ -72,12 +75,12 @@ export function BestTimesPanel({
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <h2 id="best-times-heading" className="flex items-center gap-2 font-medium whitespace-nowrap">
           <Sparkles className="size-4 text-brand" aria-hidden="true" />
-          Best times
+          {t('best.title')}
         </h2>
-        <div className="flex gap-1" role="group" aria-label="Meeting length">
+        <div className="flex gap-1" role="group" aria-label={t('best.length')}>
           {DURATION_OPTIONS.map((minutes) => (
-            <Chip key={minutes} active={duration === minutes} onClick={() => onDurationChange(minutes)} label={`${minutes} minutes`}>
-              {durationLabel(minutes)}
+            <Chip key={minutes} active={duration === minutes} onClick={() => onDurationChange(minutes)} label={t('duration.longMinutes', { count: minutes })}>
+              {durationLabel(t, minutes)}
             </Chip>
           ))}
         </div>
@@ -85,7 +88,7 @@ export function BestTimesPanel({
 
       {participants.length > 0 && (
         <div className="mt-4">
-          <p className="text-xs text-muted-foreground">Must include</p>
+          <p className="text-xs text-muted-foreground">{t('best.mustInclude')}</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {visiblePeople.map((person) => {
               const active = mustInclude.includes(person.username)
@@ -104,7 +107,7 @@ export function BestTimesPanel({
             {mustInclude.length > 0 && (
               <button type="button" onClick={() => onMustIncludeChange([])} className="inline-flex h-8 items-center gap-1 px-2 text-xs text-muted-foreground hover:text-foreground">
                 <X className="size-3" aria-hidden="true" />
-                Clear
+                {t('common.clear')}
               </button>
             )}
           </div>
@@ -114,19 +117,19 @@ export function BestTimesPanel({
       {times.length === 0 ? (
         <p role="status" className="mt-5 rounded-xl bg-muted px-4 py-3 text-sm text-muted-foreground">
           {total === 0
-            ? 'No one has added their availability yet.'
+            ? t('best.noOne')
             : mustInclude.length > 0
-              ? 'No time works for everyone you selected. Try removing someone or a shorter meeting.'
-              : 'No time fits this meeting length yet. Try a shorter meeting.'}
+              ? t('best.noneForSelected')
+              : t('best.noneForLength')}
         </p>
       ) : (
         <>
           {times[0].missing.length > 0 && (
-            <p className="mt-4 text-xs text-muted-foreground">No time works for everyone, so these are the closest.</p>
+            <p className="mt-4 text-xs text-muted-foreground">{t('best.closest')}</p>
           )}
           {/* Mobile: thẻ cuộn ngang; desktop: danh sách dọc */}
           <ol
-            aria-label="Ranked times"
+            aria-label={t('best.ranked')}
             className="-mx-4 mt-3 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-1 sm:-mx-5 sm:px-5 lg:mx-0 lg:grid lg:overflow-visible lg:px-0 lg:pb-0"
           >
             {times.map((slot, index) => {
@@ -171,7 +174,7 @@ export function BestTimesPanel({
                   </div>
                   <div className="mt-2 flex items-end justify-between gap-2 pl-9">
                     <p className="line-clamp-2 min-w-0 text-xs text-muted-foreground">
-                      {everyone ? 'Everyone can make it' : `Missing: ${slot.missing.join(', ')}`}
+                      {everyone ? t('best.everyone') : t('best.missing', { names: slot.missing.join(', ') })}
                     </p>
                     <Button
                       type="button"
@@ -183,7 +186,7 @@ export function BestTimesPanel({
                         onPick(slot)
                       }}
                     >
-                      Pick
+                      {t('best.pick')}
                     </Button>
                   </div>
                 </li>
@@ -199,7 +202,7 @@ export function BestTimesPanel({
         onClick={onChooseManually}
         className="mt-4 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:opacity-50"
       >
-        Or drag on the grid to choose another time
+        {t('best.manual')}
       </button>
     </section>
   )

@@ -3,8 +3,9 @@ import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { fromIsoDate, toIsoDate } from '@/lib/date-time'
 import { EventType } from '@/shared/constants'
+import { useT } from '@/shared/i18n'
 import { WEEKDAY_PRESETS, type EventFormValues } from '../schema'
-import { dateChipFormat } from '../summary'
+import { formatDateChip } from '../summary'
 import { DatePicker, WeekdayPicker } from './AvailabilitySelector'
 import { QuickChip } from './QuickChip'
 
@@ -46,16 +47,17 @@ export function DaysField({
   onWeekdaysChange,
   error,
 }: DaysFieldProps) {
+  const t = useT()
   const sortedDates = [...dates].sort()
   const next7 = upcomingDates(7, false)
   const next5Weekdays = upcomingDates(5, true)
 
   return (
     <div className="grid gap-4">
-      <div role="radiogroup" aria-label="Event type" className="grid grid-cols-2 gap-1 rounded-full bg-muted p-1">
+      <div role="radiogroup" aria-label={t('days.typeLabel')} className="grid grid-cols-2 gap-1 rounded-full bg-muted p-1">
         {[
-          { type: EventType.Dates, label: 'Specific dates', short: 'Dates' },
-          { type: EventType.Weekdays, label: 'Days of the week', short: 'Weekly' },
+          { type: EventType.Dates, label: t('days.specificDates'), short: t('days.datesShort') },
+          { type: EventType.Weekdays, label: t('days.weekdays'), short: t('days.weeklyShort') },
         ].map((option) => {
           const checked = eventType === option.type
           return (
@@ -80,24 +82,24 @@ export function DaysField({
 
       {eventType === EventType.Dates ? (
         <>
-          <div className="flex flex-wrap gap-2" aria-label="Quick date picks">
+          <div className="flex flex-wrap gap-2" aria-label={t('days.quickDates')}>
             <QuickChip active={sameSet(dates, next7)} onClick={() => onDatesChange(next7)}>
-              Next 7 days
+              {t('days.next7')}
             </QuickChip>
             <QuickChip active={sameSet(dates, next5Weekdays)} onClick={() => onDatesChange(next5Weekdays)}>
-              Next 5 weekdays
+              {t('days.next5Weekdays')}
             </QuickChip>
           </div>
           <DatePicker value={dates} onChange={onDatesChange} error={error} />
           {sortedDates.length > 0 && (
-            <ul className="flex flex-wrap gap-1.5" aria-label="Selected dates">
+            <ul className="flex flex-wrap gap-1.5" aria-label={t('days.selected')}>
               {sortedDates.slice(0, MAX_VISIBLE_DATES).map((date) => (
                 <li key={date}>
                   <span className="inline-flex items-center gap-1 rounded-full border bg-card py-0.5 pr-0.5 pl-2.5 text-xs tabular-nums">
-                    {dateChipFormat.format(fromIsoDate(date))}
+                    {formatDateChip(fromIsoDate(date))}
                     <button
                       type="button"
-                      aria-label={`Remove ${date}`}
+                      aria-label={t('days.remove', { date: formatDateChip(fromIsoDate(date)) })}
                       onClick={() => onDatesChange(dates.filter((item) => item !== date))}
                       className="grid size-5 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
                     >
@@ -108,7 +110,7 @@ export function DaysField({
               ))}
               {sortedDates.length > MAX_VISIBLE_DATES && (
                 <li className="self-center text-xs text-muted-foreground">
-                  +{sortedDates.length - MAX_VISIBLE_DATES} more
+                  {t('days.more', { count: sortedDates.length - MAX_VISIBLE_DATES })}
                 </li>
               )}
             </ul>
@@ -116,14 +118,14 @@ export function DaysField({
         </>
       ) : (
         <>
-          <div className="flex flex-wrap gap-2" aria-label="Quick weekday picks">
+          <div className="flex flex-wrap gap-2" aria-label={t('days.quickWeekdays')}>
             {WEEKDAY_PRESETS.map((preset) => (
               <QuickChip
-                key={preset.label}
+                key={preset.labelKey}
                 active={sameSet(weekdays, preset.days)}
                 onClick={() => onWeekdaysChange([...preset.days])}
               >
-                {preset.label}
+                {t(preset.labelKey)}
               </QuickChip>
             ))}
           </div>

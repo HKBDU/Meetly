@@ -1,22 +1,31 @@
-import { fromIsoDate, timeToMinutes } from '@/lib/date-time'
+import { dateFormatter, fromIsoDate, timeToMinutes } from '@/lib/date-time'
 import { EventType, SLOT_MINUTES, WEEKDAYS_MONDAY_FIRST } from '@/shared/constants'
+import { t } from '@/shared/i18n'
 import type { EventFormValues } from './schema'
 
-export const dateChipFormat = new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+/** "Mon, Nov 24" theo ngôn ngữ đang chọn */
+export const formatDateChip = (date: Date) =>
+  dateFormatter({ weekday: 'short', month: 'short', day: 'numeric' }).format(date)
 
 /** "Every Mon, Tue" hoặc "Mon, Nov 24 – Fri, Nov 28" cho phần tóm tắt */
 export function describeDays(values: Pick<EventFormValues, 'eventType' | 'dates' | 'weekdays'>): string {
   if (values.eventType === EventType.Weekdays) {
-    if (values.weekdays.length === 0) return 'No days picked yet'
-    return `Every ${WEEKDAYS_MONDAY_FIRST.filter((day) => values.weekdays.includes(day.value))
-      .map((day) => day.shortLabel)
-      .join(', ')}`
+    if (values.weekdays.length === 0) return t('summary.noWeekdays')
+    return describeWeekdays(values.weekdays)
   }
-  if (values.dates.length === 0) return 'No dates picked yet'
+  if (values.dates.length === 0) return t('summary.noDates')
   const sorted = [...values.dates].sort()
-  const first = dateChipFormat.format(fromIsoDate(sorted[0]))
+  const first = formatDateChip(fromIsoDate(sorted[0]))
   if (sorted.length === 1) return first
-  return `${first} – ${dateChipFormat.format(fromIsoDate(sorted[sorted.length - 1]))}`
+  return `${first} – ${formatDateChip(fromIsoDate(sorted[sorted.length - 1]))}`
+}
+
+/** "Every Mon, Tue" / "T2, T3 hằng tuần" */
+export function describeWeekdays(weekdays: readonly number[]): string {
+  const days = WEEKDAYS_MONDAY_FIRST.filter((day) => weekdays.includes(day.value))
+    .map((day) => day.shortLabel)
+    .join(', ')
+  return t('summary.every', { days })
 }
 
 export function dayCount(values: Pick<EventFormValues, 'eventType' | 'dates' | 'weekdays'>): number {
@@ -29,10 +38,12 @@ export function dailyMinutes(start: string, end: string): number {
 }
 
 export function describeDuration(minutes: number): string {
-  if (!Number.isFinite(minutes) || minutes <= 0) return 'Invalid time range'
+  if (!Number.isFinite(minutes) || minutes <= 0) return t('duration.invalid')
   const hours = Math.floor(minutes / 60)
   const rest = minutes % 60
-  return [hours ? `${hours} h` : '', rest ? `${rest} min` : ''].filter(Boolean).join(' ')
+  return [hours ? t('duration.hours', { count: hours }) : '', rest ? t('duration.minutes', { count: rest }) : '']
+    .filter(Boolean)
+    .join(' ')
 }
 
 export function slotCount(values: Pick<EventFormValues, 'eventType' | 'dates' | 'weekdays' | 'dailyStartTime' | 'dailyEndTime'>): number {

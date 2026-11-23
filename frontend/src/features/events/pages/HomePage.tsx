@@ -3,14 +3,17 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import { formatHourLabel } from '@/lib/date-time'
+import { WEEKDAYS } from '@/shared/constants'
+import { useT, type MessageKey } from '@/shared/i18n'
 import { parseEventCode } from '@/shared/lib/share'
 import { Button } from '@/shared/components/ui/button'
 import { FieldError, FieldLabel } from '@/shared/components/ui/field'
 
-const STEPS = [
-  { title: 'Pick times', text: 'Choose the days and hours that could work.' },
-  { title: 'Share one link', text: 'Everyone marks when they are free. No sign-up.' },
-  { title: 'Find the best slot', text: 'The heatmap shows when most people can make it.' },
+const STEPS: { title: MessageKey; text: MessageKey }[] = [
+  { title: 'home.step1Title', text: 'home.step1Text' },
+  { title: 'home.step2Title', text: 'home.step2Text' },
+  { title: 'home.step3Title', text: 'home.step3Text' },
 ]
 
 /** Lưới mẫu cho bản xem trước: 0-5 = mức rảnh của mỗi ô */
@@ -22,18 +25,20 @@ const DEMO_GRID = [
   [1, 2, 3, 2, 1],
 ]
 const HEAT = ['bg-heat-0', 'bg-heat-1', 'bg-heat-2', 'bg-heat-3', 'bg-heat-4', 'bg-heat-5']
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
-const HOURS = ['5 PM', '6 PM', '7 PM', '8 PM', '9 PM']
+/** Thứ 2 → thứ 6 và 17:00 → 21:00 */
+const DAYS = [1, 2, 3, 4, 5] as const
+const HOURS = ['17:00', '18:00', '19:00', '20:00', '21:00']
 
 /** Bản xem trước trang trí của heatmap, không mang dữ liệu thật */
 function ProductPreview() {
+  const t = useT()
   return (
     <div aria-hidden="true" className="relative mx-auto mt-16 w-full max-w-2xl select-none">
       <div className="rounded-2xl border bg-card p-5 shadow-lift sm:p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium">Team dinner</p>
-            <p className="text-xs text-muted-foreground">9 people responded</p>
+            <p className="text-sm font-medium">{t('home.demoTitle')}</p>
+            <p className="text-xs text-muted-foreground">{t('home.demoResponded')}</p>
           </div>
           <div className="flex -space-x-1.5">
             {['A', 'M', 'K', 'L'].map((initial, index) => (
@@ -57,12 +62,12 @@ function ProductPreview() {
           <span />
           {DAYS.map((day) => (
             <span key={day} className="text-center">
-              {day}
+              {WEEKDAYS[day].shortLabel}
             </span>
           ))}
           {DEMO_GRID.map((row, rowIndex) => (
             <div key={HOURS[rowIndex]} className="contents">
-              <span className="self-center">{HOURS[rowIndex]}</span>
+              <span className="self-center">{formatHourLabel(HOURS[rowIndex])}</span>
               {row.map((level, columnIndex) => (
                 <span
                   key={columnIndex}
@@ -80,23 +85,27 @@ function ProductPreview() {
 
       <div className="absolute -bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-2.5 rounded-full border bg-card px-4 py-2 text-sm whitespace-nowrap shadow-lift">
         <span className="size-2 rounded-full bg-brand" />
-        <span className="font-medium">Tue, 7:00 PM</span>
-        <span className="text-muted-foreground">8 of 9 available</span>
+        <span className="font-medium">
+          {WEEKDAYS[2].shortLabel}, {formatHourLabel('19:00')}
+        </span>
+        <span className="text-muted-foreground">{t('home.demoAvailable')}</span>
       </div>
     </div>
   )
 }
 
 export function HomePage() {
+  const t = useT()
   const navigate = useNavigate()
   const [code, setCode] = useState('')
-  const [error, setError] = useState('')
+  // Lưu cờ thay vì câu lỗi để đổi ngôn ngữ thì câu lỗi đổi theo
+  const [error, setError] = useState(false)
 
   function join(event: React.FormEvent) {
     event.preventDefault()
     const shortCode = parseEventCode(code)
     if (!shortCode) {
-      setError('Enter the event code or paste the link you received.')
+      setError(true)
       return
     }
     navigate(`/e/${encodeURIComponent(shortCode)}`)
@@ -107,44 +116,45 @@ export function HomePage() {
       <section className="text-center">
         <span className="inline-flex items-center gap-2 rounded-full border bg-card/70 px-3 py-1 text-xs text-muted-foreground shadow-[0_1px_2px_rgb(12_10_9/0.04)]">
           <span className="size-1.5 rounded-full bg-brand" />
-          Group scheduling, simplified
+          {t('home.badge')}
         </span>
         <h1 className="mx-auto mt-6 max-w-3xl text-5xl leading-[1.05] font-semibold tracking-[-0.035em] text-balance sm:text-6xl lg:text-7xl">
-          Find a time that works for <span className="font-serif font-normal tracking-normal italic">everyone</span>
+          {t('home.titleBefore')}{' '}
+          <span className="font-serif font-normal tracking-normal italic">{t('home.titleEmphasis')}</span>
         </h1>
         <p className="mx-auto mt-5 max-w-md text-base text-pretty text-muted-foreground sm:text-lg">
-          Create a poll, share one link, and see at a glance when your group is free.
+          {t('home.subtitle')}
         </p>
 
         <div className="mx-auto mt-9 flex max-w-xl flex-col items-stretch gap-3 sm:flex-row sm:items-start sm:justify-center">
           <Button size="lg" className="h-12 px-6" onClick={() => navigate('/create')}>
-            Create an event
+            {t('home.create')}
             <ArrowRight aria-hidden="true" />
           </Button>
 
           <form onSubmit={join} noValidate className="grid gap-1.5 text-left sm:w-64">
             <FieldLabel htmlFor="join-code" className="sr-only">
-              Event code or link
+              {t('home.codeLabel')}
             </FieldLabel>
             <div className="flex h-12 items-center rounded-full border bg-card pr-1.5 pl-5 shadow-[0_1px_2px_rgb(12_10_9/0.04)] transition-shadow focus-within:border-primary/60 focus-within:ring-4 focus-within:ring-primary/15">
               <input
                 id="join-code"
-                placeholder="Have a code?"
+                placeholder={t('home.codePlaceholder')}
                 autoComplete="off"
                 spellCheck={false}
                 className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                 value={code}
-                aria-invalid={Boolean(error)}
+                aria-invalid={error}
                 onChange={(event) => {
                   setCode(event.target.value)
-                  setError('')
+                  setError(false)
                 }}
               />
-              <Button type="submit" size="icon-sm" variant="secondary" aria-label="Join event">
+              <Button type="submit" size="icon-sm" variant="secondary" aria-label={t('home.join')}>
                 <ArrowRight aria-hidden="true" />
               </Button>
             </div>
-            {error && <FieldError className="pl-5 text-xs">{error}</FieldError>}
+            {error && <FieldError className="pl-5 text-xs">{t('home.codeError')}</FieldError>}
           </form>
         </div>
       </section>
@@ -155,8 +165,8 @@ export function HomePage() {
         {STEPS.map(({ title, text }, index) => (
           <li key={title} className="px-1 py-6 sm:px-6">
             <p className="font-serif text-2xl text-muted-foreground italic">0{index + 1}</p>
-            <p className="mt-2 font-medium">{title}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{text}</p>
+            <p className="mt-2 font-medium">{t(title)}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{t(text)}</p>
           </li>
         ))}
       </ol>

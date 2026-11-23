@@ -6,6 +6,7 @@ import { EmailPromptDialog } from '@/features/participants/components/EmailPromp
 import { ParticipantAuthForm } from '@/features/participants/components/ParticipantAuthForm'
 import { useParticipantStore } from '@/features/participants/store'
 import type { ParticipantAuthInfo } from '@/features/participants/types'
+import { useT } from '@/shared/i18n'
 import type { EventOutletContext } from './eventOutlet'
 
 /**
@@ -29,14 +30,15 @@ export function EventLayout() {
 }
 
 function SignedInEvent({ shortCode, auth }: { shortCode: string; auth: ParticipantAuthInfo }) {
+  const t = useT()
   const { data: event, isPending, error } = useEventQuery(shortCode)
   useEventRealtime(shortCode, auth.accessToken)
 
-  if (isPending) return <p role="status" className="p-8 text-center text-muted-foreground">Loading event…</p>
+  if (isPending) return <p role="status" className="p-8 text-center text-muted-foreground">{t('layout.loading')}</p>
   if (error || !event) {
     return (
       <p role="alert" className="p-8 text-center text-destructive">
-        {error?.message ?? 'Event not found.'}
+        {error?.message ?? t('layout.notFound')}
       </p>
     )
   }

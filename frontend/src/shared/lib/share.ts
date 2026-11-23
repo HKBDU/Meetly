@@ -1,5 +1,7 @@
 import { toast } from 'sonner'
 
+import { t } from '@/shared/i18n'
+
 /** Link tuyệt đối người tham gia mở để điền lịch */
 export function eventShareUrl(shortCode: string): string {
   const path = `/e/${encodeURIComponent(shortCode)}`
@@ -21,7 +23,7 @@ export function parseEventCode(input: string): string {
 
 /** Tin nhắn mời viết sẵn để dán thẳng vào chat */
 export function inviteMessage(title: string, url: string): string {
-  return `Hi! Please mark when you're free for "${title}" so we can pick a time: ${url}`
+  return t('share.inviteMessage', { title, url })
 }
 
 /** Có share sheet của hệ điều hành (chủ yếu trên điện thoại) không */
@@ -35,7 +37,7 @@ export async function copyToClipboard(text: string, successMessage: string): Pro
     toast.success(successMessage)
     return true
   } catch {
-    toast.error('Unable to copy. Select the text and copy it manually.')
+    toast.error(t('share.copyFailed'))
     return false
   }
 }
@@ -46,6 +48,6 @@ export async function nativeShare(data: { title: string; text: string; url: stri
     await navigator.share(data)
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') return
-    await copyToClipboard(`${data.text}`, 'Invite message copied.')
+    await copyToClipboard(data.text, t('share.inviteCopied'))
   }
 }

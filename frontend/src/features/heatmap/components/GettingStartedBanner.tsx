@@ -3,6 +3,7 @@ import { CalendarPlus, UserPlus } from 'lucide-react'
 import { CopyButton } from '@/shared/components/CopyButton'
 import { Button } from '@/shared/components/ui/button'
 import { eventShareUrl } from '@/shared/lib/share'
+import { useT } from '@/shared/i18n'
 import type { EventDetail } from '@/shared/types'
 
 interface GettingStartedBannerProps {
@@ -14,6 +15,7 @@ interface GettingStartedBannerProps {
 
 /** Thay cho heatmap trống: nói rõ bước tiếp theo (mời người, tự điền lịch) */
 export function GettingStartedBanner({ event, currentUsername, onInvite, onOpenMySchedule }: GettingStartedBannerProps) {
+  const t = useT()
   const othersJoined = event.participants.filter((person) => person.username !== currentUsername).length
   const hasMyAvailability =
     !currentUsername || event.heatmapGrid.some((cell) => cell.participants.includes(currentUsername))
@@ -27,17 +29,17 @@ export function GettingStartedBanner({ event, currentUsername, onInvite, onOpenM
           <div className="flex items-start gap-3">
             <UserPlus className="mt-0.5 size-5 shrink-0 text-brand" aria-hidden="true" />
             <div>
-              <p className="font-semibold">No one else has joined yet</p>
-              <p className="text-sm text-muted-foreground">Share the link so people can mark when they're free.</p>
+              <p className="font-semibold">{t('start.noOne')}</p>
+              <p className="text-sm text-muted-foreground">{t('start.shareText')}</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
             {onInvite && (
               <Button type="button" size="sm" onClick={onInvite}>
-                Invite people
+                {t('start.invite')}
               </Button>
             )}
-            <CopyButton value={eventShareUrl(event.shortCode)} successMessage="Event link copied." size="sm" variant="outline" label="Copy link" />
+            <CopyButton value={eventShareUrl(event.shortCode)} successMessage={t('common.eventLinkCopied')} size="sm" variant="outline" label={t('common.copyLink')} />
           </div>
         </div>
       )}
@@ -46,13 +48,13 @@ export function GettingStartedBanner({ event, currentUsername, onInvite, onOpenM
           <div className="flex items-start gap-3">
             <CalendarPlus className="mt-0.5 size-5 shrink-0 text-brand" aria-hidden="true" />
             <div>
-              <p className="font-semibold">Add your availability</p>
-              <p className="text-sm text-muted-foreground">You haven't marked any free time yet.</p>
+              <p className="font-semibold">{t('share.addAvailability')}</p>
+              <p className="text-sm text-muted-foreground">{t('start.noTime')}</p>
             </div>
           </div>
           {onOpenMySchedule && (
             <Button type="button" size="sm" variant="outline" className="self-start" onClick={onOpenMySchedule}>
-              Add my availability
+              {t('start.addMine')}
             </Button>
           )}
         </div>

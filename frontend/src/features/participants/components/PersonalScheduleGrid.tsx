@@ -7,6 +7,7 @@ import { getSlotId } from '@/features/participants/gridUtils'
 import { useOptimizedDrag } from '@/features/participants/hooks/useOptimizedDrag'
 import type { ScheduleGrid } from '@/features/participants/hooks/useScheduleGrid'
 import { useParticipantStore } from '@/features/participants/store'
+import { useT } from '@/shared/i18n'
 
 interface ScheduleCellProps {
   slotId: string
@@ -62,6 +63,7 @@ interface PersonalScheduleGridProps {
 }
 
 export function PersonalScheduleGrid({ grid, triggerAutoSave, manualSelection }: PersonalScheduleGridProps) {
+  const t = useT()
   const { handleCellPointerDown, handleCellPointerEnter } = useOptimizedDrag({
     times: grid.times,
     locked: grid.isLocked,
@@ -69,12 +71,12 @@ export function PersonalScheduleGrid({ grid, triggerAutoSave, manualSelection }:
   })
 
   return (
-    <section className="p-3 sm:p-4" aria-label="My schedule">
+    <section className="p-3 sm:p-4" aria-label={t('schedule.label')}>
       <TimeGrid
         columns={grid.columns}
         rows={grid.rows}
-        caption="Your availability. Drag across cells to paint them."
-        pagerLabel="Schedule date pages"
+        caption={t('schedule.caption')}
+        pagerLabel={t('schedule.pager')}
         revealColumn={manualSelection ? { key: manualSelection.columnKey, requestId: manualSelection.requestId } : null}
         renderCell={(column, row, rowIndex) => {
           const slotId = getSlotId(column, row.startTime)

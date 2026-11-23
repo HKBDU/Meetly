@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react'
 
 import { createEvent } from '@/shared/api/events'
+import { t as translate, useT } from '@/shared/i18n'
 import { useParticipantStore } from '@/features/participants/store'
 import { Button } from '@/shared/components/ui/button'
 import { FieldError, FieldLabel } from '@/shared/components/ui/field'
@@ -43,6 +44,7 @@ function Row({ id, title, description, children }: { id: string; title: string; 
 
 /** Một trang: tên → ngày → giờ → host; tạo xong sang màn chia sẻ link */
 export function NewEventPage() {
+  const t = useT()
   const navigate = useNavigate()
   const [error, setError] = useState<string>()
   const {
@@ -75,7 +77,7 @@ export function NewEventPage() {
       })
       navigate(`/e/${created.shortCode}/share`, { replace: true })
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : 'Unable to create the event. Please try again.')
+      setError(failure instanceof Error ? failure.message : translate('api.createEvent'))
     }
   }
 
@@ -90,7 +92,7 @@ export function NewEventPage() {
   const submitContent = (
     <>
       {isSubmitting && <Loader2 className="animate-spin" aria-hidden="true" />}
-      {isSubmitting ? 'Creating…' : 'Create event'}
+      {isSubmitting ? t('create.creating') : t('create.submit')}
       {!isSubmitting && <ArrowRight aria-hidden="true" />}
     </>
   )
@@ -99,19 +101,19 @@ export function NewEventPage() {
     <div className="mx-auto w-full max-w-6xl px-4 pt-4 pb-10 sm:pt-8 lg:pb-16">
       <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
         <ArrowLeft className="size-4" aria-hidden="true" />
-        Back
+        {t('common.back')}
       </Link>
 
       <form onSubmit={handleSubmit(onValid, onInvalid)} noValidate className="mt-6 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="min-w-0">
           <div id="section-name" className="scroll-mt-24">
-            <p className="text-sm text-muted-foreground">New event</p>
+            <p className="text-sm text-muted-foreground">{t('create.newEvent')}</p>
             <FieldLabel htmlFor="event-name" className="sr-only">
-              Event name
+              {t('common.eventName')}
             </FieldLabel>
             <input
               id="event-name"
-              placeholder="Untitled event"
+              placeholder={t('create.untitled')}
               autoFocus
               autoComplete="off"
               aria-invalid={Boolean(errors.title)}
@@ -122,7 +124,7 @@ export function NewEventPage() {
           </div>
 
           <div className="mt-8 divide-y rounded-2xl border bg-card shadow-soft">
-            <Row id="section-days" title="Days" description="Exact dates, or days that repeat every week.">
+            <Row id="section-days" title={t('common.daysTitle')} description={t('create.daysHint')}>
               <DaysField
                 eventType={values.eventType}
                 dates={values.dates}
@@ -134,7 +136,7 @@ export function NewEventPage() {
               />
             </Row>
 
-            <Row id="section-hours" title="Hours" description="People mark when they're free within this range.">
+            <Row id="section-hours" title={t('common.hoursTitle')} description={t('create.hoursHint')}>
               <HoursField
                 start={values.dailyStartTime}
                 end={values.dailyEndTime}
@@ -146,18 +148,18 @@ export function NewEventPage() {
               />
             </Row>
 
-            <Row id="section-host" title="Host" description="Used to edit or finalize the event later. The password can't be recovered.">
+            <Row id="section-host" title={t('create.host')} description={t('create.hostHint')}>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-1.5">
                   <FieldLabel htmlFor="admin-username" className="text-xs font-normal text-muted-foreground">
-                    Your name
+                    {t('common.yourName')}
                   </FieldLabel>
                   <Input id="admin-username" autoComplete="username" aria-invalid={Boolean(errors.adminUsername)} {...register('adminUsername')} />
                   {errors.adminUsername && <FieldError className="text-xs">{errors.adminUsername.message}</FieldError>}
                 </div>
                 <div className="grid gap-1.5">
                   <FieldLabel htmlFor="admin-password" className="text-xs font-normal text-muted-foreground">
-                    Password
+                    {t('common.password')}
                   </FieldLabel>
                   <Input id="admin-password" type="password" autoComplete="new-password" aria-invalid={Boolean(errors.adminPassword)} {...register('adminPassword')} />
                   {errors.adminPassword && <FieldError className="text-xs">{errors.adminPassword.message}</FieldError>}
@@ -174,16 +176,16 @@ export function NewEventPage() {
         </div>
 
         {/* Desktop: tóm tắt luôn nhìn thấy khi cuộn */}
-        <aside className="sticky top-24 hidden rounded-2xl border bg-card p-5 shadow-soft lg:block" aria-label="Event summary">
-          <p className="text-xs text-muted-foreground">Summary</p>
-          <p className="mt-1 truncate font-medium">{values.title?.trim() || 'Untitled event'}</p>
+        <aside className="sticky top-24 hidden rounded-2xl border bg-card p-5 shadow-soft lg:block" aria-label={t('create.summaryLabel')}>
+          <p className="text-xs text-muted-foreground">{t('create.summary')}</p>
+          <p className="mt-1 truncate font-medium">{values.title?.trim() || t('create.untitled')}</p>
           <dl className="mt-4 grid gap-3 border-t pt-4 text-sm">
             <div>
-              <dt className="text-xs text-muted-foreground">Days</dt>
+              <dt className="text-xs text-muted-foreground">{t('common.daysTitle')}</dt>
               <dd className="mt-0.5">{describeDays(values)}</dd>
             </div>
             <div>
-              <dt className="text-xs text-muted-foreground">Hours</dt>
+              <dt className="text-xs text-muted-foreground">{t('common.hoursTitle')}</dt>
               <dd className="mt-0.5 tabular-nums">
                 {values.dailyStartTime} – {values.dailyEndTime}
                 <span className="text-muted-foreground"> · {describeDuration(minutes)}</span>
@@ -193,13 +195,13 @@ export function NewEventPage() {
           <Button type="submit" size="lg" className="mt-5 w-full" disabled={isSubmitting}>
             {submitContent}
           </Button>
-          <p className="mt-3 text-center text-xs text-muted-foreground">You'll get a link to share next.</p>
+          <p className="mt-3 text-center text-xs text-muted-foreground">{t('create.nextHint')}</p>
         </aside>
 
         {/* Mobile: thanh dính đáy màn hình trong lúc điền form, hết form thì dừng (không che footer) */}
         <div className="surface-glass sticky bottom-0 z-10 -mx-4 flex items-center gap-3 border-t px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
           <div className="min-w-0 flex-1 text-xs">
-            <p className="truncate font-medium">{days > 0 ? `${days} ${days === 1 ? 'day' : 'days'}` : 'No days yet'}</p>
+            <p className="truncate font-medium">{days > 0 ? t('common.days', { count: days }) : t('create.noDaysYet')}</p>
             <p className="truncate text-muted-foreground tabular-nums">
               {values.dailyStartTime} – {values.dailyEndTime}
             </p>

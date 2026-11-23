@@ -1,3 +1,4 @@
+import { t, type MessageKey } from '@/shared/i18n'
 import type { DayOfWeek } from '@/shared/types'
 
 /** Độ dài một ô lưới; khớp `InputLimits.SlotMinutes` bên BE */
@@ -31,16 +32,17 @@ export interface WeekdayInfo {
   shortLabel: string
 }
 
-/** Đánh số theo JS `Date.getDay()` và BE: 0 = Chủ nhật */
-export const WEEKDAYS: readonly WeekdayInfo[] = [
-  { value: 0, label: 'Sunday', shortLabel: 'Sun' },
-  { value: 1, label: 'Monday', shortLabel: 'Mon' },
-  { value: 2, label: 'Tuesday', shortLabel: 'Tue' },
-  { value: 3, label: 'Wednesday', shortLabel: 'Wed' },
-  { value: 4, label: 'Thursday', shortLabel: 'Thu' },
-  { value: 5, label: 'Friday', shortLabel: 'Fri' },
-  { value: 6, label: 'Saturday', shortLabel: 'Sat' },
-]
+/** Đánh số theo JS `Date.getDay()` và BE: 0 = Chủ nhật; nhãn theo ngôn ngữ hiện tại */
+export const WEEKDAYS: readonly WeekdayInfo[] = ([0, 1, 2, 3, 4, 5, 6] as const).map((value) => ({
+  value,
+  // Getter để nhãn luôn theo ngôn ngữ đang chọn
+  get label() {
+    return t(`weekday.${value}` as MessageKey)
+  },
+  get shortLabel() {
+    return t(`weekdayShort.${value}` as MessageKey)
+  },
+}))
 
 /** Thứ tự hiển thị: Thứ Hai đầu tuần */
 export const WEEKDAYS_MONDAY_FIRST: readonly WeekdayInfo[] = [1, 2, 3, 4, 5, 6, 0].map(

@@ -2,47 +2,51 @@ import { z } from 'zod'
 
 import { timeToMinutes } from '@/lib/date-time'
 import { EventType, INPUT_LIMITS } from '@/shared/constants'
+import { t, type MessageKey, type TranslateParams } from '@/shared/i18n'
 import type { EventFieldsRequest } from '@/shared/api/events'
 import type { DayOfWeek, EditableEvent } from '@/shared/types'
 
 /** Tối đa ~2 tháng ngày cụ thể; khớp `InputLimits.MaxAvailableDates` bên BE */
 export const MAX_AVAILABLE_DATES = 62
 
+/** Câu lỗi tính lúc kiểm tra (không phải lúc nạp module) để theo ngôn ngữ đang chọn */
+const msg = (key: MessageKey, params?: TranslateParams) => ({ error: () => t(key, params) })
+
 const eventFields = z.object({
   title: z
     .string()
     .trim()
-    .min(1, 'Give your event a name.')
-    .max(INPUT_LIMITS.titleMaxLength, `Name must be at most ${INPUT_LIMITS.titleMaxLength} characters.`),
+    .min(1, msg('validation.nameRequired'))
+    .max(INPUT_LIMITS.titleMaxLength, msg('validation.nameMax', { max: INPUT_LIMITS.titleMaxLength })),
   eventType: z.union([z.literal(EventType.Dates), z.literal(EventType.Weekdays)]),
   /** "YYYY-MM-DD", dùng khi eventType = Dates */
-  dates: z.array(z.string()).max(MAX_AVAILABLE_DATES, `Select at most ${MAX_AVAILABLE_DATES} dates.`),
+  dates: z.array(z.string()).max(MAX_AVAILABLE_DATES, msg('validation.datesMax', { max: MAX_AVAILABLE_DATES })),
   /** 0 = CN ... 6 = T7, dùng khi eventType = Weekdays */
   weekdays: z.array(z.number().int().min(0).max(6)),
-  dailyStartTime: z.string().min(1, 'Pick a start time.'),
-  dailyEndTime: z.string().min(1, 'Pick an end time.'),
+  dailyStartTime: z.string().min(1, msg('validation.startRequired')),
+  dailyEndTime: z.string().min(1, msg('validation.endRequired')),
 })
 
 const hostFields = z.object({
   adminUsername: z
     .string()
     .trim()
-    .min(1, 'Enter your name.')
-    .max(INPUT_LIMITS.usernameMaxLength, `Name must be at most ${INPUT_LIMITS.usernameMaxLength} characters.`),
+    .min(1, msg('validation.yourNameRequired'))
+    .max(INPUT_LIMITS.usernameMaxLength, msg('validation.nameMax', { max: INPUT_LIMITS.usernameMaxLength })),
   // BE bắt buộc mật khẩu admin để không ai mạo danh admin chỉ bằng username
   adminPassword: z
     .string()
-    .min(INPUT_LIMITS.passwordMinLength, `Use at least ${INPUT_LIMITS.passwordMinLength} characters.`)
-    .max(INPUT_LIMITS.passwordMaxLength, `Use at most ${INPUT_LIMITS.passwordMaxLength} characters.`),
+    .min(INPUT_LIMITS.passwordMinLength, msg('validation.passwordMin', { min: INPUT_LIMITS.passwordMinLength }))
+    .max(INPUT_LIMITS.passwordMaxLength, msg('validation.passwordMax', { max: INPUT_LIMITS.passwordMaxLength })),
 })
 
 function refineEvent(data: z.infer<typeof eventFields>, ctx: z.RefinementCtx) {
   if (data.eventType === EventType.Dates && data.dates.length === 0)
-    ctx.addIssue({ code: 'custom', path: ['dates'], message: 'Pick at least one date.' })
+    ctx.addIssue({ code: 'custom', path: ['dates'], message: t('validation.pickDate') })
   if (data.eventType === EventType.Weekdays && data.weekdays.length === 0)
-    ctx.addIssue({ code: 'custom', path: ['weekdays'], message: 'Pick at least one day of the week.' })
+    ctx.addIssue({ code: 'custom', path: ['weekdays'], message: t('validation.pickWeekday') })
   if (!(timeToMinutes(data.dailyStartTime) < timeToMinutes(data.dailyEndTime)))
-    ctx.addIssue({ code: 'custom', path: ['dailyEndTime'], message: 'End time must be after the start time.' })
+    ctx.addIssue({ code: 'custom', path: ['dailyEndTime'], message: t('validation.endAfterStart') })
 }
 
 /** Sửa event (không có thông tin host) */
@@ -68,20 +72,20 @@ export const DEFAULT_CREATE_VALUES: CreateEventFormValues = {
   adminPassword: '',
 }
 
-/** Khung giờ chọn nhanh */
+/** Khung giờ chọn nhanh; `labelKey` là khoá dịch */
 export const HOUR_PRESETS = [
-  { label: 'Working hours', start: '09:00', end: '17:00' },
-  { label: 'Morning', start: '08:00', end: '12:00' },
-  { label: 'Afternoon', start: '13:00', end: '17:00' },
-  { label: 'Evening', start: '18:00', end: '22:00' },
-] as const
+  { labelKey: 'preset.working', start: '09:00', end: '17:00' },
+  { labelKey: 'preset.morning', start: '08:00', end: '12:00' },
+  { labelKey: 'preset.afternoon', start: '13:00', end: '17:00' },
+  { labelKey: 'preset.evening', start: '18:00', end: '22:00' },
+] as const satisfies readonly { labelKey: MessageKey; start: string; end: string }[]
 
 /** Thứ chọn nhanh (0 = CN) */
 export const WEEKDAY_PRESETS = [
-  { label: 'Mon – Fri', days: [1, 2, 3, 4, 5] },
-  { label: 'Weekend', days: [0, 6] },
-  { label: 'Every day', days: [0, 1, 2, 3, 4, 5, 6] },
-] as const
+  { labelKey: 'preset.monFri', days: [1, 2, 3, 4, 5] },
+  { labelKey: 'preset.weekend', days: [0, 6] },
+  { labelKey: 'preset.everyDay', days: [0, 1, 2, 3, 4, 5, 6] },
+] as const satisfies readonly { labelKey: MessageKey; days: readonly number[] }[]
 
 /** Chỉ gửi ngày hoặc thứ theo loại event; BE từ chối nếu gửi cả hai */
 export function toEventFields(values: EventFormValues): EventFieldsRequest {

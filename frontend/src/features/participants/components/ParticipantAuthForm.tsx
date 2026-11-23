@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { accessParticipant } from '@/shared/api/events'
+import { t as translate, useT } from '@/shared/i18n'
 import { loginSchema, type LoginFormValues } from '@/features/participants/schema'
 import { useParticipantStore } from '@/features/participants/store'
 import {
@@ -26,6 +27,7 @@ import {
 
 /** Form định danh: username bắt buộc, password tuỳ chọn (bắt buộc với admin) */
 export function ParticipantAuthForm({ shortCode }: { shortCode: string }) {
+  const t = useT()
   const navigate = useNavigate()
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -43,7 +45,7 @@ export function ParticipantAuthForm({ shortCode }: { shortCode: string }) {
         isAdmin: result.isAdmin,
         accessToken: result.accessToken,
       })
-      toast.success(`Welcome, ${result.username}!`)
+      toast.success(translate('auth.welcome', { name: result.username }))
     },
     onError: (error) => toast.error(error.message),
   })
@@ -56,8 +58,8 @@ export function ParticipantAuthForm({ shortCode }: { shortCode: string }) {
             <img src="/meetly-logo.png" alt="" aria-hidden="true" className="h-8 w-10 object-contain" />
             <span className="text-xl font-bold tracking-tight">meetly</span>
           </div>
-          <CardTitle className="text-2xl font-semibold tracking-tight">Join the event</CardTitle>
-          <CardDescription>Enter your name to start filling in your availability</CardDescription>
+          <CardTitle className="text-2xl font-semibold tracking-tight">{t('auth.title')}</CardTitle>
+          <CardDescription>{t('auth.description')}</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -67,11 +69,11 @@ export function ParticipantAuthForm({ shortCode }: { shortCode: string }) {
                 name="username"
                 render={({ field }) => (
                   <FormItem className="space-y-1.5">
-                    <FormLabel className="text-xs font-normal text-muted-foreground">Your name</FormLabel>
+                    <FormLabel className="text-xs font-normal text-muted-foreground">{t('common.yourName')}</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <User className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input placeholder="e.g. Jane Doe" autoComplete="username" autoFocus className="pl-9" {...field} />
+                        <Input placeholder={t('auth.namePlaceholder')} autoComplete="username" autoFocus className="pl-9" {...field} />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -84,7 +86,7 @@ export function ParticipantAuthForm({ shortCode }: { shortCode: string }) {
                 render={({ field }) => (
                   <FormItem className="space-y-1.5">
                     <FormLabel className="text-xs font-normal text-muted-foreground">
-                      Password <span className="text-muted-foreground/70">(optional)</span>
+                      {t('common.password')} <span className="text-muted-foreground/70">{t('auth.optional')}</span>
                     </FormLabel>
                     <FormControl>
                       <div className="relative">
@@ -92,7 +94,7 @@ export function ParticipantAuthForm({ shortCode }: { shortCode: string }) {
                         <Input
                           type="password"
                           autoComplete="current-password"
-                          placeholder="Only if you set one"
+                          placeholder={t('auth.passwordPlaceholder')}
                           className="pl-9"
                           {...field}
                         />
@@ -104,10 +106,10 @@ export function ParticipantAuthForm({ shortCode }: { shortCode: string }) {
               />
               <div className="grid grid-cols-2 gap-2">
                 <Button type="button" variant="outline" size="lg" disabled={isPending} onClick={() => navigate('/')}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button type="submit" size="lg" disabled={isPending}>
-                  {isPending ? 'Please wait…' : 'Continue'}
+                  {isPending ? t('auth.wait') : t('auth.continue')}
                 </Button>
               </div>
             </form>

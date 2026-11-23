@@ -8,6 +8,7 @@ declare module 'axios' {
 }
 
 import { env } from '@/lib/env';
+import { t, type MessageKey } from '@/shared/i18n';
 import { useParticipantStore } from '@/features/participants/store';
 
 /** Envelope `ApiResponse<T>` của BE; response lỗi trả PascalCase nên chuẩn hóa về camelCase */
@@ -33,15 +34,15 @@ function normalizeEnvelope(data: unknown): unknown {
   } satisfies Partial<ApiEnvelope>;
 }
 
-/** Câu lỗi tiếng Anh theo mã HTTP, không hiển thị message của BE */
-const ERROR_MESSAGE_BY_STATUS: Record<number, string> = {
-  400: 'Invalid information, please check and try again',
-  422: 'Invalid information, please check and try again',
-  401: 'Your session has expired, please join again',
-  403: "You don't have permission to do this",
-  404: 'Event not found',
-  409: 'This action conflicts with the current state of the event',
-  429: 'Too many requests, please slow down',
+/** Câu lỗi theo mã HTTP (theo ngôn ngữ đang chọn), không hiển thị message của BE */
+const ERROR_MESSAGE_BY_STATUS: Record<number, MessageKey> = {
+  400: 'api.invalid',
+  422: 'api.invalid',
+  401: 'api.sessionExpired',
+  403: 'api.forbidden',
+  404: 'api.notFound',
+  409: 'api.conflict',
+  429: 'api.tooMany',
 };
 
 /** Câu lỗi để toast theo mã lỗi BE trả về; lỗi mạng hoặc mã lạ thì dùng `fallback` */
@@ -49,8 +50,9 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
   if (!isAxiosError(error) || !error.response) return fallback;
   const data = error.response.data as Partial<ApiEnvelope> | undefined;
   const code = data?.code ?? error.response.status;
-  if (code >= 500) return 'Server error, please try again later';
-  return ERROR_MESSAGE_BY_STATUS[code] ?? fallback;
+  if (code >= 500) return t('api.server');
+  const key = ERROR_MESSAGE_BY_STATUS[code];
+  return key ? t(key) : fallback;
 }
 
 export const api = axios.create({

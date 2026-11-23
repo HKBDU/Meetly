@@ -3,9 +3,13 @@ import { memo, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { formatHourLabel } from '@/lib/date-time'
 import { ColumnPager } from '@/shared/components/ColumnPager'
+import { useT } from '@/shared/i18n'
 import {
   DESKTOP_COLUMNS_PER_PAGE,
   MOBILE_COLUMNS_PER_PAGE,
+  columnDetail,
+  columnLabel,
+  columnShortLabel,
   getColumnPage,
   getPageCount,
   type TimeColumn,
@@ -62,6 +66,7 @@ interface TimeGridProps {
  * cột ngày phân trang theo bề rộng, mỗi hàng là 1 ô 15 phút.
  */
 export function TimeGrid({ columns, rows, renderCell, caption, pagerLabel, revealColumn, className }: TimeGridProps) {
+  const t = useT()
   const { containerRef, pageSize, isMobile } = usePageSize(columns.length)
   const [page, setPage] = useState(0)
   const [revealedKey, setRevealedKey] = useState<string | null>(null)
@@ -96,19 +101,19 @@ export function TimeGrid({ columns, rows, renderCell, caption, pagerLabel, revea
                 style={{ width: TIME_COLUMN_WIDTH }}
                 className="border-r border-b border-border p-1 text-xs font-medium text-muted-foreground"
               >
-                Time
+                {t('grid.time')}
               </th>
               {visibleColumns.map((column) => (
                 <th
                   scope="col"
                   key={column.key}
-                  title={`${column.label} ${column.detail}`}
+                  title={`${columnLabel(column)} ${columnDetail(column)}`}
                   className="border-r border-b border-border px-1 py-2 text-xs font-semibold last:border-r-0 sm:py-3 sm:text-sm"
                 >
-                  <span className="sm:hidden">{column.label.slice(0, 3)}</span>
-                  <span className="hidden sm:inline">{column.label}</span>
+                  <span className="sm:hidden">{columnShortLabel(column)}</span>
+                  <span className="hidden sm:inline">{columnLabel(column)}</span>
                   <span className="mt-1 block truncate text-[10px] font-normal text-muted-foreground sm:text-xs">
-                    {column.detail}
+                    {columnDetail(column)}
                   </span>
                 </th>
               ))}
@@ -129,6 +134,7 @@ export function TimeGrid({ columns, rows, renderCell, caption, pagerLabel, revea
 }
 
 const TimeLabel = memo(function TimeLabel({ startTime }: { startTime: string }) {
+  useT() // vẽ lại nhãn giờ khi đổi ngôn ngữ (memo chặn render từ cha)
   const isHour = startTime.endsWith(':00')
   return (
     <th

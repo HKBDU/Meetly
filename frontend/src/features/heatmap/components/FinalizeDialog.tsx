@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui';
 import type { FinalizeDialogProps } from '../types';
 import { formatDay } from '@/shared/grid/model';
+import { useT } from '@/shared/i18n';
 
 export function FinalizeDialog({
   open,
@@ -11,6 +12,7 @@ export function FinalizeDialog({
   onClose,
   onConfirm,
 }: FinalizeDialogProps) {
+  const t = useT();
   const cancelButton = useRef<HTMLButtonElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
 
@@ -43,10 +45,9 @@ export function FinalizeDialog({
           }}
         >
           <DialogHeader className="gap-1.5">
-            <DialogTitle>Finalize this meeting?</DialogTitle>
+            <DialogTitle>{t('finalize.title')}</DialogTitle>
             <DialogDescription className="leading-5 text-muted-foreground">
-              Confirming will lock this event. Participants will no longer be able to edit their
-              availability.
+              {t('finalize.description')}
             </DialogDescription>
           </DialogHeader>
           {selected && (
@@ -65,13 +66,13 @@ export function FinalizeDialog({
               disabled={pending}
               onClick={onClose}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               disabled={pending}
               onClick={onConfirm}
             >
-              {pending ? 'Confirming…' : 'Confirm Final Time'}
+              {pending ? t('finalize.confirming') : t('finalize.confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>
