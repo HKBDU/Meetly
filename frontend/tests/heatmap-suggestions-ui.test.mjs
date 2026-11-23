@@ -36,9 +36,14 @@ test('Admin suggestions have no manual trigger button', async () => {
       }),
     );
 
+    // Admin thấy danh sách Best times xếp hạng ngay, không cần nút bấm hay chế độ chọn riêng
     assert.doesNotMatch(html, /Find Suggested Times/);
-    assert.equal(DEFAULT_MEETING_DURATION, 15);
-    assert.match(html, /Suggestions update automatically/);
+    assert.equal(DEFAULT_MEETING_DURATION, 60);
+    assert.match(html, /Best times/);
+    assert.match(html, /aria-label="Ranked times"/);
+    assert.match(html, />Pick</);
+    // Gợi ý trên lưới dùng màu thương hiệu, không còn viền đỏ
+    assert.doesNotMatch(html, /border-suggestion/);
 
     assert.equal(getSuggestionParams(undefined, null), null);
     assert.deepEqual(getSuggestionParams(60, null), { minDuration: 60 });

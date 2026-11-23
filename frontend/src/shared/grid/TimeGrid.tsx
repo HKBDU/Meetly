@@ -27,7 +27,10 @@ function usePageSize(columnCount: number) {
   useLayoutEffect(() => {
     const container = containerRef.current
     if (!container) return
-    const update = () => setWidth(container.clientWidth)
+    // Bỏ qua lần đo 0px (lưới đang bị ẩn/khung nhìn đang co tạm), nếu không số cột rơi về 1
+    const update = () => {
+      if (container.clientWidth > 0) setWidth(container.clientWidth)
+    }
     update()
     const observer = new ResizeObserver(update)
     observer.observe(container)

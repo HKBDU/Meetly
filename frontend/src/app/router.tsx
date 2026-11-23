@@ -1,12 +1,14 @@
 import { createBrowserRouter } from 'react-router-dom'
 
 import { RootLayout } from '@/app/RootLayout'
+import { RouteError } from '@/app/RouteError'
 import { HomePage } from '@/features/events/pages/HomePage'
 
 /** Mỗi route tải code riêng: trang chủ không kéo theo SignalR, heatmap, calendar */
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
+    errorElement: <RouteError />,
     hydrateFallbackElement: null,
     children: [
       { path: '/', element: <HomePage /> },
@@ -22,6 +24,10 @@ export const router = createBrowserRouter([
           {
             index: true,
             lazy: async () => ({ Component: (await import('@/features/participants/pages/OverviewPage')).OverviewPage }),
+          },
+          {
+            path: 'share',
+            lazy: async () => ({ Component: (await import('@/features/participants/pages/SharePage')).SharePage }),
           },
           {
             path: 'me',

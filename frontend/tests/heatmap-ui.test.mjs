@@ -71,17 +71,11 @@ test('column pages use stable desktop and mobile page sizes', async () => {
   }
 });
 
-test('shared app background includes the exact local-ui pixel grid', async () => {
-  {
-    const css = await readFile(
-      fileURLToPath(new URL('../src/styles/global.css', import.meta.url)),
-      'utf8',
-    );
-    assert.match(
-      css.replace(/\s+/g, ' '),
-      /\.app-event-background \{ background: radial-gradient\(circle at 12% 18%, rgba\(151, 190, 146, \.35\), transparent 27rem\), linear-gradient\(rgba\(16, 67, 48, \.055\) 1px, transparent 1px\), linear-gradient\(90deg, rgba\(16, 67, 48, \.055\) 1px, transparent 1px\), #eef1e7; background-size: auto, 100px 100px, 100px 100px, auto; \}/,
-    );
-  }
+test('shared app background uses the brand glow on the base background', async () => {
+  const css = await readFile(fileURLToPath(new URL('../src/styles/global.css', import.meta.url)), 'utf8');
+  const rule = /\.app-event-background \{([^}]*)\}/.exec(css)?.[1] ?? '';
+  assert.match(rule, /radial-gradient\([^;]*var\(--brand\)/);
+  assert.match(rule, /var\(--background\)/);
 });
 
 test('historical event dates remain paginated and selectable in the Heatmap', async () => {
@@ -177,19 +171,27 @@ test('historical event dates remain paginated and selectable in the Heatmap', as
   }
 });
 
-test('selecting a key participant preserves the API order', async () => {
+test('must-include chips in Best times preserve the API order', async () => {
   const server = await createTestServer();
   try {
-    const { KeyParticipantSelector } = await server.ssrLoadModule(
-      '/src/features/heatmap/components/KeyParticipantSelector.tsx',
+    const { BestTimesPanel } = await server.ssrLoadModule(
+      '/src/features/heatmap/components/BestTimesPanel.tsx',
     );
     const participants = ['Huy', 'Uyên', 'Bảo', 'Dương'].map((username) => ({ username }));
+    const noop = () => undefined;
     const html = renderToStaticMarkup(
-      createElement(KeyParticipantSelector, {
+      createElement(BestTimesPanel, {
+        times: [],
         participants,
-        selected: 'Bảo',
+        duration: 60,
+        mustInclude: ['Bảo'],
+        highlightedKey: null,
         disabled: false,
-        onChange: () => undefined,
+        onDurationChange: noop,
+        onMustIncludeChange: noop,
+        onHighlight: noop,
+        onPick: noop,
+        onChooseManually: noop,
       }),
     );
 
@@ -286,7 +288,7 @@ test('participant details use a bounded scroll area for long lists', async () =>
           count: 20,
         },
         participants,
-        keyParticipant: 'Participant 1',
+        highlighted: ['Participant 1'],
       }),
     );
 
@@ -314,7 +316,8 @@ test('finalized schedule keeps the blue range on the Heatmap', async () => {
     const html = renderToStaticMarkup(
       createElement(Heatmap, {
         event: { ...mockDatesEvent, status: 2, finalSchedule },
-        suggestions: [],
+        bestTimes: [],
+        highlightedKey: null,
         selected: finalSchedule,
         selecting: false,
         handlers: {

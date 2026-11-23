@@ -16,8 +16,8 @@ interface ScheduleActionsBarProps {
 }
 
 const modeItemClass = cn(
-  'h-8 w-24 border-2 text-xs sm:h-9',
-  'data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground',
+  'h-8 rounded-full px-4 text-sm text-muted-foreground hover:bg-transparent hover:text-foreground',
+  'data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-soft',
 )
 
 /** Hàng điều khiển phía trên lưới: chọn thủ công, xoá hết, trạng thái lưu và chế độ Busy/Available */
@@ -32,11 +32,11 @@ export function ScheduleActionsBar({ grid, triggerAutoSave, isSaving, onManualRa
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3 px-3 pt-1 pb-3 sm:px-4">
+      <div className="flex flex-col gap-3 px-3 pt-1 pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-4">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" disabled={locked} onClick={() => setIsManualDialogOpen(true)}>
             <SlidersHorizontal />
-            Select Manual
+            Select range
           </Button>
           <Button
             variant="ghost"
@@ -48,58 +48,50 @@ export function ScheduleActionsBar({ grid, triggerAutoSave, isSaving, onManualRa
               triggerAutoSave()
             }}
           >
-            Reset dates
+            Clear all
           </Button>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
           <Button
             type="button"
             variant="ghost"
-            size="sm"
-            className="text-muted-foreground"
+            size="icon-sm"
+            className="ml-auto text-muted-foreground sm:ml-0"
             onClick={openEmailDialog}
-            aria-label={hasEmailSubscribed ? 'Notifications on' : 'Notify me by email'}
+            aria-label={hasEmailSubscribed ? 'Email notifications on' : 'Notify me by email'}
+            title={hasEmailSubscribed ? 'Email notifications on' : 'Notify me by email'}
           >
-            <BellRing />
-            <span className="hidden sm:inline">{hasEmailSubscribed ? 'Notifications on' : 'Notify me by email'}</span>
+            {hasEmailSubscribed ? <BellRing className="text-brand" /> : <BellRing />}
           </Button>
+        </div>
 
-          <span
-            role="status"
-            className={cn('flex shrink-0 items-center gap-1 text-xs font-medium', isSaving && 'text-muted-foreground')}
+        <div className="flex items-center justify-between gap-3">
+          <ToggleGroup
+            type="single"
+            value={paintMode}
+            disabled={locked}
+            aria-label="Paint mode"
+            className="rounded-full bg-muted p-1"
+            // Đổi chế độ giữ nguyên lịch (lấy phần bù), nên không cần lưu lại
+            onValueChange={(value) => value && setPaintMode(value as PaintMode, grid.allSlotIds)}
           >
+            <ToggleGroupItem value="FREE" aria-label="Paint available time" className={modeItemClass}>
+              Available
+            </ToggleGroupItem>
+            <ToggleGroupItem value="BUSY" aria-label="Paint busy time" className={modeItemClass}>
+              Busy
+            </ToggleGroupItem>
+          </ToggleGroup>
+
+          <span role="status" className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
             {isSaving ? (
               <>
                 <Loader2 className="size-3.5 animate-spin" /> Saving…
               </>
             ) : (
               <>
-                <CloudCheck className="size-3.5" /> Synced
+                <CloudCheck className="size-3.5 text-brand" /> Saved
               </>
             )}
           </span>
-
-          <div className="flex h-8 items-center gap-2 rounded-md bg-muted px-2 sm:h-auto sm:py-1.5">
-            <span className="text-xs font-medium text-muted-foreground">Mode</span>
-            <ToggleGroup
-              type="single"
-              variant="outline"
-              spacing={2}
-              value={paintMode}
-              disabled={locked}
-              className="w-auto"
-              // Đổi chế độ giữ nguyên lịch (lấy phần bù), nên không cần lưu lại
-              onValueChange={(value) => value && setPaintMode(value as PaintMode, grid.allSlotIds)}
-            >
-              <ToggleGroupItem value="BUSY" aria-label="Record busy" className={modeItemClass}>
-                Busy
-              </ToggleGroupItem>
-              <ToggleGroupItem value="FREE" aria-label="Record available" className={modeItemClass}>
-                Available
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
         </div>
       </div>
 

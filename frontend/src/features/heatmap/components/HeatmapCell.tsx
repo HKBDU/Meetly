@@ -27,6 +27,9 @@ export interface HeatmapCellProps {
   selecting: boolean
   selection: RangeEdge
   suggestion: RangeEdge
+  /** Thứ hạng trong Best times (hiện nhãn ở ô đầu khung) */
+  suggestionRank?: number
+  suggestionHighlighted?: boolean
   finalized: RangeEdge
   /** Chỉ truyền cho ô thuộc lịch đã chốt (để mở popover chi tiết) */
   finalizedEvent?: EventDetail
@@ -46,6 +49,8 @@ export const HeatmapCell = memo(function HeatmapCell({
   selecting,
   selection,
   suggestion,
+  suggestionRank,
+  suggestionHighlighted = false,
   finalized,
   finalizedEvent,
   finalizedCellCount = 0,
@@ -117,8 +122,28 @@ export const HeatmapCell = memo(function HeatmapCell({
   return (
     <td className={cn('relative border-r border-grid-line/60 p-0', getAvailabilityClass(count, total), rowBoundaryClass(row.startTime))}>
       {finalized && finalizedEvent ? <FinalizedSchedulePopover event={finalizedEvent}>{button}</FinalizedSchedulePopover> : button}
-      {suggestion && (
-        <span aria-hidden="true" className={cn('pointer-events-none absolute inset-0 border-x-2 border-suggestion', edgeClass(suggestion))} />
+      {suggestion && !finalized && (
+        <span
+          aria-hidden="true"
+          className={cn(
+            'pointer-events-none absolute inset-0 z-10 border-x-2 transition-colors duration-200',
+            suggestionHighlighted ? 'border-solid border-primary bg-primary/25' : 'border-dashed border-primary/70',
+            edgeClass(suggestion),
+            (suggestion === 'top' || suggestion === 'single') && 'rounded-t-sm',
+            (suggestion === 'bottom' || suggestion === 'single') && 'rounded-b-sm',
+          )}
+        >
+          {suggestionRank !== undefined && (suggestion === 'top' || suggestion === 'single') && (
+            <span
+              className={cn(
+                'absolute -top-2 -right-1.5 grid size-4 place-items-center rounded-full text-[10px] font-semibold tabular-nums shadow-soft',
+                suggestionHighlighted || suggestionRank === 1 ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground',
+              )}
+            >
+              {suggestionRank}
+            </span>
+          )}
+        </span>
       )}
       {selection && !finalized && (
         <span aria-hidden="true" className={cn('pointer-events-none absolute inset-0 border-x-2 border-selection', edgeClass(selection))} />

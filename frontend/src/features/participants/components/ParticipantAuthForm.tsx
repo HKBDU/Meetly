@@ -50,13 +50,13 @@ export function ParticipantAuthForm({ shortCode }: { shortCode: string }) {
 
   return (
     <div className="flex min-h-dvh items-center justify-center p-4">
-      <Card className="w-full max-w-sm shadow-lg">
+      <Card className="w-full max-w-sm shadow-lift">
         <CardHeader className="items-center text-center">
           <div className="mb-2 flex items-center justify-center gap-2">
             <img src="/meetly-logo.png" alt="" aria-hidden="true" className="h-8 w-10 object-contain" />
             <span className="text-xl font-bold tracking-tight">meetly</span>
           </div>
-          <CardTitle className="text-xl">Join the Event</CardTitle>
+          <CardTitle className="text-2xl font-semibold tracking-tight">Join the event</CardTitle>
           <CardDescription>Enter your name to start filling in your availability</CardDescription>
         </CardHeader>
         <CardContent>
@@ -67,9 +67,7 @@ export function ParticipantAuthForm({ shortCode }: { shortCode: string }) {
                 name="username"
                 render={({ field }) => (
                   <FormItem className="space-y-1.5">
-                    <FormLabel className="text-xs font-semibold uppercase text-muted-foreground">
-                      Display Name <span className="text-destructive">*</span>
-                    </FormLabel>
+                    <FormLabel className="text-xs font-normal text-muted-foreground">Your name</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <User className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -85,8 +83,8 @@ export function ParticipantAuthForm({ shortCode }: { shortCode: string }) {
                 name="password"
                 render={({ field }) => (
                   <FormItem className="space-y-1.5">
-                    <FormLabel className="text-xs font-semibold uppercase text-muted-foreground">
-                      Password (optional)
+                    <FormLabel className="text-xs font-normal text-muted-foreground">
+                      Password <span className="text-muted-foreground/70">(optional)</span>
                     </FormLabel>
                     <FormControl>
                       <div className="relative">
@@ -94,7 +92,7 @@ export function ParticipantAuthForm({ shortCode }: { shortCode: string }) {
                         <Input
                           type="password"
                           autoComplete="current-password"
-                          placeholder="Required if you set one before"
+                          placeholder="Only if you set one"
                           className="pl-9"
                           {...field}
                         />

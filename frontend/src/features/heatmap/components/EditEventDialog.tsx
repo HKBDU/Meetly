@@ -27,7 +27,7 @@ export function EditEventDialog({ event, disabled = false, onSave }: EditEventDi
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="outline" disabled={disabled} className="border-primary/40 text-primary hover:bg-primary/10 hover:text-primary">
+        <Button variant="outline" disabled={disabled} >
           <Pencil aria-hidden="true" />
           Edit Event
         </Button>

@@ -1,4 +1,5 @@
 import type { FinalizeResult } from '@/shared/api/events'
+import type { RankedTime } from './suggestions'
 import type { TimeColumn, TimeRow } from '@/shared/grid/model'
 import type { EditableEvent, EventDetail, FinalSchedule, Participant } from '@/shared/types'
 
@@ -43,21 +44,19 @@ export interface HeatmapPageProps {
   onFinalize?: (slot: FinalSchedule) => Promise<FinalizeResult>
   onUpdateEvent?: (payload: EditableEvent) => Promise<void>
   onOpenMySchedule?: () => void
+  /** Mở màn mời (link, tin nhắn mời) */
+  onInvite?: () => void
+  /** Tên người đang xem, để nhắc điền lịch khi họ chưa có ô rảnh nào */
+  currentUsername?: string
 }
 
 export interface AvailabilityDetailsProps {
   details: CellDetails | null
   participants: Participant[]
-  keyParticipant: string | null
+  /** Người được đánh dấu sao (đang trong "Must include") */
+  highlighted: string[]
   onMouseEnter?: () => void
   onMouseLeave?: () => void
-}
-
-export interface KeyParticipantSelectorProps {
-  participants: Participant[]
-  selected: string | null
-  disabled: boolean
-  onChange: (name: string | null) => void
 }
 
 export interface ScheduleControlsProps {
@@ -87,28 +86,21 @@ export interface EditEventDialogProps {
 export interface EventHeaderProps {
   event: EventDetail
   canEdit: boolean
-  duration: number | undefined
   disabled: boolean
   canUpdate: boolean
   onOpenMySchedule?: () => void
-  onDurationChange: (duration: number | undefined) => void
+  onInvite?: () => void
   onUpdateEvent: (payload: EditableEvent) => Promise<void>
-}
-
-export interface AdminSuggestionControlsProps {
-  participants: Participant[]
-  keyParticipant: string | null
-  disabled: boolean
-  hasFilters: boolean
-  suggestionCount: number
-  onKeyParticipantChange: (name: string | null) => void
 }
 
 export interface HeatmapWorkspaceProps {
   event: EventDetail
   canEdit: boolean
-  suggestions: SuggestedSlot[]
-  keyParticipant: string | null
+  bestTimes: RankedTime[]
+  duration: number
+  mustInclude: string[]
+  onDurationChange: (minutes: number) => void
+  onMustIncludeChange: (names: string[]) => void
   pending: HeatmapPendingAction | null
   onFinalize?: (slot: FinalSchedule) => Promise<FinalizeResult>
   onPendingChange: (action: HeatmapPendingAction | null) => void
