@@ -139,19 +139,22 @@ test('historical event dates remain paginated and selectable in the Heatmap', as
     };
     const started = [];
     const extended = [];
-    const cellElement = HeatmapCell({
+    // HeatmapCell là memo(): gọi hàm render bên trong để lấy cây phần tử
+    const cellElement = HeatmapCell.type({
       point,
-      event,
-      cell: historicalCell,
+      names: historicalCell.participants,
       total: event.participants.length,
-      suggestions: [],
-      selected: null,
       selecting: true,
-      onInspect: () => undefined,
-      onInspectEnd: () => undefined,
-      onStart: (value) => started.push(value),
-      onExtend: (value) => extended.push(value),
-      onKeyboardSelect: () => undefined,
+      selection: null,
+      suggestion: null,
+      finalized: null,
+      handlers: {
+        inspect: () => undefined,
+        inspectEnd: () => undefined,
+        start: (value) => started.push(value),
+        extend: (value) => extended.push(value),
+        keyboardSelect: () => undefined,
+      },
     });
     const button = cellElement.props.children[0];
 
@@ -166,7 +169,7 @@ test('historical event dates remain paginated and selectable in the Heatmap', as
         releasePointerCapture: () => undefined,
       },
     });
-    button.props.onPointerEnter();
+    button.props.onPointerEnter({ pointerType: 'mouse' });
     assert.deepEqual(started, [point]);
     assert.deepEqual(extended, [point]);
   } finally {
@@ -215,19 +218,21 @@ test('inspected cell details can be shown by hover or tap and dismissed after le
     };
     const inspected = [];
     let leaveCount = 0;
-    const cellElement = HeatmapCell({
+    const cellElement = HeatmapCell.type({
       point,
-      event: mockDatesEvent,
-      cell: mockDatesEvent.heatmapGrid[0],
+      names: mockDatesEvent.heatmapGrid[0].participants,
       total: mockDatesEvent.participants.length,
-      suggestions: [],
-      selected: null,
       selecting: false,
-      onInspect: (details) => inspected.push(details),
-      onInspectEnd: () => { leaveCount += 1; },
-      onStart: () => undefined,
-      onExtend: () => undefined,
-      onKeyboardSelect: () => undefined,
+      selection: null,
+      suggestion: null,
+      finalized: null,
+      handlers: {
+        inspect: (cellPoint, names, count) => inspected.push({ cellPoint, names, count }),
+        inspectEnd: () => { leaveCount += 1; },
+        start: () => undefined,
+        extend: () => undefined,
+        keyboardSelect: () => undefined,
+      },
     });
     const button = cellElement.props.children[0];
 
@@ -312,15 +317,18 @@ test('finalized schedule keeps the blue range on the Heatmap', async () => {
         suggestions: [],
         selected: finalSchedule,
         selecting: false,
-        onInspect: () => undefined,
-        onInspectEnd: () => undefined,
-        onStart: () => undefined,
-        onExtend: () => undefined,
-        onKeyboardSelect: () => undefined,
+        handlers: {
+          inspect: () => undefined,
+          inspectEnd: () => undefined,
+          start: () => undefined,
+          extend: () => undefined,
+          keyboardSelect: () => undefined,
+        },
       }),
     );
 
-    assert.equal((html.match(/border-finalized\/60/g) ?? []).length, 8);
+    // Một bảng duy nhất (không còn bảng mobile + desktop): 4 ô 15 phút từ 10:00 tới 11:00
+    assert.equal((html.match(/border-finalized\/60/g) ?? []).length, 4);
     assert.equal((html.match(/border-suggestion/g) ?? []).length, 0);
   } finally {
     await server.close();

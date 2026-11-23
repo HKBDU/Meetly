@@ -45,18 +45,6 @@ export interface HeatmapPageProps {
   onOpenMySchedule?: () => void
 }
 
-export interface HeatmapProps {
-  event: EventDetail
-  suggestions: SuggestedSlot[]
-  selected: FinalSchedule | null
-  selecting: boolean
-  onInspect: (details: CellDetails) => void
-  onInspectEnd: () => void
-  onStart: (point: SelectedCell) => void
-  onExtend: (point: SelectedCell) => void
-  onKeyboardSelect: (point: SelectedCell, extendRange?: boolean) => void
-}
-
 export interface AvailabilityDetailsProps {
   details: CellDetails | null
   participants: Participant[]
