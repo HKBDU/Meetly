@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BellRing, CloudCheck, Loader2, SlidersHorizontal } from 'lucide-react'
+import { BellRing, CloudCheck, SlidersHorizontal } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Button, ToggleGroup, ToggleGroupItem } from '@/shared/components/ui'
@@ -7,6 +7,7 @@ import { ManualRangeDialog } from '@/features/participants/components/ManualRang
 import type { ScheduleGrid } from '@/features/participants/hooks/useScheduleGrid'
 import { useParticipantStore } from '@/features/participants/store'
 import type { PaintMode } from '@/features/participants/types'
+import { MeetlyLoader } from '@/shared/components/MeetlyLoader'
 import { useT } from '@/shared/i18n'
 
 interface ScheduleActionsBarProps {
@@ -86,7 +87,7 @@ export function ScheduleActionsBar({ grid, triggerAutoSave, isSaving, onManualRa
           <span role="status" className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
             {isSaving ? (
               <>
-                <Loader2 className="size-3.5 animate-spin" /> {t('common.saving')}
+                <MeetlyLoader size="xs" decorative /> {t('common.saving')}
               </>
             ) : (
               <>

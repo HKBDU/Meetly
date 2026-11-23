@@ -6,6 +6,7 @@ import { EmailPromptDialog } from '@/features/participants/components/EmailPromp
 import { ParticipantAuthForm } from '@/features/participants/components/ParticipantAuthForm'
 import { useParticipantStore } from '@/features/participants/store'
 import type { ParticipantAuthInfo } from '@/features/participants/types'
+import { PageLoader } from '@/shared/components/MeetlyLoader'
 import { useT } from '@/shared/i18n'
 import type { EventOutletContext } from './eventOutlet'
 
@@ -34,7 +35,7 @@ function SignedInEvent({ shortCode, auth }: { shortCode: string; auth: Participa
   const { data: event, isPending, error } = useEventQuery(shortCode)
   useEventRealtime(shortCode, auth.accessToken)
 
-  if (isPending) return <p role="status" className="p-8 text-center text-muted-foreground">{t('layout.loading')}</p>
+  if (isPending) return <PageLoader label={t('layout.loading')} />
   if (error || !event) {
     return (
       <p role="alert" className="p-8 text-center text-destructive">

@@ -13,6 +13,7 @@ export const vi: Record<RequiredKey, string> = {
   'common.close': 'Đóng',
   'common.copy': 'Sao chép',
   'common.copied': 'Đã chép',
+  'common.loading': 'Đang tải…',
   'common.copyLink': 'Chép link',
   'common.eventLinkCopied': 'Đã chép link sự kiện.',
   'common.none': 'Không có ai.',

@@ -9,6 +9,7 @@ export const en = {
   'common.close': 'Close',
   'common.copy': 'Copy',
   'common.copied': 'Copied',
+  'common.loading': 'Loading…',
   'common.copyLink': 'Copy link',
   'common.eventLinkCopied': 'Event link copied.',
   'common.none': 'None.',

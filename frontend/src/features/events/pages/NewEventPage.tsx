@@ -2,11 +2,12 @@ import { useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm, useWatch, type FieldErrors } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight } from 'lucide-react'
 
 import { createEvent } from '@/shared/api/events'
 import { t as translate, useT } from '@/shared/i18n'
 import { useParticipantStore } from '@/features/participants/store'
+import { MeetlyLoader } from '@/shared/components/MeetlyLoader'
 import { Button } from '@/shared/components/ui/button'
 import { FieldError, FieldLabel } from '@/shared/components/ui/field'
 import { Input } from '@/shared/components/ui/input'
@@ -91,7 +92,7 @@ export function NewEventPage() {
   const minutes = dailyMinutes(values.dailyStartTime, values.dailyEndTime)
   const submitContent = (
     <>
-      {isSubmitting && <Loader2 className="animate-spin" aria-hidden="true" />}
+      {isSubmitting && <MeetlyLoader size="xs" tone="current" decorative />}
       {isSubmitting ? t('create.creating') : t('create.submit')}
       {!isSubmitting && <ArrowRight aria-hidden="true" />}
     </>
