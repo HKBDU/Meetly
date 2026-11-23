@@ -75,7 +75,8 @@ public sealed class EventService(
     }
 
     public async Task<EventResponse> GetAsync(string shortCode, CancellationToken cancellationToken) =>
-        ToResponse(await GetEventAsync(shortCode, cancellationToken));
+        ToResponse(await repository.GetReadOnlyAsync(NormalizeCode(shortCode), cancellationToken)
+            ?? throw new EventException(404, "Event not found."));
 
     public async Task<ParticipantAccessResponse> AccessAsync(string shortCode, ParticipantAccessRequest request, CancellationToken cancellationToken)
     {
@@ -140,10 +141,17 @@ public sealed class EventService(
         RequireAdmin(entity, user);
         if (entity.Status != EventStatus.Open) throw new EventException(409, "Event is already finalized.");
         SetFinalTime(entity, request);
-        entity.Status = EventStatus.Finalized;
-        entity.Revision++;
-        entity.UpdatedAt = DateTimeOffset.UtcNow;
-        await repository.SaveChangesAsync(cancellationToken);
+
+        await using (var transaction = await repository.BeginTransactionAsync(cancellationToken))
+        {
+            // Chặn race với participant đang lưu lịch: sau dòng này mọi lần lưu mới đều thấy Status != Open
+            await BumpRevisionAsync(entity, cancellationToken);
+            entity.Status = EventStatus.Finalized;
+            await repository.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+
+        shortCode = entity.ShortCode;
         var response = new FinalizeEventResponse(
             (int)entity.Status,
             new FinalScheduleResponse(
@@ -157,7 +165,7 @@ public sealed class EventService(
         try
         {
             await emailService.SendAsync(
-                entity.Emails.Select(x => x.Email).ToArray(),
+                await repository.GetEmailsAsync(entity.Id, cancellationToken),
                 $"Lịch họp đã được chốt: {entity.Title}",
                 BuildFinalizedEmail(entity, response),
                 cancellationToken);
@@ -182,15 +190,35 @@ public sealed class EventService(
         entity.DailyStartTime = request.DailyStartTime;
         entity.DailyEndTime = request.DailyEndTime;
         ValidateHours(entity);
-        repository.ReplaceAvailableDates(entity, ParseUpdateDates(request));
-        entity.Revision++;
-        entity.UpdatedAt = DateTimeOffset.UtcNow;
+        var dates = ParseUpdateDates(request);
+
+        await using var transaction = await repository.BeginTransactionAsync(cancellationToken);
+        await BumpRevisionAsync(entity, cancellationToken);
+        repository.ReplaceAvailableDates(entity, dates);
         await repository.SaveChangesAsync(cancellationToken);
-        await notifier.NotifyEventUpdatedAsync(shortCode, entity.Revision, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        await notifier.NotifyEventUpdatedAsync(entity.ShortCode, entity.Revision, cancellationToken);
     }
 
     private async Task<Events> GetEventAsync(string shortCode, CancellationToken cancellationToken) =>
-        await repository.GetAsync(shortCode, cancellationToken) ?? throw new EventException(404, "Event not found.");
+        await repository.GetAsync(NormalizeCode(shortCode), cancellationToken) ?? throw new EventException(404, "Event not found.");
+
+    /// <summary>ShortCode luôn lưu chữ hoa; chấp nhận người dùng gõ chữ thường.</summary>
+    private static string NormalizeCode(string shortCode) => shortCode.Trim().ToUpperInvariant();
+
+    /// <summary>
+    /// Phải gọi trong transaction và trước SaveChanges: câu UPDATE khoá dòng event nên
+    /// các lần ghi đồng thời xếp hàng, mỗi lần có revision riêng. Event đã chốt thì trả 409.
+    /// </summary>
+    private async Task BumpRevisionAsync(Events entity, CancellationToken cancellationToken)
+    {
+        var revision = await repository.TryBumpRevisionAsync(entity.Id, requireOpen: true, cancellationToken)
+            ?? throw new EventException(409, "Event is no longer open.");
+        // Gán lại cho entity đang tracking để SaveChanges ghi đúng giá trị vừa tăng, không ghi đè bằng số cũ
+        entity.Revision = revision;
+        entity.UpdatedAt = DateTimeOffset.UtcNow;
+    }
 
     private async Task<string> NewCode(CancellationToken cancellationToken)
     {
@@ -248,7 +276,7 @@ public sealed class EventService(
         Status = (int)entity.Status,
         Revision = entity.Revision,
         Participants = entity.Participants.Select(x => new EventParticipantResponse(x.Username)).ToList(),
-        HeatmapGrid = Heatmap(entity),
+        HeatmapGrid = HeatmapBuilder.Build(entity),
         FinalSchedule = entity.Status != EventStatus.Finalized ? null : new FinalScheduleResponse(
             entity.EventType == EventType.Dates ? entity.FinalDate?.ToString("yyyy-MM-dd") : null,
             entity.EventType == EventType.Weekdays ? (int?)entity.FinalDayOfWeek : null,
@@ -270,18 +298,6 @@ public sealed class EventService(
                $"<p><a href=\"{url}\">Mở sự kiện Meetly</a></p>";
     }
 
-    private static List<HeatmapCellResponse> Heatmap(Events entity)
-    {
-        var result = new List<HeatmapCellResponse>();
-        foreach (var available in entity.AvailableDates)
-            for (var start = entity.DailyStartTime; start < entity.DailyEndTime; start = start.AddMinutes(15))
-            {
-                var end = start.AddMinutes(15) > entity.DailyEndTime ? entity.DailyEndTime : start.AddMinutes(15);
-                var participants = entity.Participants.Where(p => p.TimeSlots.Any(s => s.SpecificDate == available.SpecificDate && s.DayOfWeek == available.DayOfWeek && s.StartTime <= start && s.EndTime >= end)).Select(p => p.Username).Order().ToList();
-                result.Add(new HeatmapCellResponse(available.SpecificDate, available.DayOfWeek is null ? null : (System.DayOfWeek)(int)available.DayOfWeek.Value, Format(start), participants, participants.Count));
-            }
-        return result;
-    }
 
     private static ParticipantTimeSlotResponse ToParticipantSlot(TimeSlots slot) => new(slot.SpecificDate, slot.DayOfWeek is null ? null : (System.DayOfWeek)(int)slot.DayOfWeek.Value, Format(slot.StartTime), Format(slot.EndTime));
     private static void RequireAdmin(Events entity, ClaimsPrincipal user)

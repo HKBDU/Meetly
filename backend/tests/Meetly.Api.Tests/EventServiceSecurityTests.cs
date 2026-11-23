@@ -95,11 +95,11 @@ public class EventServiceSecurityTests
     }
 
     [Fact]
-    public async Task Access_CreatesPasswordlessParticipant()
+    public async Task Access_AcceptsLowercaseShortCode_AndCreatesPasswordlessParticipant()
     {
         var (repo, _, _) = SeedEvent(adminPasswordHash: "hash");
 
-        var response = await TestServices.EventService(repo).AccessAsync("ABC234", new ParticipantAccessRequest("Guest", null), CancellationToken.None);
+        var response = await TestServices.EventService(repo).AccessAsync("abc234", new ParticipantAccessRequest("Guest", null), CancellationToken.None);
 
         Assert.True(response.IsNewParticipant);
         Assert.False(response.IsAdmin);
@@ -114,5 +114,32 @@ public class EventServiceSecurityTests
             TestServices.EventService(repo).AccessAsync("ABC234", new ParticipantAccessRequest(new string('a', 51), null), CancellationToken.None));
 
         Assert.Equal(422, error.StatusCode);
+    }
+
+    [Fact]
+    public async Task Finalize_Returns409_WhenEventWasClosedConcurrently()
+    {
+        var (repo, entity, admin) = SeedEvent(adminPasswordHash: "hash");
+        repo.BumpReturnsNull = true;
+        var request = new FinalizeEventRequest { DayOfWeek = 1, StartTime = new TimeOnly(9, 0), EndTime = new TimeOnly(10, 0) };
+
+        var error = await Assert.ThrowsAsync<EventException>(() =>
+            TestServices.EventService(repo).FinalizeAsync("ABC234", TestServices.User(admin.Id, "ABC234"), request, CancellationToken.None));
+
+        Assert.Equal(409, error.StatusCode);
+        Assert.Equal(EventStatus.Open, entity.Status);
+    }
+
+    [Fact]
+    public async Task Finalize_UsesRevisionFromAtomicBump()
+    {
+        var (repo, entity, admin) = SeedEvent(adminPasswordHash: "hash");
+        entity.Revision = 41;
+        var request = new FinalizeEventRequest { DayOfWeek = 1, StartTime = new TimeOnly(9, 0), EndTime = new TimeOnly(10, 0) };
+
+        var response = await TestServices.EventService(repo).FinalizeAsync("ABC234", TestServices.User(admin.Id, "ABC234"), request, CancellationToken.None);
+
+        Assert.Equal(42, response.Revision);
+        Assert.Equal(EventStatus.Finalized, entity.Status);
     }
 }

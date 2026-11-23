@@ -16,6 +16,8 @@ public sealed class SuggestionRepository : ISuggestionRepository
         string shortCode,
         CancellationToken cancellationToken) =>
         _dbContext.Events
+            .AsNoTracking()
+            .AsSplitQuery()
             .Include(x => x.AvailableDates)
             .Include(x => x.Participants)
                 .ThenInclude(x => x.TimeSlots)

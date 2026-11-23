@@ -31,6 +31,7 @@ public sealed class AvailabilityService : IAvailabilityService
         if (!Guid.TryParse(participantClaim, out var participantId))
             throw new AvailabilityException(401, "Access token không chứa participantId hợp lệ.");
 
+        shortCode = shortCode.Trim().ToUpperInvariant();
         var eventEntity = await _repository.GetEventAsync(shortCode, cancellationToken)
             ?? throw new AvailabilityException(404, "Không tìm thấy sự kiện.");
 
@@ -67,7 +68,8 @@ public sealed class AvailabilityService : IAvailabilityService
         }).ToArray();
 
         var revision = await _repository.ReplaceAsync(
-            eventEntity, participant, slots, request.Email, cancellationToken);
+                eventEntity, participant, slots, request.Email, cancellationToken)
+            ?? throw new AvailabilityException(409, "Sự kiện không còn mở để cập nhật lịch.");
         await _notifier.NotifyHeatmapUpdatedAsync(shortCode, revision, cancellationToken);
         return revision;
     }

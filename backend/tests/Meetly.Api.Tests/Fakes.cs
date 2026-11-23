@@ -6,6 +6,7 @@ using Meetly.Service.Email;
 using Meetly.Service.EventScheduling;
 using Meetly.Service.JwtService;
 using Meetly.Service.Realtime;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -18,14 +19,20 @@ internal sealed class FakeEventRepository : IEventRepository
     public List<Events> Events { get; } = [];
     public List<EventParticipants> AddedParticipants { get; } = [];
 
+    /// <summary>Giả lập câu UPDATE ... WHERE Status = 1 trả về 0 dòng (event vừa bị chốt ở request khác).</summary>
+    public bool BumpReturnsNull { get; set; }
+
     public Task<Events?> GetAsync(string shortCode, CancellationToken cancellationToken) =>
         Task.FromResult(Events.SingleOrDefault(x => x.ShortCode == shortCode));
 
+    public Task<Events?> GetReadOnlyAsync(string shortCode, CancellationToken cancellationToken) =>
+        GetAsync(shortCode, cancellationToken);
+
+    public Task<List<string>> GetEmailsAsync(Guid eventId, CancellationToken cancellationToken) =>
+        Task.FromResult(new List<string>());
+
     public Task<bool> ShortCodeExistsAsync(string shortCode, CancellationToken cancellationToken) =>
         Task.FromResult(Events.Any(x => x.ShortCode == shortCode));
-
-    public Task<bool> EmailExistsAsync(Guid eventId, string email, CancellationToken cancellationToken) =>
-        Task.FromResult(false);
 
     public void Add(Events eventEntity) => Events.Add(eventEntity);
 
@@ -35,14 +42,33 @@ internal sealed class FakeEventRepository : IEventRepository
         Events.SingleOrDefault(x => x.Id == participant.EventId)?.Participants.Add(participant);
     }
 
-    public void Add(EventEmails email) { }
-
-    public void ReplaceSlots(EventParticipants participant, IEnumerable<TimeSlots> slots) { }
-
     public void ReplaceAvailableDates(Events eventEntity, ICollection<EventAvailableDates> dates) =>
         eventEntity.AvailableDates = dates;
 
+    public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken) =>
+        Task.FromResult<IDbContextTransaction>(new FakeTransaction());
+
+    public Task<long?> TryBumpRevisionAsync(Guid eventId, bool requireOpen, CancellationToken cancellationToken)
+    {
+        var entity = Events.Single(x => x.Id == eventId);
+        if (BumpReturnsNull || (requireOpen && entity.Status != Repository.Enum.EventStatus.Open))
+            return Task.FromResult<long?>(null);
+        return Task.FromResult<long?>(entity.Revision + 1);
+    }
+
     public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+}
+
+internal sealed class FakeTransaction : IDbContextTransaction
+{
+    public Guid TransactionId { get; } = Guid.NewGuid();
+    public bool Committed { get; private set; }
+    public void Commit() => Committed = true;
+    public Task CommitAsync(CancellationToken cancellationToken = default) { Committed = true; return Task.CompletedTask; }
+    public void Rollback() { }
+    public Task RollbackAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public void Dispose() { }
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 
 internal sealed class NoopNotifier : IEventRealtimeNotifier

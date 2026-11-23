@@ -26,7 +26,7 @@ public sealed class SuggestionService : ISuggestionService
         if (!IsAdmin(user) || !string.Equals(user.FindFirst("shortCode")?.Value, shortCode, StringComparison.OrdinalIgnoreCase))
             throw new SuggestionException(403, "Chỉ Admin của sự kiện này mới được gợi ý khung giờ.");
 
-        var eventEntity = await _repository.GetEventAsync(shortCode, cancellationToken)
+        var eventEntity = await _repository.GetEventAsync(shortCode.Trim().ToUpperInvariant(), cancellationToken)
             ?? throw new SuggestionException(404, "Không tìm thấy sự kiện.");
 
         if (eventEntity.Status != EventStatus.Open)

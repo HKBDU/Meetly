@@ -1,5 +1,4 @@
 using Meetly.API.Hubs;
-using Meetly.Repository.Entity;
 using Meetly.Repository.EventScheduling;
 using Meetly.Service.EventScheduling;
 using Meetly.Service.Realtime;
@@ -13,7 +12,7 @@ public sealed class EventRealtimeNotifier(
 {
     public async Task NotifyHeatmapUpdatedAsync(string shortCode, long revision, CancellationToken cancellationToken)
     {
-        var entity = await repository.GetAsync(shortCode, cancellationToken);
+        var entity = await repository.GetReadOnlyAsync(shortCode.ToUpperInvariant(), cancellationToken);
         if (entity is null) return;
 
         await hub.Clients.Group(EventHub.GroupName(shortCode)).SendAsync(
@@ -22,14 +21,14 @@ public sealed class EventRealtimeNotifier(
             {
                 shortCode = entity.ShortCode,
                 revision,
-                heatmapGrid = BuildHeatmap(entity)
+                heatmapGrid = HeatmapBuilder.Build(entity)
             },
             cancellationToken);
     }
 
     public async Task NotifyEventUpdatedAsync(string shortCode, long revision, CancellationToken cancellationToken)
     {
-        var entity = await repository.GetAsync(shortCode, cancellationToken);
+        var entity = await repository.GetReadOnlyAsync(shortCode.ToUpperInvariant(), cancellationToken);
         if (entity is null) return;
 
         await hub.Clients.Group(EventHub.GroupName(shortCode)).SendAsync(
@@ -43,6 +42,8 @@ public sealed class EventRealtimeNotifier(
                 availableWeekdays = entity.AvailableDates.Where(x => x.DayOfWeek.HasValue).Select(x => (int)x.DayOfWeek!.Value).ToList(),
                 dailyStartTime = entity.DailyStartTime.ToString("HH:mm"),
                 dailyEndTime = entity.DailyEndTime.ToString("HH:mm"),
+                // Ngày/giờ đổi thì lưới cũng đổi (slot của ngày bị bỏ đã bị xoá), gửi kèm để client không phải tải lại
+                heatmapGrid = HeatmapBuilder.Build(entity),
                 revision
             },
             cancellationToken);
@@ -53,35 +54,4 @@ public sealed class EventRealtimeNotifier(
             "EventFinalized",
             new { shortCode, status = response.Status, finalSchedule = response.FinalSchedule, revision = response.Revision },
             cancellationToken);
-
-    private static List<object> BuildHeatmap(Events entity)
-    {
-        var cells = new List<object>();
-        foreach (var available in entity.AvailableDates)
-        {
-            for (var start = entity.DailyStartTime; start < entity.DailyEndTime; start = start.AddMinutes(15))
-            {
-                var end = start.AddMinutes(15) > entity.DailyEndTime ? entity.DailyEndTime : start.AddMinutes(15);
-                var participants = entity.Participants
-                    .Where(p => p.TimeSlots.Any(slot =>
-                        slot.SpecificDate == available.SpecificDate &&
-                        slot.DayOfWeek == available.DayOfWeek &&
-                        slot.StartTime <= start && slot.EndTime >= end))
-                    .Select(p => p.Username)
-                    .Order()
-                    .ToList();
-
-                cells.Add(new
-                {
-                    specificDate = available.SpecificDate,
-                    dayOfWeek = available.DayOfWeek is null ? null : (int?)available.DayOfWeek.Value,
-                    startTime = start.ToString("HH:mm"),
-                    participants,
-                    count = participants.Count
-                });
-            }
-        }
-
-        return cells;
-    }
 }
