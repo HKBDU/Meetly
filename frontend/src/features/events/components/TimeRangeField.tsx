@@ -3,12 +3,15 @@ import { SLOT_MINUTES } from '@/shared/constants'
 import { FieldError, FieldLabel } from '@/shared/components/ui/field'
 import { Slider } from '@/shared/components/ui/slider'
 
-/** Mốc 00:00 ... 23:45: BE dùng TimeOnly nên không có "24:00" */
+/** Mốc 00:15 ... 23:45: không cho chọn mốc biên của ngày (BE dùng TimeOnly nên không có "24:00") */
+const FIRST_STEP = 1
 const LAST_STEP = (24 * 60) / SLOT_MINUTES - 1
 
 const toStep = (time: string, fallback: number) => {
   const minutes = timeToMinutes(time)
-  return Number.isFinite(minutes) ? Math.min(LAST_STEP, Math.round(minutes / SLOT_MINUTES)) : fallback
+  return Number.isFinite(minutes)
+    ? Math.min(LAST_STEP, Math.max(FIRST_STEP, Math.round(minutes / SLOT_MINUTES)))
+    : fallback
 }
 
 interface TimeRangeFieldProps {
@@ -37,7 +40,7 @@ export function TimeRangeField({ start, end, onChange, error }: TimeRangeFieldPr
         </div>
         <Slider
           aria-label="Daily time range"
-          min={0}
+          min={FIRST_STEP}
           max={LAST_STEP}
           step={1}
           minStepsBetweenThumbs={1}

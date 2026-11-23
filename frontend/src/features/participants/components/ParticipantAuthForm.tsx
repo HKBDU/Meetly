@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import meetlyLogo from '@/assets/meetly-logo.png'
 import { accessParticipant } from '@/shared/api/events'
 import { loginSchema, type LoginFormValues } from '@/features/participants/schema'
 import { useParticipantStore } from '@/features/participants/store'
@@ -54,7 +53,7 @@ export function ParticipantAuthForm({ shortCode }: { shortCode: string }) {
       <Card className="w-full max-w-sm shadow-lg">
         <CardHeader className="items-center text-center">
           <div className="mb-2 flex items-center justify-center gap-2">
-            <img src={meetlyLogo} alt="" aria-hidden="true" className="h-8 w-10 object-contain" />
+            <img src="/meetly-logo.png" alt="" aria-hidden="true" className="h-8 w-10 object-contain" />
             <span className="text-xl font-bold tracking-tight">meetly</span>
           </div>
           <CardTitle className="text-xl">Join the Event</CardTitle>
