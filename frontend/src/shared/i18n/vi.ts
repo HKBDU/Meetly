@@ -156,7 +156,7 @@ export const vi: Record<RequiredKey, string> = {
   'api.sessionExpired': 'Phiên đã hết hạn, vui lòng tham gia lại',
   'api.forbidden': 'Bạn không có quyền thực hiện thao tác này',
   'api.notFound': 'Không tìm thấy sự kiện',
-  'api.conflict': 'Thao tác này xung đột với trạng thái hiện tại của sự kiện',
+  'api.conflict': 'Sự kiện vừa có thay đổi. Vui lòng tải lại trang rồi thử lại.',
   'api.tooMany': 'Quá nhiều yêu cầu, vui lòng thử lại sau giây lát',
   'api.server': 'Lỗi máy chủ, vui lòng thử lại sau',
   'api.loadEvent': 'Không tải được sự kiện.',

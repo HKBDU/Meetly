@@ -156,7 +156,7 @@ export const en = {
   'api.sessionExpired': 'Your session has expired, please join again',
   'api.forbidden': "You don't have permission to do this",
   'api.notFound': 'Event not found',
-  'api.conflict': 'This action conflicts with the current state of the event',
+  'api.conflict': 'The event was just updated. Please reload the page and try again.',
   'api.tooMany': 'Too many requests, please slow down',
   'api.server': 'Server error, please try again later',
   'api.loadEvent': 'Unable to load the event.',
