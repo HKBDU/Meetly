@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { trackEvent } from '@/lib/analytics'
 import { accessParticipant } from '@/shared/api/events'
 import { t as translate, useT } from '@/shared/i18n'
 import { loginSchema, type LoginFormValues } from '@/features/participants/schema'
@@ -45,6 +46,7 @@ export function ParticipantAuthForm({ shortCode }: { shortCode: string }) {
         isAdmin: result.isAdmin,
         accessToken: result.accessToken,
       })
+      trackEvent('join_event', { new_participant: result.isNewParticipant, is_admin: result.isAdmin })
       toast.success(translate('auth.welcome', { name: result.username }))
     },
     onError: (error) => toast.error(error.message),

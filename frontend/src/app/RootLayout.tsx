@@ -1,4 +1,4 @@
-import { Outlet, useNavigation } from 'react-router-dom'
+import { Outlet, ScrollRestoration, useNavigation } from 'react-router-dom'
 
 import { AppFooter, AppHeader } from '@/shared/layouts'
 
@@ -19,6 +19,8 @@ export function RootLayout() {
         <Outlet />
       </main>
       <AppFooter />
+      {/* Sang trang mới thì về đầu trang (VD bấm link Điều khoản ở footer) */}
+      <ScrollRestoration />
     </div>
   )
 }

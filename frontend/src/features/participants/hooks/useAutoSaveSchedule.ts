@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
+import { trackEvent } from '@/lib/analytics'
 import { saveAvailability } from '@/shared/api/events'
 import { t } from '@/shared/i18n'
 import { useDebouncedCallback } from '@/shared/hooks'
@@ -37,6 +38,8 @@ export function useAutoSaveSchedule(shortCode: string, grid: ScheduleGrid | null
       toast.success(t('schedule.saved'), { id: 'auto-save-schedule', duration: 1500 })
       if (!hasSavedOnce) {
         markSavedOnce()
+        // Chỉ đếm lần lưu đầu của phiên, không đếm mỗi lần tự lưu
+        trackEvent('save_availability')
         if (!hasEmailSubscribed) openEmailDialog()
       }
     },

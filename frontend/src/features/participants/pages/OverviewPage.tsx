@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { HeatmapPage } from '@/features/heatmap'
+import { trackEvent } from '@/lib/analytics'
 import { finalizeEvent, updateEvent } from '@/shared/api/events'
 import { patchEventCache } from '@/shared/hooks'
 import { useEventOutlet } from './eventOutlet'
@@ -25,6 +26,7 @@ export function OverviewPage() {
       }}
       onFinalize={async (slot) => {
         const result = await finalizeEvent(shortCode, slot)
+        trackEvent('finalize_event', { participants: event.participants.length })
         patchEventCache(queryClient, shortCode, (current) =>
           result.revision >= current.revision ? { ...current, ...result } : current,
         )
