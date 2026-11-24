@@ -4,6 +4,7 @@ import { useForm, useWatch, type FieldErrors } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 
+import { trackEvent } from '@/lib/analytics'
 import { createEvent } from '@/shared/api/events'
 import { t as translate, useT } from '@/shared/i18n'
 import { useParticipantStore } from '@/features/participants/store'
@@ -43,6 +44,25 @@ function Row({ id, title, description, children }: { id: string; title: string; 
   )
 }
 
+/** "Khi tạo sự kiện, bạn đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư" */
+function LegalNote({ className }: { className?: string }) {
+  const t = useT()
+  const link = 'underline underline-offset-2 hover:text-foreground'
+  return (
+    <p className={`text-xs leading-5 text-muted-foreground ${className ?? ''}`}>
+      {t('legal.agreeBefore')}{' '}
+      <Link to="/terms" target="_blank" className={link}>
+        {t('legal.termsLink')}
+      </Link>{' '}
+      {t('legal.and')}{' '}
+      <Link to="/privacy" target="_blank" className={link}>
+        {t('legal.privacyLink')}
+      </Link>
+      .
+    </p>
+  )
+}
+
 /** Một trang: tên → ngày → giờ → host; tạo xong sang màn chia sẻ link */
 export function NewEventPage() {
   const t = useT()
@@ -76,6 +96,7 @@ export function NewEventPage() {
         isAdmin: created.isAdmin,
         accessToken: created.accessToken,
       })
+      trackEvent('create_event', { event_type: form.eventType === 1 ? 'dates' : 'weekdays' })
       navigate(`/e/${created.shortCode}/share`, { replace: true })
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : translate('api.createEvent'))
@@ -169,6 +190,8 @@ export function NewEventPage() {
             </Row>
           </div>
 
+          <LegalNote className="mt-4 lg:hidden" />
+
           {error && (
             <p role="alert" className="mt-4 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
               {error}
@@ -197,6 +220,7 @@ export function NewEventPage() {
             {submitContent}
           </Button>
           <p className="mt-3 text-center text-xs text-muted-foreground">{t('create.nextHint')}</p>
+          <LegalNote className="mt-3 border-t pt-3 text-center" />
         </aside>
 
         {/* Mobile: thanh dính đáy màn hình trong lúc điền form, hết form thì dừng (không che footer) */}

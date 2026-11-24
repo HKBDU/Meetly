@@ -66,6 +66,19 @@ export const vi: Record<RequiredKey, string> = {
   'error.reload': 'Tải lại',
   'error.goHome': 'Về trang chủ',
 
+  'legal.updated': 'Cập nhật lần cuối: {date}',
+  'legal.contents': 'Mục lục',
+  'legal.contact': 'Liên hệ',
+  'legal.contactText': 'Có câu hỏi về trang này, hoặc muốn xem hay xoá dữ liệu của bạn? Hãy gửi email cho chúng tôi, kèm mã sự kiện.',
+  'legal.seeTerms': 'Xem thêm',
+  'legal.seePrivacy': 'Xem thêm',
+  'legal.privacy': 'Quyền riêng tư',
+  'legal.terms': 'Điều khoản',
+  'legal.privacyLink': 'Chính sách quyền riêng tư',
+  'legal.termsLink': 'Điều khoản sử dụng',
+  'legal.agreeBefore': 'Khi tạo sự kiện, bạn đồng ý với',
+  'legal.and': 'và',
+
   // Trang chủ
   'home.badge': 'Hẹn lịch nhóm thật đơn giản',
   'home.titleBefore': 'Tìm thời gian phù hợp với',

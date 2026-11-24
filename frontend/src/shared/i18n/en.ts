@@ -64,6 +64,19 @@ export const en = {
   'error.reload': 'Reload',
   'error.goHome': 'Go home',
 
+  'legal.updated': 'Last updated: {date}',
+  'legal.contents': 'Contents',
+  'legal.contact': 'Contact',
+  'legal.contactText': 'Questions about this page, or want to access or delete your data? Email us and include your event code.',
+  'legal.seeTerms': 'See also our',
+  'legal.seePrivacy': 'See also our',
+  'legal.privacy': 'Privacy',
+  'legal.terms': 'Terms',
+  'legal.privacyLink': 'Privacy Policy',
+  'legal.termsLink': 'Terms of Service',
+  'legal.agreeBefore': 'By creating an event, you agree to the',
+  'legal.and': 'and',
+
   // Trang chủ
   'home.badge': 'Group scheduling, simplified',
   'home.titleBefore': 'Find a time that works for',

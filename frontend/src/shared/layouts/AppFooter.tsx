@@ -1,4 +1,5 @@
 import { Heart } from "lucide-react"
+import { Link } from "react-router-dom"
 
 import {
   DiscordIcon,
@@ -40,6 +41,14 @@ export function AppFooter() {
             @hkbdu
           </a>
         </p>
+        <nav aria-label={t("legal.contents")} className="mt-2 flex gap-4 text-xs">
+          <Link to="/privacy" className="hover:text-foreground hover:underline hover:underline-offset-2">
+            {t("legal.privacy")}
+          </Link>
+          <Link to="/terms" className="hover:text-foreground hover:underline hover:underline-offset-2">
+            {t("legal.terms")}
+          </Link>
+        </nav>
       </div>
 
       <div className="flex items-center gap-4">
