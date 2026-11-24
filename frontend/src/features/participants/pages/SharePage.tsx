@@ -9,6 +9,7 @@ import { CopyButton } from '@/shared/components/CopyButton'
 import { Button } from '@/shared/components/ui/button'
 import { canNativeShare, eventShareUrl, inviteMessage, nativeShare } from '@/shared/lib/share'
 import type { EventDetail } from '@/shared/types'
+import { trackEvent } from '@/lib/analytics'
 import { useEventOutlet } from './eventOutlet'
 
 function describeEventDays(event: EventDetail): string {
@@ -50,7 +51,7 @@ export function SharePage() {
             onFocus={(focusEvent) => focusEvent.currentTarget.select()}
             className="min-w-0 flex-1 truncate bg-transparent text-sm outline-none"
           />
-          <CopyButton value={url} successMessage={t('share.linkCopied')} label={t('common.copyLink')} />
+          <CopyButton value={url} successMessage={t('share.linkCopied')} label={t('common.copyLink')} onCopied={() => trackEvent('share_invite', { method: 'link' })} />
         </div>
 
         <figure className="px-4 pt-4 pb-3">
@@ -60,12 +61,15 @@ export function SharePage() {
 
         <div className="flex flex-wrap gap-2 px-2 pb-2">
           {canNativeShare() && (
-            <Button type="button" variant="outline" size="sm" onClick={() => void nativeShare({ title: event.title, text: message, url })}>
+            <Button type="button" variant="outline" size="sm" onClick={() => {
+                trackEvent('share_invite', { method: 'native' })
+                void nativeShare({ title: event.title, text: message, url })
+              }}>
               <Share2 aria-hidden="true" />
               {t('share.share')}
             </Button>
           )}
-          <CopyButton value={message} successMessage={t('share.inviteCopied')} variant="outline" size="sm" label={t('share.copyMessage')} />
+          <CopyButton value={message} successMessage={t('share.inviteCopied')} variant="outline" size="sm" label={t('share.copyMessage')} onCopied={() => trackEvent('share_invite', { method: 'message' })} />
           <CopyButton value={shortCode} successMessage={t('share.codeCopied')} variant="ghost" size="sm" label={t('share.code', { code: shortCode })} />
         </div>
       </section>

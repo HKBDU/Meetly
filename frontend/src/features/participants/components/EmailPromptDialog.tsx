@@ -4,6 +4,7 @@ import { Mail } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
+import { trackEvent } from '@/lib/analytics'
 import { getMyParticipant, saveAvailability } from '@/shared/api/events'
 import { t as translate, useT } from '@/shared/i18n'
 import { eventQueryKey } from '@/shared/hooks'
@@ -55,6 +56,7 @@ export function EmailPromptDialog({ shortCode }: { shortCode: string }) {
     onSuccess: () => {
       toast.success(translate('email.subscribed'))
       markEmailSubscribed()
+      trackEvent('subscribe_email')
       form.reset()
     },
     onError: (error) => toast.error(error.message),

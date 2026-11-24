@@ -9,10 +9,12 @@ interface CopyButtonProps extends Omit<ComponentProps<typeof Button>, 'onClick'>
   value: string
   successMessage: string
   label?: string
+  /** Gọi sau khi copy thành công */
+  onCopied?: () => void
 }
 
 /** Nút copy đổi thành "Copied" vài giây để người dùng biết đã copy xong */
-export function CopyButton({ value, successMessage, label, children, ...props }: CopyButtonProps) {
+export function CopyButton({ value, successMessage, label, onCopied, children, ...props }: CopyButtonProps) {
   const t = useT()
   const [copied, setCopied] = useState(false)
   const timer = useRef<number | null>(null)
@@ -28,6 +30,7 @@ export function CopyButton({ value, successMessage, label, children, ...props }:
       onClick={async () => {
         if (!(await copyToClipboard(value, successMessage))) return
         setCopied(true)
+        onCopied?.()
         if (timer.current !== null) window.clearTimeout(timer.current)
         timer.current = window.setTimeout(() => setCopied(false), 2000)
       }}
