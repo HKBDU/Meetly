@@ -1,6 +1,9 @@
 import { t, type MessageKey } from '@/shared/i18n'
 import type { DayOfWeek } from '@/shared/types'
 
+/** Email liên hệ hiển thị ở footer và trang pháp lý */
+export const CONTACT_EMAIL = 'meetlysooner.admin@gmail.com'
+
 /** Độ dài một ô lưới; khớp `InputLimits.SlotMinutes` bên BE */
 export const SLOT_MINUTES = 15
 
