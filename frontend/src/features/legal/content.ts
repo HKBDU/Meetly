@@ -82,6 +82,20 @@ const privacyVi: LegalDocument = {
       ],
     },
     {
+      heading: 'Meetly Extension (tiện ích trình duyệt)',
+      body: [
+        'Nếu bạn dùng tiện ích Meetly cho trình duyệt, tiện ích lưu một số dữ liệu ngay trên máy bạn (trong bộ nhớ riêng của tiện ích), không đồng bộ lên máy chủ của chúng tôi:',
+        [
+          'Tên người tổ chức bạn hay dùng, để điền sẵn lần sau.',
+          'Danh sách sự kiện bạn đã tạo bằng tiện ích: tên và mã sự kiện, thời điểm tạo.',
+          'Mã đăng nhập và mật khẩu người tổ chức do tiện ích tự tạo ngẫu nhiên cho từng sự kiện, để bạn mở lại sự kiện với vai trò người tổ chức.',
+        ],
+        'Thông tin sự kiện bạn tạo (tên, ngày giờ, tên hiển thị) được gửi tới máy chủ Meetly giống hệt khi dùng trang web. Khi bạn bấm mở một sự kiện, tiện ích chuyển phiên đăng nhập sang trang web qua phần sau dấu # của đường dẫn; phần này không được gửi lên máy chủ.',
+        'Tiện ích chỉ kết nối tới máy chủ Meetly. Tiện ích không đọc nội dung các trang web bạn mở, không theo dõi lịch sử duyệt web và không dùng Google Analytics.',
+        'Bạn có thể xoá từng sự kiện khỏi danh sách trong tiện ích. Gỡ tiện ích sẽ xoá toàn bộ dữ liệu tiện ích đã lưu trên máy; sự kiện trên Meetly vẫn còn cho đến khi có yêu cầu xoá.',
+      ],
+    },
+    {
       heading: 'Thời gian lưu trữ',
       body: [
         'Dữ liệu sự kiện (gồm tên hiển thị, lịch rảnh và email đã đăng ký) được lưu cho đến khi có yêu cầu xoá. Dữ liệu thống kê được Google Analytics lưu theo thời hạn cài đặt trong dịch vụ đó.',
@@ -169,6 +183,20 @@ const privacyEn: LegalDocument = {
       body: [
         'Meetly keeps a few things in your browser (localStorage): your event session so you do not have to re-enter your name, your light/dark mode and your language.',
         'Google Analytics uses cookies to tell visits apart. You can block cookies or use a tracker blocker; Meetly keeps working normally.',
+      ],
+    },
+    {
+      heading: 'Meetly Extension (browser extension)',
+      body: [
+        "If you use the Meetly browser extension, it stores some data on your device (in the extension's own storage). This data is not synced to our servers:",
+        [
+          'The host name you usually use, so it can be filled in next time.',
+          'The list of events you created with the extension: event name and code, and when it was created.',
+          'The access token and the host password that the extension randomly generates for each event, so you can reopen the event as the host.',
+        ],
+        'The event details you create (name, dates and times, display name) are sent to the Meetly server exactly as when you use the website. When you open an event, the extension passes your session to the website in the part of the link after the # sign, which is never sent to any server.',
+        'The extension only connects to the Meetly server. It does not read the content of the pages you visit, does not track your browsing history and does not use Google Analytics.',
+        'You can remove any event from the list in the extension. Uninstalling the extension deletes everything it stored on your device; the events on Meetly remain until a deletion is requested.',
       ],
     },
     {
