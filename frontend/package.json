@@ -8,6 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "dev:extension": "vite --config vite.extension.config.ts --mode extension",
+    "build:extension": "vite build --config vite.extension.config.ts --mode extension",
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {

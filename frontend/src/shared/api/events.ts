@@ -64,6 +64,7 @@ export interface ParticipantAccess {
   isAdmin: boolean
   isNewParticipant: boolean
   accessToken: string
+  expiresAt: string
   eventStatus: number
   revision: number
   timeSlots: TimeSlotRange[]
