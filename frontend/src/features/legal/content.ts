@@ -1,4 +1,7 @@
+import { CONTACT_EMAIL } from '@/shared/constants'
 import type { Locale } from '@/shared/i18n'
+
+export { CONTACT_EMAIL }
 
 /**
  * Nội dung trang Chính sách quyền riêng tư và Điều khoản sử dụng. Viết theo đúng cách app
@@ -16,7 +19,6 @@ export interface LegalDocument {
   sections: LegalSection[]
 }
 
-export const CONTACT_EMAIL = 'meetlysooner.admin@gmail.com'
 /** Ngày cập nhật gần nhất, dạng YYYY-MM-DD */
 export const LAST_UPDATED = '2026-11-25'
 
