@@ -270,3 +270,66 @@
     opacity: 0.6;
   }
 }
+
+/*
+ * Viên thông báo "Sắp ra mắt" ở đầu trang chủ: viền có vệt sáng chạy vòng quanh,
+ * quầng sáng emerald "thở" nhẹ và vệt bóng lướt qua nhãn. Tắt chuyển động thì giữ viền xanh tĩnh.
+ */
+@property --announce-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes announce-spin {
+  to { --announce-angle: 360deg; }
+}
+@keyframes announce-glow {
+  0%, 100% { box-shadow: 0 0 18px -8px color-mix(in oklab, var(--brand) 45%, transparent); }
+  50% { box-shadow: 0 0 28px -4px color-mix(in oklab, var(--brand) 70%, transparent); }
+}
+@keyframes announce-shine {
+  0%, 60% { transform: translateX(-120%) skewX(-20deg); }
+  100% { transform: translateX(220%) skewX(-20deg); }
+}
+
+.announce-pill {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(var(--card), var(--card)) padding-box,
+    conic-gradient(
+        from var(--announce-angle),
+        transparent 0 50%,
+        color-mix(in oklab, var(--brand) 85%, transparent) 70%,
+        color-mix(in oklab, var(--brand) 70%, white) 80%,
+        transparent 92%
+      )
+      border-box,
+    linear-gradient(var(--border), var(--border)) border-box;
+  animation:
+    announce-spin 4s linear infinite,
+    announce-glow 3s ease-in-out infinite;
+}
+.announce-shine {
+  position: relative;
+  overflow: hidden;
+}
+.announce-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.55), transparent);
+  animation: announce-shine 3.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .announce-pill {
+    animation: none !important;
+    background:
+      linear-gradient(var(--card), var(--card)) padding-box,
+      linear-gradient(color-mix(in oklab, var(--brand) 55%, transparent), color-mix(in oklab, var(--brand) 55%, transparent)) border-box;
+  }
+  .announce-shine::after {
+    display: none;
+  }
+}

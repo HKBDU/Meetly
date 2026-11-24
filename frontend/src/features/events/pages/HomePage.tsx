@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Check, Puzzle } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { formatHourLabel } from '@/lib/date-time'
@@ -94,6 +94,58 @@ function ProductPreview() {
   )
 }
 
+/** Giới thiệu extension sắp ra mắt, kèm bản xem trước popup (chỉ để trang trí) */
+function ExtensionTeaser() {
+  const t = useT()
+  return (
+    <section id="extension" aria-labelledby="extension-heading" className="mt-24 scroll-mt-24 overflow-hidden rounded-3xl border bg-card shadow-soft">
+      <div className="grid items-center gap-10 p-6 sm:p-10 md:grid-cols-[minmax(0,1fr)_20rem]">
+        <div>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-xs font-medium text-brand">
+            <Puzzle className="size-3.5" aria-hidden="true" />
+            {t('home.extBadge')}
+          </span>
+          <h2 id="extension-heading" className="mt-4 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
+            {t('home.extTitle')}
+          </h2>
+          <p className="mt-3 max-w-md text-pretty text-muted-foreground">{t('home.extText')}</p>
+          <ul className="mt-6 grid gap-2.5 text-sm">
+            {(['home.extPoint1', 'home.extPoint2', 'home.extPoint3'] as const).map((key) => (
+              <li key={key} className="flex items-center gap-2.5">
+                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-brand-soft text-brand">
+                  <Check className="size-3" strokeWidth={3} aria-hidden="true" />
+                </span>
+                {t(key)}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div aria-hidden="true" className="relative mx-auto w-full max-w-80 select-none">
+          <div className="absolute -inset-6 rounded-[2rem] bg-brand/10 blur-2xl" />
+          <div className="relative rounded-2xl border bg-background p-4 shadow-lift">
+            <div className="flex items-center gap-2 border-b pb-3 text-sm font-semibold">
+              <img src="/meetly-logo.png" alt="" className="h-4 w-5 object-contain" />
+              Meetly
+            </div>
+            <p className="mt-3 text-[11px] text-muted-foreground">{t('common.eventName')}</p>
+            <div className="mt-1 rounded-lg border bg-card px-3 py-2 text-sm">{t('home.extDemoTitle')}</div>
+            <div className="mt-3 flex flex-wrap gap-1.5 text-[11px]">
+              <span className="rounded-full border border-primary bg-brand-soft px-2.5 py-1 font-medium text-brand">{t('days.next7')}</span>
+              <span className="rounded-full border px-2.5 py-1">{t('days.next5Weekdays')}</span>
+              <span className="rounded-full border border-primary bg-brand-soft px-2.5 py-1 font-medium text-brand">{t('preset.working')}</span>
+              <span className="rounded-full border px-2.5 py-1">{t('preset.evening')}</span>
+            </div>
+            <div className="mt-4 rounded-full bg-primary py-2 text-center text-sm font-medium text-primary-foreground">
+              {t('ext.createAndCopy')}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export function HomePage() {
   const t = useT()
   const navigate = useNavigate()
@@ -114,10 +166,23 @@ export function HomePage() {
   return (
     <div className="mx-auto w-full max-w-5xl px-4 pt-10 pb-20 sm:pt-20">
       <section className="text-center">
-        <span className="inline-flex items-center gap-2 rounded-full border bg-card/70 px-3 py-1 text-xs text-muted-foreground shadow-[0_1px_2px_rgb(12_10_9/0.04)]">
-          <span className="size-1.5 rounded-full bg-brand" />
-          {t('home.badge')}
-        </span>
+        {/* Thông báo extension ngay đầu trang; bấm để cuộn tới phần giới thiệu bên dưới */}
+        <a
+          href="#extension"
+          onClick={(event) => {
+            event.preventDefault()
+            document.getElementById('extension')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }}
+          className="announce-pill group inline-flex items-center gap-2 rounded-full py-1 pr-3 pl-1 text-xs transition-transform duration-200 hover:-translate-y-px"
+        >
+          <span className="announce-shine inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 font-medium text-primary-foreground">
+            <Puzzle className="size-3" aria-hidden="true" />
+            {t('home.extBadge')}
+          </span>
+          <span className="font-medium text-foreground">{t('home.extTitle')}</span>
+          <span className="hidden text-muted-foreground sm:inline">· {t('home.extAnnounce')}</span>
+          <ArrowRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+        </a>
         <h1 className="mx-auto mt-6 max-w-3xl text-5xl leading-[1.05] font-semibold tracking-[-0.035em] text-balance sm:text-6xl lg:text-7xl">
           {t('home.titleBefore')}{' '}
           <span className="font-serif font-normal tracking-normal italic">{t('home.titleEmphasis')}</span>
@@ -170,6 +235,8 @@ export function HomePage() {
           </li>
         ))}
       </ol>
+
+      <ExtensionTeaser />
     </div>
   )
 }
