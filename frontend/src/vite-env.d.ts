@@ -9,4 +9,6 @@ interface ImportMetaEnv {
   readonly VITE_CF_ANALYTICS_TOKEN?: string
   /** Trang web Meetly, extension dùng để dựng link chia sẻ */
   readonly VITE_APP_URL?: string
+  /** Link Meetly Extension trên Chrome Web Store; bỏ trống thì web hiện "Sắp ra mắt" */
+  readonly VITE_EXTENSION_STORE_URL?: string
 }

@@ -110,6 +110,17 @@ export const vi: Record<RequiredKey, string> = {
   'home.extPoint1': 'Đặt tên, chọn ngày giờ, xong trong vài giây',
   'home.extPoint2': 'Link được chép sẵn tự động',
   'home.extPoint3': 'Theo dõi mọi sự kiện bạn đã tạo',
+  'home.extAvailable': 'Đã có trên Chrome',
+  'home.extInstall': 'Thêm vào Chrome',
+  'home.extNew': 'Mới',
+  'home.annSoonTitle': 'Lên lịch nhanh hơn với 2 tính năng mới',
+  'home.annSoonExt': 'Tạo lịch hẹn ngay từ mọi tab',
+  'home.annSoonGoogle': 'Thêm vào lịch, tạo link Meet tự động',
+  'home.annLiveTitle': 'Meetly Extension đã có trên Chrome',
+  'home.annLiveText': 'Tạo lịch hẹn ngay trên thanh trình duyệt.',
+  'home.annMore': 'Xem thêm',
+  'home.annLater': 'Để sau',
+  'home.annClose': 'Đóng thông báo',
 
   // Tích hợp Google (sắp ra mắt, tùy chọn)
   'home.gTitle': 'Google Calendar & Google Meet',
