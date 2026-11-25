@@ -1,4 +1,6 @@
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -16,12 +18,18 @@ public sealed class BrevoEmailService(
     /// <summary>Số messageVersions mỗi request, giữ nhỏ để một lần lỗi không kéo theo quá nhiều người nhận.</summary>
     private const int BatchSize = 100;
 
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+
     private readonly BrevoOptions _options = options.Value;
 
     public async Task SendAsync(
         IReadOnlyCollection<string> recipients,
         string subject,
         string html,
+        IReadOnlyCollection<EmailAttachment> attachments,
         CancellationToken cancellationToken)
     {
         var to = recipients
@@ -44,6 +52,11 @@ public sealed class BrevoEmailService(
             ? (object)new { email = _options.SenderEmail }
             : new { name = _options.SenderName, email = _options.SenderEmail };
 
+        // Brevo nhận file đính kèm dạng base64; không có file thì bỏ hẳn trường `attachment`
+        var attachment = attachments.Count == 0
+            ? null
+            : attachments.Select(file => new { name = file.Name, content = Convert.ToBase64String(file.Content) }).ToArray();
+
         foreach (var chunk in to.Chunk(BatchSize))
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, _options.ApiUrl)
@@ -53,11 +66,12 @@ public sealed class BrevoEmailService(
                     sender,
                     subject,
                     htmlContent = html,
+                    attachment,
                     messageVersions = chunk.Select(recipient => new
                     {
                         to = new[] { new { email = recipient } }
                     })
-                })
+                }, options: JsonOptions)
             };
             request.Headers.Add("api-key", _options.ApiKey);
             request.Headers.Accept.ParseAdd("application/json");

@@ -1,3 +1,4 @@
+using System.Text;
 using Meetly.API.Extensions;
 using Meetly.Contract.DTOs.Common;
 using Meetly.Service.EventScheduling;
@@ -19,6 +20,14 @@ public sealed class EventsController(IEventService service) : ControllerBase
     [HttpGet("{shortCode}")]
     public async Task<ActionResult<ApiResponse<EventResponse>>> Get(string shortCode, CancellationToken ct) =>
         Ok(ApiResponse<EventResponse>.Success(200, "Event loaded successfully", await service.GetAsync(shortCode, ct)));
+
+    /// <summary>File iCalendar của lịch họp đã chốt, để thêm vào Google Calendar, Apple Calendar, Outlook.</summary>
+    [HttpGet("{shortCode}/calendar.ics")]
+    public async Task<IActionResult> Calendar(string shortCode, CancellationToken ct)
+    {
+        var file = await service.GetCalendarAsync(shortCode, ct);
+        return File(Encoding.UTF8.GetBytes(file.Content), "text/calendar; charset=utf-8", file.FileName);
+    }
 
     [HttpPost("{shortCode}/participants/access")]
     [EnableRateLimiting(RateLimitingExtensions.ParticipantAccessPolicy)]

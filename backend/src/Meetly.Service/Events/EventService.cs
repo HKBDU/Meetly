@@ -1,9 +1,11 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text;
 using Meetly.Repository.Entity;
 using Meetly.Repository.Enum;
 using Meetly.Repository.EventScheduling;
+using Meetly.Service.Calendar;
 using Meetly.Service.Common;
 using Meetly.Service.Email;
 using Meetly.Service.JwtService;
@@ -171,11 +173,51 @@ public sealed class EventService(
 
         // Gửi nền (có retry): lỗi email không được làm hỏng việc chốt lịch, cũng không bắt admin chờ
         var recipients = await repository.GetEmailsAsync(entity.Id, cancellationToken);
-        if (recipients.Count > 0 &&
-            !emailQueue.Enqueue(new EmailMessage(recipients, FinalizedEmailTemplate.Subject(entity.Title), BuildFinalizedEmail(entity, response))))
-            logger.LogError("Could not queue finalized event email for {ShortCode}", shortCode);
+        if (recipients.Count > 0)
+        {
+            var (googleCalendarUrl, attachments) = BuildCalendarExtras(entity);
+            var message = new EmailMessage(
+                recipients,
+                FinalizedEmailTemplate.Subject(entity.Title),
+                BuildFinalizedEmail(entity, response, googleCalendarUrl, attachments.Count > 0),
+                attachments);
+            if (!emailQueue.Enqueue(message))
+                logger.LogError("Could not queue finalized event email for {ShortCode}", shortCode);
+        }
 
         return response;
+    }
+
+    public async Task<CalendarFileResponse> GetCalendarAsync(string shortCode, CancellationToken cancellationToken)
+    {
+        var entity = await repository.GetReadOnlyAsync(NormalizeCode(shortCode), cancellationToken)
+            ?? throw new EventException(404, "Event not found.");
+        var invite = CalendarInviteBuilder.FromEvent(entity, appOptions.Value.EventUrl(entity.ShortCode), DateTimeOffset.UtcNow)
+            ?? throw new EventException(409, "Event is not finalized yet.");
+        return new CalendarFileResponse($"meetly-{entity.ShortCode}.ics", CalendarInviteBuilder.ToIcs(invite, DateTimeOffset.UtcNow));
+    }
+
+    /// <summary>
+    /// Link Google Calendar và file invite.ics cho email đã chốt. Lỗi ở đây chỉ làm email thiếu phần lịch,
+    /// không được chặn việc gửi email.
+    /// </summary>
+    private (string? GoogleCalendarUrl, IReadOnlyList<EmailAttachment> Attachments) BuildCalendarExtras(Events entity)
+    {
+        try
+        {
+            var now = DateTimeOffset.UtcNow;
+            var invite = CalendarInviteBuilder.FromEvent(entity, appOptions.Value.EventUrl(entity.ShortCode), now);
+            if (invite is null)
+                return (null, []);
+            return (
+                CalendarInviteBuilder.GoogleCalendarUrl(invite),
+                [new EmailAttachment("invite.ics", Encoding.UTF8.GetBytes(CalendarInviteBuilder.ToIcs(invite, now)))]);
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(exception, "Could not build calendar invite for {ShortCode}", entity.ShortCode);
+            return (null, []);
+        }
     }
 
     public async Task UpdateAsync(string shortCode, ClaimsPrincipal user, UpdateEventRequest request, CancellationToken cancellationToken)
@@ -282,7 +324,7 @@ public sealed class EventService(
             Format(entity.FinalStartTime!.Value), Format(entity.FinalEndTime!.Value))
     };
 
-    private string BuildFinalizedEmail(Events entity, FinalizeEventResponse response)
+    private string BuildFinalizedEmail(Events entity, FinalizeEventResponse response, string? googleCalendarUrl, bool hasCalendarAttachment)
     {
         var schedule = response.FinalSchedule;
         return FinalizedEmailTemplate.Render(new FinalizedEmailModel(
@@ -293,7 +335,9 @@ public sealed class EventService(
             schedule.EndTime,
             entity.Participants.Count,
             appOptions.Value.EventUrl(entity.ShortCode),
-            appOptions.Value.FrontendBaseUrl));
+            appOptions.Value.FrontendBaseUrl,
+            googleCalendarUrl,
+            hasCalendarAttachment));
     }
 
 
