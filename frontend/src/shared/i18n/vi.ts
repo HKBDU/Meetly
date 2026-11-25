@@ -111,8 +111,20 @@ export const vi: Record<RequiredKey, string> = {
   'home.extPoint2': 'Link được chép sẵn tự động',
   'home.extPoint3': 'Theo dõi mọi sự kiện bạn đã tạo',
 
+  // Tích hợp Google (sắp ra mắt, tùy chọn)
+  'home.gTitle': 'Google Calendar & Google Meet',
+  'home.gText': 'Tiện ích thêm, dùng khi bạn cần. Meetly vẫn chỉ cần một link, không bắt đăng nhập.',
+  'home.gPoint1': 'Thêm giờ đã chốt vào Google Calendar chỉ với một nút',
+  'home.gPoint2': 'Tạo link Google Meet ngay khi chốt lịch',
+  'home.gPoint3': 'Tô lịch rảnh nhanh từ giờ bận trên Google Calendar',
+  'home.gShort': 'Google Calendar & Meet',
+  'home.gOptional': 'Tùy chọn · không dùng thì mọi thứ vẫn như cũ',
+  'home.gDemoFinal': 'Đã chốt',
+  'home.gDemoWhen': 'Thứ 3, 19:00 – 20:00',
+  'home.gDemoAddCalendar': 'Thêm vào Google Calendar',
+  'home.gDemoMeet': 'Tham gia bằng Google Meet',
+
   // Trang chủ
-  'home.extAnnounce': 'Hẹn lịch ngay trên trình duyệt',
   'home.titleBefore': 'Tìm thời gian phù hợp với',
   'home.titleEmphasis': 'mọi người',
   'home.subtitle': 'Tạo bình chọn, gửi một link và xem ngay khi nào cả nhóm cùng rảnh.',

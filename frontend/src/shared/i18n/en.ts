@@ -109,8 +109,20 @@ export const en = {
   'home.extPoint2': 'The link is copied automatically',
   'home.extPoint3': 'Keep track of every event you have created',
 
+  // Tích hợp Google (sắp ra mắt, tùy chọn)
+  'home.gTitle': 'Google Calendar & Google Meet',
+  'home.gText': 'Optional add-ons for when you want them. Meetly still works with just a link, no sign-in needed.',
+  'home.gPoint1': 'Add the finalized time to Google Calendar in one click',
+  'home.gPoint2': 'Create a Google Meet link when you finalize',
+  'home.gPoint3': 'Fill your grid from your Google Calendar busy times',
+  'home.gShort': 'Google Calendar & Meet',
+  'home.gOptional': 'Optional · nothing changes if you skip it',
+  'home.gDemoFinal': 'Finalized',
+  'home.gDemoWhen': 'Tue, 19:00 – 20:00',
+  'home.gDemoAddCalendar': 'Add to Google Calendar',
+  'home.gDemoMeet': 'Join with Google Meet',
+
   // Trang chủ
-  'home.extAnnounce': 'Schedule from any tab',
   'home.titleBefore': 'Find a time that works for',
   'home.titleEmphasis': 'everyone',
   'home.subtitle': 'Create a poll, share one link, and see at a glance when your group is free.',
