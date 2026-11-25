@@ -20,7 +20,7 @@ export interface LegalDocument {
 }
 
 /** Ngày cập nhật gần nhất, dạng YYYY-MM-DD */
-export const LAST_UPDATED = '2026-11-25'
+export const LAST_UPDATED = '2026-11-26'
 
 const privacyVi: LegalDocument = {
   title: 'Chính sách quyền riêng tư',
@@ -93,6 +93,26 @@ const privacyVi: LegalDocument = {
         'Thông tin sự kiện bạn tạo (tên, ngày giờ, tên hiển thị) được gửi tới máy chủ Meetly giống hệt khi dùng trang web. Khi bạn bấm mở một sự kiện, tiện ích chuyển phiên đăng nhập sang trang web qua phần sau dấu # của đường dẫn; phần này không được gửi lên máy chủ.',
         'Tiện ích chỉ kết nối tới máy chủ Meetly. Tiện ích không đọc nội dung các trang web bạn mở, không theo dõi lịch sử duyệt web và không dùng công cụ thống kê truy cập nào.',
         'Bạn có thể xoá từng sự kiện khỏi danh sách trong tiện ích. Gỡ tiện ích sẽ xoá toàn bộ dữ liệu tiện ích đã lưu trên máy; sự kiện trên Meetly vẫn còn cho đến khi có yêu cầu xoá.',
+      ],
+    },
+    {
+      heading: 'Google Calendar và dữ liệu người dùng Google',
+      body: [
+        'Kết nối tài khoản Google là tùy chọn. Meetly hoạt động đầy đủ khi không kết nối, và chỉ xin quyền khi chính bạn bấm vào một nút Google Calendar.',
+        'Chúng tôi truy cập gì và để làm gì:',
+        [
+          'Giờ rảnh/bận (quyền calendar.freebusy): khi bạn chọn "Nhập từ Google Calendar", Meetly chỉ đọc bạn bận hay rảnh trong các ngày và khung giờ của cuộc hẹn đó để điền sẵn lịch rảnh. Meetly không thấy được tiêu đề, mô tả, người tham dự hay địa điểm của các sự kiện trong lịch của bạn.',
+          'Tạo sự kiện (quyền calendar.events, chỉ người tổ chức): nếu người tổ chức chọn tạo link Google Meet khi chốt lịch, Meetly tạo một sự kiện có link Meet trong lịch của chính người tổ chức. Meetly không đọc, sửa hay xoá bất kỳ sự kiện nào khác.',
+        ],
+        'Cách chúng tôi xử lý dữ liệu Google:',
+        [
+          'Mã truy cập Google chỉ nằm trong tab trình duyệt của bạn và hết hạn sau khoảng một giờ. Mã này không bao giờ được gửi tới hay lưu trên máy chủ của chúng tôi.',
+          'Giờ rảnh/bận được chuyển thành lưới lịch rảnh ngay trên trình duyệt. Meetly chỉ nhận lịch rảnh bạn đã xem lại và lưu, giống hệt khi bạn tự tô bằng tay. Dữ liệu rảnh/bận gốc không được lưu.',
+          'Khi tạo link Meet, Meetly chỉ lưu đường link đó cùng sự kiện để mọi người tham gia.',
+          'Dữ liệu người dùng Google không được bán, không dùng cho quảng cáo, không chia sẻ cho bên thứ ba và không dùng để huấn luyện AI hay mô hình học máy.',
+        ],
+        'Việc Meetly sử dụng và chuyển giao thông tin nhận từ Google API tuân thủ Chính sách dữ liệu người dùng của Google API Services (Google API Services User Data Policy), bao gồm các yêu cầu về Sử dụng giới hạn (Limited Use).',
+        'Bạn có thể thu hồi quyền truy cập của Meetly bất cứ lúc nào tại https://myaccount.google.com/permissions.',
       ],
     },
     {
@@ -197,6 +217,26 @@ const privacyEn: LegalDocument = {
         'The event details you create (name, dates and times, display name) are sent to the Meetly server exactly as when you use the website. When you open an event, the extension passes your session to the website in the part of the link after the # sign, which is never sent to any server.',
         'The extension only connects to the Meetly server. It does not read the content of the pages you visit, does not track your browsing history and does not use any analytics tools.',
         'You can remove any event from the list in the extension. Uninstalling the extension deletes everything it stored on your device; the events on Meetly remain until a deletion is requested.',
+      ],
+    },
+    {
+      heading: 'Google Calendar and Google user data',
+      body: [
+        'Connecting your Google account is optional. Meetly works fully without it, and we only ask for access when you click a Google Calendar button yourself.',
+        'What we access and why:',
+        [
+          'Free/busy times (scope calendar.freebusy): when you choose "Import from Google Calendar", Meetly reads only whether you are busy or free during the dates and hours of that poll, to pre-fill your availability. Meetly cannot see the titles, descriptions, attendees or locations of your calendar events.',
+          'Creating an event (scope calendar.events, host only): if the host chooses to create a Google Meet link when finalizing, Meetly creates one event with a Meet link in the host\'s own calendar. Meetly does not read, change or delete any other events.',
+        ],
+        'How we handle Google data:',
+        [
+          'The Google access token stays in your browser tab and expires after about one hour. It is never sent to or stored on our servers.',
+          'Free/busy times are turned into the availability grid in your browser. Only the availability you review and save is sent to Meetly, exactly as if you had marked it by hand. The raw free/busy data is not stored.',
+          'When a Meet link is created, Meetly stores only that link with the event so participants can join.',
+          'Google user data is not sold, not used for advertising, not shared with third parties and not used to train AI or machine learning models.',
+        ],
+        "Meetly's use and transfer of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements.",
+        'You can remove Meetly\'s access at any time at https://myaccount.google.com/permissions.',
       ],
     },
     {
