@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Check, Puzzle } from 'lucide-react'
+import { ArrowRight, CalendarCheck, CalendarPlus, Check, Puzzle, Sparkles, Video, type LucideIcon } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { formatHourLabel } from '@/lib/date-time'
@@ -146,6 +146,104 @@ function ExtensionTeaser() {
   )
 }
 
+const ANNOUNCEMENTS: { target: string; icon: LucideIcon; label: MessageKey }[] = [
+  { target: 'extension', icon: Puzzle, label: 'home.extTitle' },
+  { target: 'google', icon: CalendarCheck, label: 'home.gShort' },
+]
+
+/** Thanh "Sắp ra mắt" đầu trang: một nhãn chung, mỗi sản phẩm là một link cuộn mượt tới khối giới thiệu */
+function AnnounceBar() {
+  const t = useT()
+  return (
+    <nav
+      aria-label={t('home.extBadge')}
+      className="announce-pill inline-flex max-w-full items-center gap-1 rounded-full py-1 pr-1.5 pl-1 text-xs"
+    >
+      <span className="announce-shine inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-2 py-0.5 font-medium text-primary-foreground">
+        <Sparkles className="size-3" aria-hidden="true" />
+        <span className="sr-only sm:not-sr-only">{t('home.extBadge')}</span>
+      </span>
+      {ANNOUNCEMENTS.map(({ target, icon: Icon, label }, index) => (
+        <span key={target} className="flex min-w-0 items-center">
+          {index > 0 && <span className="mx-0.5 h-3.5 w-px shrink-0 bg-border" aria-hidden="true" />}
+          <a
+            href={`#${target}`}
+            onClick={(event) => {
+              event.preventDefault()
+              document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }}
+            className="group inline-flex min-w-0 items-center gap-1.5 rounded-full px-2 py-0.5 font-medium text-foreground transition-colors hover:bg-brand-soft hover:text-brand"
+          >
+            <Icon className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-brand" aria-hidden="true" />
+            <span className="truncate">{t(label)}</span>
+            <ArrowRight className="hidden size-3 shrink-0 transition-transform group-hover:translate-x-0.5 sm:block" aria-hidden="true" />
+          </a>
+        </span>
+      ))}
+    </nav>
+  )
+}
+
+const GOOGLE_POINTS = [
+  { key: 'home.gPoint1', icon: CalendarPlus },
+  { key: 'home.gPoint2', icon: Video },
+  { key: 'home.gPoint3', icon: CalendarCheck },
+] as const
+
+/** Giới thiệu tích hợp Google Calendar & Meet sắp ra mắt (tùy chọn), kèm bản xem trước trang trí */
+function GoogleTeaser() {
+  const t = useT()
+  return (
+    <section id="google" aria-labelledby="google-heading" className="mt-8 scroll-mt-24 overflow-hidden rounded-3xl border bg-card shadow-soft">
+      <div className="grid items-center gap-10 p-6 sm:p-10 md:grid-cols-[20rem_minmax(0,1fr)]">
+        <div aria-hidden="true" className="relative order-last mx-auto w-full max-w-80 select-none md:order-first">
+          <div className="absolute -inset-6 rounded-[2rem] bg-brand/10 blur-2xl" />
+          <div className="relative rounded-2xl border bg-background p-4 shadow-lift">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-medium text-brand">
+              <Check className="size-3" strokeWidth={3} />
+              {t('home.gDemoFinal')}
+            </span>
+            <p className="mt-3 text-sm font-semibold">{t('home.demoTitle')}</p>
+            <p className="text-xs text-muted-foreground">{t('home.gDemoWhen')}</p>
+            <div className="mt-4 grid gap-2 text-sm">
+              <div className="flex items-center gap-2 rounded-full border bg-card px-3 py-2">
+                <CalendarPlus className="size-4 text-brand" />
+                {t('home.gDemoAddCalendar')}
+              </div>
+              <div className="flex items-center gap-2 rounded-full bg-primary px-3 py-2 font-medium text-primary-foreground">
+                <Video className="size-4" />
+                {t('home.gDemoMeet')}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-xs font-medium text-brand">
+            <CalendarCheck className="size-3.5" aria-hidden="true" />
+            {t('home.extBadge')}
+          </span>
+          <h2 id="google-heading" className="mt-4 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
+            {t('home.gTitle')}
+          </h2>
+          <p className="mt-3 max-w-md text-pretty text-muted-foreground">{t('home.gText')}</p>
+          <ul className="mt-6 grid gap-2.5 text-sm">
+            {GOOGLE_POINTS.map(({ key, icon: Icon }) => (
+              <li key={key} className="flex items-center gap-2.5">
+                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-brand-soft text-brand">
+                  <Icon className="size-3" strokeWidth={2.5} aria-hidden="true" />
+                </span>
+                {t(key)}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-5 text-xs text-muted-foreground">{t('home.gOptional')}</p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export function HomePage() {
   const t = useT()
   const navigate = useNavigate()
@@ -166,23 +264,8 @@ export function HomePage() {
   return (
     <div className="mx-auto w-full max-w-5xl px-4 pt-10 pb-20 sm:pt-20">
       <section className="text-center">
-        {/* Thông báo extension ngay đầu trang; bấm để cuộn tới phần giới thiệu bên dưới */}
-        <a
-          href="#extension"
-          onClick={(event) => {
-            event.preventDefault()
-            document.getElementById('extension')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-          }}
-          className="announce-pill group inline-flex items-center gap-2 rounded-full py-1 pr-3 pl-1 text-xs transition-transform duration-200 hover:-translate-y-px"
-        >
-          <span className="announce-shine inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 font-medium text-primary-foreground">
-            <Puzzle className="size-3" aria-hidden="true" />
-            {t('home.extBadge')}
-          </span>
-          <span className="font-medium text-foreground">{t('home.extTitle')}</span>
-          <span className="hidden text-muted-foreground sm:inline">· {t('home.extAnnounce')}</span>
-          <ArrowRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-        </a>
+        {/* Thông báo sắp ra mắt ngay đầu trang; bấm để cuộn tới phần giới thiệu bên dưới */}
+        <AnnounceBar />
         <h1 className="mx-auto mt-6 max-w-3xl text-5xl leading-[1.05] font-semibold tracking-[-0.035em] text-balance sm:text-6xl lg:text-7xl">
           {t('home.titleBefore')}{' '}
           <span className="font-serif font-normal tracking-normal italic">{t('home.titleEmphasis')}</span>
@@ -237,6 +320,7 @@ export function HomePage() {
       </ol>
 
       <ExtensionTeaser />
+      <GoogleTeaser />
     </div>
   )
 }

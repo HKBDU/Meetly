@@ -66,6 +66,14 @@ export function AppFooter() {
                 </span>
               </Link>
             </li>
+            <li>
+              <Link to="/#google" className={`${linkClass} inline-flex flex-wrap items-center gap-2`}>
+                {t("home.gTitle")}
+                <span className="rounded-full bg-brand-soft px-1.5 py-0.5 text-[10px] font-medium text-brand">
+                  {t("home.extBadge")}
+                </span>
+              </Link>
+            </li>
           </Column>
 
           <Column title={t("footer.legal")}>
