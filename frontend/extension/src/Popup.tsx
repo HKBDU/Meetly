@@ -241,7 +241,8 @@ function CreatedView({ event, onDone }: { event: StoredEvent; onDone: () => void
   const url = eventUrl(event.shortCode)
 
   return (
-    <div className="grid gap-4 pt-2 text-center">
+    // minmax(0,1fr): không để link dài kéo cột rộng quá khung popup 360px
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 pt-2 text-center">
       <span className="mx-auto grid size-11 place-items-center rounded-full bg-brand-soft text-brand">
         <Check className="size-5" strokeWidth={2.5} aria-hidden="true" />
       </span>
