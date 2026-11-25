@@ -14,6 +14,7 @@ using Meetly.Service.EventScheduling;
 using Meetly.Service.JwtService;
 using Meetly.Service.Realtime;
 using Meetly.Service.SuggestionSlots;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
@@ -137,6 +138,8 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<EventHub>("/hubs/events");
 app.MapHealthChecks("/health").DisableRateLimiting();
+// Cho dịch vụ ping giữ máy chủ thức (cron-job.org, UptimeRobot): trả 200 ngay, không chạy check DB
+app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false }).DisableRateLimiting();
 
 app.MapGet("/", () => Results.Ok(new
 {
