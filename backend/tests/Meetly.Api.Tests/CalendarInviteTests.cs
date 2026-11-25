@@ -93,6 +93,32 @@ public class CalendarInviteTests
     }
 
     [Fact]
+    public void FixedOffset_IgnoresHistoricalDaylightSaving()
+    {
+        // Giống dữ liệu tzdata trên Linux: +7 hiện tại nhưng có giờ mùa hè trong quá khứ
+        var historicDst = TimeZoneInfo.AdjustmentRule.CreateAdjustmentRule(
+            new DateTime(1960, 1, 1), new DateTime(1970, 12, 31), TimeSpan.FromHours(1),
+            TimeZoneInfo.TransitionTime.CreateFixedDateRule(new DateTime(1, 1, 1, 2, 0, 0), 4, 1),
+            TimeZoneInfo.TransitionTime.CreateFixedDateRule(new DateTime(1, 1, 1, 2, 0, 0), 10, 1));
+        var zone = TimeZoneInfo.CreateCustomTimeZone("Test/Historic", TimeSpan.FromHours(7), "Historic", "Historic", "Historic DST", [historicDst]);
+
+        Assert.True(zone.SupportsDaylightSavingTime);
+        Assert.Equal(TimeSpan.FromHours(7), CalendarInviteBuilder.FixedOffset(zone, new DateTime(2026, 12, 2, 9, 45, 0)));
+    }
+
+    [Fact]
+    public void FixedOffset_IsNull_WhenClocksChangeNearTheMeeting()
+    {
+        var currentDst = TimeZoneInfo.AdjustmentRule.CreateAdjustmentRule(
+            new DateTime(2000, 1, 1), new DateTime(2099, 12, 31), TimeSpan.FromHours(1),
+            TimeZoneInfo.TransitionTime.CreateFixedDateRule(new DateTime(1, 1, 1, 2, 0, 0), 3, 30),
+            TimeZoneInfo.TransitionTime.CreateFixedDateRule(new DateTime(1, 1, 1, 2, 0, 0), 10, 30));
+        var zone = TimeZoneInfo.CreateCustomTimeZone("Test/Dst", TimeSpan.FromHours(1), "Dst", "Dst", "Dst summer", [currentDst]);
+
+        Assert.Null(CalendarInviteBuilder.FixedOffset(zone, new DateTime(2026, 12, 2, 9, 45, 0)));
+    }
+
+    [Fact]
     public void GoogleCalendarUrl_SpecificDate()
     {
         var url = CalendarInviteBuilder.GoogleCalendarUrl(Invite(Finalized(title: "Họp & ăn tối")));

@@ -79,9 +79,10 @@ public static class CalendarInviteBuilder
     public static string ToIcs(CalendarInvite invite, DateTimeOffset stamp)
     {
         var zone = FindZone(invite.TimeZone);
-        // Múi giờ không đổi giờ mùa hè (VD Asia/Ho_Chi_Minh): khai báo VTIMEZONE và giữ giờ địa phương.
-        // Có giờ mùa hè thì quy về UTC để khỏi phải mô tả luật DST.
-        var fixedOffset = zone is { SupportsDaylightSavingTime: false };
+        // Múi giờ không đổi giờ quanh thời điểm họp (VD Asia/Ho_Chi_Minh): khai báo VTIMEZONE và giữ giờ địa phương.
+        // Có đổi giờ (giờ mùa hè) thì quy về UTC để khỏi phải mô tả luật DST.
+        var offset = zone is null ? null : FixedOffset(zone, invite.Start);
+        var fixedOffset = offset is not null;
 
         var lines = new List<string>
         {
@@ -92,17 +93,17 @@ public static class CalendarInviteBuilder
             "METHOD:PUBLISH",
         };
 
-        if (fixedOffset)
+        if (offset is { } utcOffset)
         {
-            var offset = Offset(zone!.BaseUtcOffset);
+            var formatted = Offset(utcOffset);
             lines.AddRange(
             [
                 "BEGIN:VTIMEZONE",
                 $"TZID:{invite.TimeZone}",
                 "BEGIN:STANDARD",
                 "DTSTART:19700101T000000",
-                $"TZOFFSETFROM:{offset}",
-                $"TZOFFSETTO:{offset}",
+                $"TZOFFSETFROM:{formatted}",
+                $"TZOFFSETTO:{formatted}",
                 "END:STANDARD",
                 "END:VTIMEZONE",
             ]);
@@ -152,6 +153,22 @@ public static class CalendarInviteBuilder
 
     private static DateOnly NextOccurrence(DateOnly from, System.DayOfWeek day) =>
         from.AddDays(((int)day - (int)from.DayOfWeek + 7) % 7);
+
+    /// <summary>
+    /// Độ lệch UTC nếu nó giữ nguyên từ 6 tháng trước tới 18 tháng sau buổi họp, ngược lại null.
+    /// Không dùng <see cref="TimeZoneInfo.SupportsDaylightSavingTime"/>: trên Linux cờ này tính cả các lần
+    /// đổi giờ trong lịch sử (VD Asia/Ho_Chi_Minh trước 1975) nên báo true dù hiện nay không đổi giờ.
+    /// </summary>
+    public static TimeSpan? FixedOffset(TimeZoneInfo zone, DateTime around)
+    {
+        var offset = zone.GetUtcOffset(around);
+        for (var month = -6; month <= 18; month++)
+        {
+            if (zone.GetUtcOffset(around.AddMonths(month)) != offset)
+                return null;
+        }
+        return offset;
+    }
 
     private static TimeZoneInfo? FindZone(string id) =>
         TimeZoneInfo.TryFindSystemTimeZoneById(id, out var zone) ? zone : null;
