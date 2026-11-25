@@ -108,6 +108,9 @@ export const en = {
   'home.extPoint1': 'Name it, pick days and hours, done in seconds',
   'home.extPoint2': 'The link is copied automatically',
   'home.extPoint3': 'Keep track of every event you have created',
+  'home.extAvailable': 'Available on Chrome',
+  'home.extInstall': 'Add to Chrome',
+  'home.extNew': 'New',
 
   // Tích hợp Google (sắp ra mắt, tùy chọn)
   'home.gTitle': 'Google Calendar & Google Meet',

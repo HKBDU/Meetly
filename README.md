@@ -211,6 +211,7 @@ Defined in `frontend/.env` (see `frontend/.env.example`):
 | `VITE_SIGNALR_HUB_URL` | SignalR hub URL, e.g. `http://localhost:5010/hubs/events`. **Required.** |
 | `VITE_GA_MEASUREMENT_ID` | Optional Google Analytics 4 ID (`G-…`). Only loaded in production builds. |
 | `VITE_CF_ANALYTICS_TOKEN` | Optional Cloudflare Web Analytics site token (cookieless). Only loaded in production builds. |
+| `VITE_EXTENSION_STORE_URL` | Optional Chrome Web Store link of the extension. When set, the home page shows an "Add to Chrome" button instead of "Coming soon". |
 
 ## Scripts
 

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, CalendarCheck, CalendarPlus, Check, Puzzle, Sparkles, Video, type LucideIcon } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, CalendarCheck, CalendarPlus, Check, Puzzle, Sparkles, Video, type LucideIcon } from 'lucide-react'
 
+import { env } from '@/lib/env'
 import { cn } from '@/lib/utils'
 import { formatHourLabel } from '@/lib/date-time'
 import { WEEKDAYS } from '@/shared/constants'
@@ -103,7 +104,7 @@ function ExtensionTeaser() {
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-xs font-medium text-brand">
             <Puzzle className="size-3.5" aria-hidden="true" />
-            {t('home.extBadge')}
+            {t(env.extensionStoreUrl ? 'home.extAvailable' : 'home.extBadge')}
           </span>
           <h2 id="extension-heading" className="mt-4 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
             {t('home.extTitle')}
@@ -119,6 +120,15 @@ function ExtensionTeaser() {
               </li>
             ))}
           </ul>
+          {env.extensionStoreUrl && (
+            <Button asChild size="lg" className="mt-7 h-12 px-6">
+              <a href={env.extensionStoreUrl} target="_blank" rel="noreferrer">
+                <Puzzle aria-hidden="true" />
+                {t('home.extInstall')}
+                <ArrowUpRight aria-hidden="true" />
+              </a>
+            </Button>
+          )}
         </div>
 
         <div aria-hidden="true" className="relative mx-auto w-full max-w-80 select-none">
@@ -146,10 +156,13 @@ function ExtensionTeaser() {
   )
 }
 
-const ANNOUNCEMENTS: { target: string; icon: LucideIcon; label: MessageKey }[] = [
-  { target: 'extension', icon: Puzzle, label: 'home.extTitle' },
-  { target: 'google', icon: CalendarCheck, label: 'home.gShort' },
-]
+/** Extension đã lên Chrome Web Store thì không còn là "sắp ra mắt" nữa */
+const ANNOUNCEMENTS = (
+  [
+    { target: 'extension', icon: Puzzle, label: 'home.extTitle' },
+    { target: 'google', icon: CalendarCheck, label: 'home.gShort' },
+  ] satisfies { target: string; icon: LucideIcon; label: MessageKey }[]
+).filter(({ target }) => !(target === 'extension' && env.extensionStoreUrl))
 
 /** Thanh "Sắp ra mắt" đầu trang: một nhãn chung, mỗi sản phẩm là một link cuộn mượt tới khối giới thiệu */
 function AnnounceBar() {

@@ -110,6 +110,9 @@ export const vi: Record<RequiredKey, string> = {
   'home.extPoint1': 'Đặt tên, chọn ngày giờ, xong trong vài giây',
   'home.extPoint2': 'Link được chép sẵn tự động',
   'home.extPoint3': 'Theo dõi mọi sự kiện bạn đã tạo',
+  'home.extAvailable': 'Đã có trên Chrome',
+  'home.extInstall': 'Thêm vào Chrome',
+  'home.extNew': 'Mới',
 
   // Tích hợp Google (sắp ra mắt, tùy chọn)
   'home.gTitle': 'Google Calendar & Google Meet',

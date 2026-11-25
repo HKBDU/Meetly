@@ -194,7 +194,7 @@ Sửa theo yêu cầu, tăng `version`, build và nén lại, rồi gửi duyệ
 ## 6. Sau khi được duyệt
 
 1. Lấy link trang extension dạng `https://chromewebstore.google.com/detail/<tên>/<id>`.
-2. Trên trang chủ, đổi thông báo "Sắp ra mắt" và phần giới thiệu Meetly Extension thành nút **"Thêm vào Chrome"** trỏ tới link này (`src/features/events/pages/HomePage.tsx`).
+2. Trên Vercel, thêm biến `VITE_EXTENSION_STORE_URL` = link vừa lấy, rồi **Redeploy**. Không cần sửa code: trang chủ tự bỏ Extension khỏi thanh "Sắp ra mắt", khối giới thiệu đổi nhãn thành "Đã có trên Chrome" kèm nút **"Thêm vào Chrome"**, link trong footer trỏ thẳng tới store với nhãn "Mới".
 3. Kiểm tra lại toàn bộ luồng từ bản cài trên store (không phải bản Load unpacked).
 
 ---

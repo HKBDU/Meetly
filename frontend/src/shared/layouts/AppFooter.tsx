@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import { ArrowRight, Heart, Mail } from "lucide-react"
 import { Link } from "react-router-dom"
 
+import { env } from "@/lib/env"
 import { CONTACT_EMAIL } from "@/shared/constants"
 import { useT } from "@/shared/i18n"
 import { DiscordIcon, GithubIcon, LinkedinIcon, RedditIcon, XIcon } from "@/shared/layouts/SocialIcons"
@@ -59,12 +60,26 @@ export function AppFooter() {
               </Link>
             </li>
             <li>
-              <Link to="/#extension" className={`${linkClass} inline-flex flex-wrap items-center gap-2`}>
-                {t("home.extTitle")}
-                <span className="rounded-full bg-brand-soft px-1.5 py-0.5 text-[10px] font-medium text-brand">
-                  {t("home.extBadge")}
-                </span>
-              </Link>
+              {env.extensionStoreUrl ? (
+                <a
+                  href={env.extensionStoreUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`${linkClass} inline-flex flex-wrap items-center gap-2`}
+                >
+                  {t("home.extTitle")}
+                  <span className="rounded-full bg-brand-soft px-1.5 py-0.5 text-[10px] font-medium text-brand">
+                    {t("home.extNew")}
+                  </span>
+                </a>
+              ) : (
+                <Link to="/#extension" className={`${linkClass} inline-flex flex-wrap items-center gap-2`}>
+                  {t("home.extTitle")}
+                  <span className="rounded-full bg-brand-soft px-1.5 py-0.5 text-[10px] font-medium text-brand">
+                    {t("home.extBadge")}
+                  </span>
+                </Link>
+              )}
             </li>
             <li>
               <Link to="/#google" className={`${linkClass} inline-flex flex-wrap items-center gap-2`}>
