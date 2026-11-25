@@ -210,6 +210,7 @@ Defined in `frontend/.env` (see `frontend/.env.example`):
 | `VITE_API_BASE_URL` | Backend base URL, e.g. `http://localhost:5010`. **Required.** |
 | `VITE_SIGNALR_HUB_URL` | SignalR hub URL, e.g. `http://localhost:5010/hubs/events`. **Required.** |
 | `VITE_GA_MEASUREMENT_ID` | Optional Google Analytics 4 ID (`G-…`). Only loaded in production builds. |
+| `VITE_CF_ANALYTICS_TOKEN` | Optional Cloudflare Web Analytics site token (cookieless). Only loaded in production builds. |
 
 ## Scripts
 
