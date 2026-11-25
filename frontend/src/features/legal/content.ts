@@ -37,7 +37,7 @@ const privacyVi: LegalDocument = {
           'Mật khẩu (nếu bạn đặt): được mã hoá một chiều trước khi lưu, không ai, kể cả chúng tôi, đọc được mật khẩu gốc.',
           'Lịch rảnh bạn đánh dấu trên lưới thời gian.',
           'Địa chỉ email (không bắt buộc): chỉ khi bạn chủ động đăng ký nhận thông báo.',
-          'Dữ liệu sử dụng qua Google Analytics: trang đã xem, loại thiết bị và trình duyệt, khu vực ước tính và các thao tác chính như tạo sự kiện hay lưu lịch.',
+          'Dữ liệu sử dụng qua Google Analytics và Cloudflare Web Analytics: trang đã xem, loại thiết bị và trình duyệt, khu vực ước tính và các thao tác chính như tạo sự kiện hay lưu lịch.',
           'Dữ liệu kỹ thuật: địa chỉ IP và nhật ký yêu cầu trên máy chủ, dùng để chống lạm dụng và sửa lỗi.',
         ],
       ],
@@ -69,7 +69,7 @@ const privacyVi: LegalDocument = {
           'Vercel: lưu trữ và phân phối giao diện web.',
           'Render và nhà cung cấp cơ sở dữ liệu: chạy máy chủ và lưu dữ liệu sự kiện.',
           'Brevo: gửi email thông báo chốt lịch.',
-          'Google Analytics: thống kê lượt truy cập.',
+          'Google Analytics và Cloudflare Web Analytics: thống kê lượt truy cập và tốc độ tải trang.',
         ],
         'Các nhà cung cấp này có thể đặt máy chủ ở ngoài Việt Nam, nên dữ liệu của bạn có thể được xử lý ở nước ngoài.',
       ],
@@ -78,7 +78,7 @@ const privacyVi: LegalDocument = {
       heading: 'Cookie và lưu trữ trên trình duyệt',
       body: [
         'Meetly lưu một số thông tin ngay trên trình duyệt của bạn (localStorage): phiên tham gia sự kiện để bạn không phải nhập lại tên, chế độ sáng/tối và ngôn ngữ đã chọn.',
-        'Google Analytics dùng cookie để phân biệt lượt truy cập. Bạn có thể chặn cookie hoặc dùng tiện ích chặn theo dõi; Meetly vẫn hoạt động bình thường.',
+        'Google Analytics dùng cookie để phân biệt lượt truy cập. Cloudflare Web Analytics không dùng cookie và không lưu gì trên trình duyệt của bạn. Bạn có thể chặn cookie hoặc dùng tiện ích chặn theo dõi; Meetly vẫn hoạt động bình thường.',
       ],
     },
     {
@@ -91,14 +91,14 @@ const privacyVi: LegalDocument = {
           'Mã đăng nhập và mật khẩu người tổ chức do tiện ích tự tạo ngẫu nhiên cho từng sự kiện, để bạn mở lại sự kiện với vai trò người tổ chức.',
         ],
         'Thông tin sự kiện bạn tạo (tên, ngày giờ, tên hiển thị) được gửi tới máy chủ Meetly giống hệt khi dùng trang web. Khi bạn bấm mở một sự kiện, tiện ích chuyển phiên đăng nhập sang trang web qua phần sau dấu # của đường dẫn; phần này không được gửi lên máy chủ.',
-        'Tiện ích chỉ kết nối tới máy chủ Meetly. Tiện ích không đọc nội dung các trang web bạn mở, không theo dõi lịch sử duyệt web và không dùng Google Analytics.',
+        'Tiện ích chỉ kết nối tới máy chủ Meetly. Tiện ích không đọc nội dung các trang web bạn mở, không theo dõi lịch sử duyệt web và không dùng công cụ thống kê truy cập nào.',
         'Bạn có thể xoá từng sự kiện khỏi danh sách trong tiện ích. Gỡ tiện ích sẽ xoá toàn bộ dữ liệu tiện ích đã lưu trên máy; sự kiện trên Meetly vẫn còn cho đến khi có yêu cầu xoá.',
       ],
     },
     {
       heading: 'Thời gian lưu trữ',
       body: [
-        'Dữ liệu sự kiện (gồm tên hiển thị, lịch rảnh và email đã đăng ký) được lưu cho đến khi có yêu cầu xoá. Dữ liệu thống kê được Google Analytics lưu theo thời hạn cài đặt trong dịch vụ đó.',
+        'Dữ liệu sự kiện (gồm tên hiển thị, lịch rảnh và email đã đăng ký) được lưu cho đến khi có yêu cầu xoá. Dữ liệu thống kê được Google Analytics và Cloudflare lưu theo chính sách của từng dịch vụ.',
       ],
     },
     {
@@ -141,7 +141,7 @@ const privacyEn: LegalDocument = {
           'A password, if you set one: it is hashed before storage, so nobody, including us, can read the original.',
           'The availability you mark on the time grid.',
           'Your email address (optional): only if you choose to sign up for notifications.',
-          'Usage data through Google Analytics: pages viewed, device and browser type, approximate region, and key actions such as creating an event or saving availability.',
+          'Usage data through Google Analytics and Cloudflare Web Analytics: pages viewed, device and browser type, approximate region, and key actions such as creating an event or saving availability.',
           'Technical data: IP addresses and request logs on our servers, used to prevent abuse and fix problems.',
         ],
       ],
@@ -173,7 +173,7 @@ const privacyEn: LegalDocument = {
           'Vercel: hosts and serves the web app.',
           'Render and our database provider: run the server and store event data.',
           'Brevo: sends the finalized-meeting emails.',
-          'Google Analytics: measures website traffic.',
+          'Google Analytics and Cloudflare Web Analytics: measure website traffic and page load performance.',
         ],
         'These providers may operate servers outside your country, so your data may be processed abroad.',
       ],
@@ -182,7 +182,7 @@ const privacyEn: LegalDocument = {
       heading: 'Cookies and browser storage',
       body: [
         'Meetly keeps a few things in your browser (localStorage): your event session so you do not have to re-enter your name, your light/dark mode and your language.',
-        'Google Analytics uses cookies to tell visits apart. You can block cookies or use a tracker blocker; Meetly keeps working normally.',
+        'Google Analytics uses cookies to tell visits apart. Cloudflare Web Analytics does not use cookies or store anything in your browser. You can block cookies or use a tracker blocker; Meetly keeps working normally.',
       ],
     },
     {
@@ -195,14 +195,14 @@ const privacyEn: LegalDocument = {
           'The access token and the host password that the extension randomly generates for each event, so you can reopen the event as the host.',
         ],
         'The event details you create (name, dates and times, display name) are sent to the Meetly server exactly as when you use the website. When you open an event, the extension passes your session to the website in the part of the link after the # sign, which is never sent to any server.',
-        'The extension only connects to the Meetly server. It does not read the content of the pages you visit, does not track your browsing history and does not use Google Analytics.',
+        'The extension only connects to the Meetly server. It does not read the content of the pages you visit, does not track your browsing history and does not use any analytics tools.',
         'You can remove any event from the list in the extension. Uninstalling the extension deletes everything it stored on your device; the events on Meetly remain until a deletion is requested.',
       ],
     },
     {
       heading: 'Data retention',
       body: [
-        'Event data (including display names, availability and subscribed emails) is kept until a deletion is requested. Analytics data is kept by Google Analytics according to the retention setting of that service.',
+        'Event data (including display names, availability and subscribed emails) is kept until a deletion is requested. Analytics data is kept by Google Analytics and Cloudflare according to the policy of each service.',
       ],
     },
     {
