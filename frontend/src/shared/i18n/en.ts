@@ -111,6 +111,14 @@ export const en = {
   'home.extAvailable': 'Available on Chrome',
   'home.extInstall': 'Add to Chrome',
   'home.extNew': 'New',
+  'home.annSoonTitle': 'Two new ways to plan faster',
+  'home.annSoonExt': 'Create a poll from any tab',
+  'home.annSoonGoogle': 'Add to your calendar, get a Meet link',
+  'home.annLiveTitle': 'Meetly Extension is on Chrome',
+  'home.annLiveText': 'Create a scheduling poll right from your browser toolbar.',
+  'home.annMore': 'Learn more',
+  'home.annLater': 'Later',
+  'home.annClose': 'Dismiss announcement',
 
   // Tích hợp Google (sắp ra mắt, tùy chọn)
   'home.gTitle': 'Google Calendar & Google Meet',

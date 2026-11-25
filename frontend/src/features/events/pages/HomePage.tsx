@@ -10,6 +10,7 @@ import { useT, type MessageKey } from '@/shared/i18n'
 import { parseEventCode } from '@/shared/lib/share'
 import { Button } from '@/shared/components/ui/button'
 import { FieldError, FieldLabel } from '@/shared/components/ui/field'
+import { AnnouncementCard } from '../components/AnnouncementCard'
 
 const STEPS: { title: MessageKey; text: MessageKey }[] = [
   { title: 'home.step1Title', text: 'home.step1Text' },
@@ -334,6 +335,7 @@ export function HomePage() {
 
       <ExtensionTeaser />
       <GoogleTeaser />
+      <AnnouncementCard />
     </div>
   )
 }

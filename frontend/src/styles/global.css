@@ -291,6 +291,15 @@
   0%, 60% { transform: translateX(-120%) skewX(-20deg); }
   100% { transform: translateX(220%) skewX(-20deg); }
 }
+/* Icon trong thẻ thông báo lơ lửng nhẹ; giữ góc xoay của từng icon qua biến --tilt */
+@keyframes announce-float {
+  0%, 100% { transform: translateY(0) rotate(var(--tilt, 0deg)); }
+  50% { transform: translateY(-5px) rotate(var(--tilt, 0deg)); }
+}
+.announce-float {
+  transform: rotate(var(--tilt, 0deg));
+  animation: announce-float 3.6s ease-in-out infinite;
+}
 
 .announce-pill {
   border: 1.5px solid transparent;
@@ -331,5 +340,8 @@
   }
   .announce-shine::after {
     display: none;
+  }
+  .announce-float {
+    animation: none;
   }
 }
