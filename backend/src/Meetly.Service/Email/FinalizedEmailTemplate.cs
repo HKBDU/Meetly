@@ -13,7 +13,9 @@ public sealed record FinalizedEmailModel(
     string EndTime,
     int ParticipantCount,
     string EventUrl,
-    string FrontendBaseUrl);
+    string FrontendBaseUrl,
+    string? GoogleCalendarUrl = null,
+    bool HasCalendarAttachment = false);
 
 /// <summary>
 /// HTML email "Lịch họp đã được chốt". Dựng bằng bảng + style inline vì Gmail/Outlook bỏ
@@ -97,6 +99,7 @@ public static class FinalizedEmailTemplate
         <tr><td align="center" style="padding:28px 32px 8px;">
           <a href="{url}" style="display:inline-block;padding:14px 32px;border-radius:999px;background:{Brand};color:#ffffff;font-family:{Font};font-size:15px;font-weight:600;text-decoration:none;">Xem chi tiết sự kiện</a>
         </td></tr>
+{CalendarRow(model)}
         <tr><td style="padding:12px 32px 32px;font-family:{Font};font-size:12px;line-height:1.6;color:{Muted};text-align:center;">
           Nút không bấm được? Mở link này:<br>
           <a href="{url}" style="color:{Brand};word-break:break-all;">{url}</a>
@@ -112,6 +115,22 @@ public static class FinalizedEmailTemplate
 </table>
 </body>
 </html>
+""";
+    }
+
+    /// <summary>Nút "Thêm vào Google Calendar" và ghi chú file .ics; trống nếu không có link lịch.</summary>
+    private static string CalendarRow(FinalizedEmailModel model)
+    {
+        if (string.IsNullOrEmpty(model.GoogleCalendarUrl))
+            return "";
+        var note = model.HasCalendarAttachment
+            ? $"""<p style="margin:10px 0 0;font-family:{Font};font-size:12px;line-height:1.6;color:{Muted};">Dùng Apple Calendar hay Outlook? Mở file <strong>invite.ics</strong> đính kèm.</p>"""
+            : "";
+        return $"""
+        <tr><td align="center" style="padding:10px 32px 0;">
+          <a href="{Encoder.Encode(model.GoogleCalendarUrl)}" style="display:inline-block;padding:12px 26px;border-radius:999px;border:1px solid {Line};background:#ffffff;color:{Ink};font-family:{Font};font-size:14px;font-weight:600;text-decoration:none;">&#128197;&nbsp; Thêm vào Google Calendar</a>
+          {note}
+        </td></tr>
 """;
     }
 

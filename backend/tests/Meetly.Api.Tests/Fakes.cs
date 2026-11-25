@@ -18,6 +18,7 @@ internal sealed class FakeEventRepository : IEventRepository
 {
     public List<Events> Events { get; } = [];
     public List<EventParticipants> AddedParticipants { get; } = [];
+    public List<string> Emails { get; } = [];
 
     /// <summary>Giả lập câu UPDATE ... WHERE Status = 1 trả về 0 dòng (event vừa bị chốt ở request khác).</summary>
     public bool BumpReturnsNull { get; set; }
@@ -29,7 +30,7 @@ internal sealed class FakeEventRepository : IEventRepository
         GetAsync(shortCode, cancellationToken);
 
     public Task<List<string>> GetEmailsAsync(Guid eventId, CancellationToken cancellationToken) =>
-        Task.FromResult(new List<string>());
+        Task.FromResult(Emails.ToList());
 
     public Task<bool> ShortCodeExistsAsync(string shortCode, CancellationToken cancellationToken) =>
         Task.FromResult(Events.Any(x => x.ShortCode == shortCode));
@@ -98,11 +99,11 @@ internal static class TestServices
         ["JwtOptions:ExpirationMinutes"] = "60"
     }).Build());
 
-    public static EventService EventService(FakeEventRepository repository) => new(
+    public static EventService EventService(FakeEventRepository repository, FakeEmailQueue? emailQueue = null) => new(
         repository,
         Jwt(),
         new NoopNotifier(),
-        new FakeEmailQueue(),
+        emailQueue ?? new FakeEmailQueue(),
         Options.Create(new AppOptions { FrontendBaseUrl = "https://app.test" }),
         NullLogger<EventService>.Instance);
 
