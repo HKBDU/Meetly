@@ -199,7 +199,7 @@ export function HeatmapWorkspace({
         <div className="min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1">
           <Heatmap
             event={event}
-            bestTimes={canEdit ? bestTimes : []}
+            bestTimes={bestTimes}
             highlightedKey={highlighted ? rankedKey(highlighted) : null}
             reveal={reveal}
             selected={selected}

@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { t } from '@/shared/i18n'
 import { useEventHubConnection } from '@/shared/hooks/useEventHubConnection'
 import { eventQueryKey, patchEventCache } from '@/shared/hooks/useEventQuery'
+import { diffActivity, useEventActivity } from '@/shared/lib/eventActivity'
 import type {
   DayOfWeek,
   EventDetail,
@@ -72,11 +73,17 @@ export function useEventRealtime(shortCode: string, accessToken: string | undefi
     }
 
     const onHeatmapUpdated = (payload: HeatmapUpdatedPayload) => {
-      apply(payload, (event) => ({
+      // Chụp lưới trước khi ghi đè để biết ai vừa đổi lịch (hiện "Minh vừa cập nhật" trên trang)
+      const before = queryClient.getQueryData<EventDetail>(eventQueryKey(shortCode))
+      const applied = apply(payload, (event) => ({
         ...event,
         heatmapGrid: payload.heatmapGrid,
         participants: payload.participants ?? event.participants,
       }))
+      if (applied && before) {
+        const activity = diffActivity(before, payload)
+        if (activity.length > 0) useEventActivity.getState().push(shortCode, activity)
+      }
     }
 
     const onEventUpdated = (payload: EventUpdatedPayload) => {

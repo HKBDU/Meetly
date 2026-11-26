@@ -5,6 +5,7 @@ import { Button } from '@/shared/components/ui';
 import { useT } from '@/shared/i18n';
 import type { EventHeaderProps } from '../types';
 import { EditEventDialog } from './EditEventDialog';
+import { LiveActivity } from './LiveActivity';
 
 export function EventHeader({
   event,
@@ -14,6 +15,7 @@ export function EventHeader({
   onOpenMySchedule,
   onInvite,
   onUpdateEvent,
+  currentUsername,
 }: EventHeaderProps) {
   const t = useT();
   const canOpenMySchedule = Boolean(onOpenMySchedule);
@@ -36,6 +38,9 @@ export function EventHeader({
               onSave={onUpdateEvent}
             />
           )}
+        </div>
+        <div className="mt-5">
+          <LiveActivity shortCode={event.shortCode} participants={event.participants} currentUsername={currentUsername} />
         </div>
         <div className="mt-4 flex flex-wrap gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-2">

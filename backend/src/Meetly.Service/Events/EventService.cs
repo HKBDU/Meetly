@@ -25,7 +25,7 @@ public sealed class EventService(
     ILogger<EventService> logger) : IEventService
 {
     private const string Alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    private static readonly TimeSpan VietnamOffset = TimeSpan.FromHours(7);
+    public const string DefaultTimeZone = "Asia/Ho_Chi_Minh";
     private static readonly PasswordHasher<EventParticipants> PasswordHasher = new();
 
     public async Task<CreateEventResponse> CreateAsync(CreateEventRequest request, CancellationToken cancellationToken)
@@ -42,7 +42,7 @@ public sealed class EventService(
             EventType = (EventType)request.EventType,
             ShortCode = code,
             URL = appOptions.Value.EventUrl(code),
-            TimeZone = "Asia/Ho_Chi_Minh",
+            TimeZone = NormalizeTimeZone(request.TimeZone),
             DailyStartTime = request.DailyStartTime,
             DailyEndTime = request.DailyEndTime,
             AvailableDates = ParseCreateDates(request),
@@ -278,7 +278,7 @@ public sealed class EventService(
             new Claim("isAdmin", participant.IsAdmin.ToString().ToLowerInvariant()),
             new Claim(ClaimTypes.Role, participant.IsAdmin ? "Admin" : "User")
         ]);
-        var expiresAt = new DateTimeOffset(new JwtSecurityTokenHandler().ReadJwtToken(token).ValidTo, TimeSpan.Zero).ToOffset(VietnamOffset);
+        var expiresAt = new DateTimeOffset(new JwtSecurityTokenHandler().ReadJwtToken(token).ValidTo, TimeSpan.Zero);
         return (token, expiresAt);
     }
 
@@ -382,6 +382,20 @@ public sealed class EventService(
         entity.FinalEndTime = request.EndTime;
     }
     private static string Format(TimeOnly time) => time.ToString("HH:mm");
+
+    /// <summary>
+    /// Múi giờ của event theo tên IANA (dùng cho lịch .ics và Google Calendar). Client cũ không gửi,
+    /// hoặc server không nhận ra tên, thì dùng giờ Việt Nam để không chặn việc tạo event.
+    /// </summary>
+    public static string NormalizeTimeZone(string? value)
+    {
+        var id = value?.Trim();
+        if (string.IsNullOrEmpty(id) || id.Length > InputLimits.TimeZoneMaxLength || !TimeZoneInfo.TryFindSystemTimeZoneById(id, out _))
+            return DefaultTimeZone;
+        // Tên kiểu Windows ("SE Asia Standard Time") thì đổi sang IANA vì lịch và trình duyệt chỉ hiểu IANA
+        if (TimeZoneInfo.TryConvertWindowsIdToIanaId(id, out var iana)) return iana;
+        return id;
+    }
     private static string Text(string? value, string name, int maxLength)
     {
         if (string.IsNullOrWhiteSpace(value)) throw new EventException(422, $"{name} is required.");

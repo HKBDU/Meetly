@@ -354,3 +354,62 @@
     animation: none;
   }
 }
+
+/*
+ * Demo sống động ở trang chủ. Ô vừa được lưu "nảy" nhẹ (2 tên keyframe giống nhau để đổi qua lại
+ * mà chạy lại được), ô tốt nhất bật lên lúc chốt, con trỏ giả bay vào nút, thanh tiến trình của tính năng.
+ */
+@keyframes demo-cell-pop-a {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.08); filter: brightness(1.15); }
+  100% { transform: scale(1); }
+}
+@keyframes demo-cell-pop-b {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.08); filter: brightness(1.15); }
+  100% { transform: scale(1); }
+}
+.demo-cell {
+  animation-duration: 450ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes demo-best {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.demo-best {
+  animation: demo-best 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes demo-cursor-in {
+  from { opacity: 0; transform: translate(48px, 36px); }
+  to { opacity: 1; transform: none; }
+}
+.demo-cursor-in {
+  animation: demo-cursor-in 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes demo-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.demo-progress {
+  animation-name: demo-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+/* Ô "bận" lấy từ Google Calendar: sọc chéo như lịch bị chiếm */
+.demo-busy {
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in oklab, var(--muted-foreground) 14%, transparent) 0 4px,
+    transparent 4px 8px
+  );
+}
+/* Con trỏ nhập liệu nhấp nháy trong demo extension */
+@keyframes demo-caret {
+  0%, 45% { opacity: 1; }
+  55%, 100% { opacity: 0; }
+}
+.demo-caret {
+  animation: demo-caret 1s steps(1) infinite;
+}
