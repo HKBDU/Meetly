@@ -217,14 +217,13 @@
  * Loader đặc trưng của Meetly: lưới 3×3 như một góc heatmap, các ô "sáng lên" theo
  * đường chéo giống lịch rảnh đang được lấp dần. `--delay` do component đặt cho từng ô.
  */
-@keyframes meetly-cell-fill {
-  0%, 100% { background-color: var(--heat-2); transform: scale(0.8); }
-  35% { background-color: var(--heat-3); }
-  55% { background-color: var(--heat-5); transform: scale(1); }
+@keyframes meetly-logo-trace {
+  0% { stroke-dashoffset: 1; }
+  72%, 100% { stroke-dashoffset: 0; }
 }
-@keyframes meetly-cell-pulse {
-  0%, 100% { opacity: 0.3; transform: scale(0.8); }
-  55% { opacity: 1; transform: scale(1); }
+@keyframes meetly-logo-reset {
+  0%, 83% { opacity: 1; }
+  100% { opacity: 0; }
 }
 @keyframes meetly-fade-in {
   from { opacity: 0; transform: translateY(4px); }
@@ -236,14 +235,15 @@
   100% { transform: translateX(100%) scaleX(0.3); }
 }
 
-.meetly-loader-cell {
-  animation: meetly-cell-fill 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite both;
-  animation-delay: var(--delay, 0s);
-  background-color: var(--heat-2);
+.meetly-loader-base {
+  opacity: 0.28;
 }
-.meetly-loader[data-tone='current'] .meetly-loader-cell {
-  animation-name: meetly-cell-pulse;
-  background-color: currentColor;
+.meetly-loader-trace {
+  stroke-dasharray: 1 1;
+  animation: meetly-logo-trace 1.6s linear infinite;
+}
+.meetly-loader-fill {
+  animation: meetly-logo-reset 1.6s ease-out infinite;
 }
 /* Chỉ hiện sau một nhịp ngắn: tải nhanh thì không nháy loader */
 .meetly-loader-delayed {
@@ -255,15 +255,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* Không chuyển động: giữ lưới tĩnh với các mức màu khác nhau để vẫn nhận ra là đang tải */
-  .meetly-loader-cell {
-    animation: none !important;
-    background-color: var(--static-heat, var(--heat-3));
-  }
-  .meetly-loader[data-tone='current'] .meetly-loader-cell {
-    background-color: currentColor;
-    opacity: var(--static-opacity, 0.6);
-  }
+  .meetly-loader-base { opacity: 1; }
+  .meetly-loader-fill { display: none; animation: none; }
+  .meetly-loader-trace, .meetly-loader-delayed { animation: none; }
   .meetly-route-progress {
     animation: none !important;
     transform: none;
