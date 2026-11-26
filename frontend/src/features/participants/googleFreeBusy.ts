@@ -11,6 +11,19 @@ import { addIsoDays, busyToFreeSlotIds, todayInTimeZone, type BusyInterval } fro
 
 const FREEBUSY_URL = 'https://www.googleapis.com/calendar/v3/freeBusy'
 
+/** Scope chỉ xem giờ bận/rảnh, không đọc được tiêu đề hay nội dung lịch */
+export const FREEBUSY_SCOPE = 'https://www.googleapis.com/auth/calendar.freebusy'
+
+/** Xin access token Google cho một scope (mở popup cấp quyền nếu cần); từ chối hoặc lỗi thì reject */
+export type GoogleTokenProvider = (scope: string) => Promise<string>
+
+/**
+ * Nguồn token cho nút "Nhập từ Google Calendar". Đang `null` nên nút bị ẩn.
+ * TODO: khi `lib/google.ts` (Google Identity Services) được merge, gán bằng hàm xin token ở đó,
+ * và để `null` khi không có `VITE_GOOGLE_CLIENT_ID`.
+ */
+export const googleCalendarTokenProvider: GoogleTokenProvider | null = null
+
 /** Event lặp theo tuần không có ngày thật: lấy số tuần tới tính từ hôm nay làm tham chiếu */
 export const WEEKLY_REFERENCE_WEEKS = 2
 

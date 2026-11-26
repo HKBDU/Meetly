@@ -6,8 +6,10 @@ import { BusyImportDraftBar } from '@/features/participants/components/BusyImpor
 import { EventInfoBar } from '@/features/participants/components/EventInfoBar'
 import { PersonalScheduleGrid } from '@/features/participants/components/PersonalScheduleGrid'
 import { ScheduleActionsBar } from '@/features/participants/components/ScheduleActionsBar'
+import { googleCalendarTokenProvider } from '@/features/participants/googleFreeBusy'
 import { expandRangesToSlotIds } from '@/features/participants/gridUtils'
 import { useAutoSaveSchedule } from '@/features/participants/hooks/useAutoSaveSchedule'
+import { useGoogleBusyImport } from '@/features/participants/hooks/useGoogleBusyImport'
 import { useScheduleGrid } from '@/features/participants/hooks/useScheduleGrid'
 import { useParticipantStore } from '@/features/participants/store'
 import { PageLoader } from '@/shared/components/MeetlyLoader'
@@ -22,6 +24,7 @@ export function MySchedulePage() {
   const loadedSlotsFor = useParticipantStore((s) => s.loadedSlotsFor)
   const loadSlots = useParticipantStore((s) => s.loadSlots)
   const { triggerAutoSave, isSaving } = useAutoSaveSchedule(shortCode, grid)
+  const googleImport = useGoogleBusyImport({ event, grid, getAccessToken: googleCalendarTokenProvider })
   const [manualSelection, setManualSelection] = useState<{ columnKey: string; requestId: number } | null>(null)
 
   // Lịch đã lưu luôn lấy từ server (không tin bản trong máy), mỗi phiên chỉ nạp 1 lần
@@ -56,6 +59,7 @@ export function MySchedulePage() {
             grid={grid}
             triggerAutoSave={triggerAutoSave}
             isSaving={isSaving}
+            googleImport={googleImport}
             onManualRangeApplied={(columnKey) =>
               setManualSelection((current) => ({ columnKey, requestId: (current?.requestId ?? 0) + 1 }))
             }

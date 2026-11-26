@@ -62,6 +62,7 @@ export type AnalyticsEvent =
   | 'create_event'
   | 'join_event'
   | 'save_availability'
+  | 'import_google_busy'
   | 'subscribe_email'
   | 'finalize_event'
   | 'share_invite'

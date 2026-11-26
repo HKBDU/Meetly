@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BellRing, CloudCheck, SlidersHorizontal } from 'lucide-react'
+import { BellRing, CalendarArrowDown, CloudCheck, SlidersHorizontal } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Button, ToggleGroup, ToggleGroupItem } from '@/shared/components/ui'
@@ -15,6 +15,8 @@ interface ScheduleActionsBarProps {
   triggerAutoSave: () => void
   isSaving: boolean
   onManualRangeApplied: (columnKey: string) => void
+  /** Nhập giờ bận từ Google Calendar; `canImport = false` thì ẩn nút */
+  googleImport: { canImport: boolean; isImporting: boolean; importFromGoogle: () => void }
 }
 
 const modeItemClass = cn(
@@ -23,7 +25,13 @@ const modeItemClass = cn(
 )
 
 /** Hàng điều khiển phía trên lưới: chọn thủ công, xoá hết, trạng thái lưu và chế độ Busy/Available */
-export function ScheduleActionsBar({ grid, triggerAutoSave, isSaving, onManualRangeApplied }: ScheduleActionsBarProps) {
+export function ScheduleActionsBar({
+  grid,
+  triggerAutoSave,
+  isSaving,
+  onManualRangeApplied,
+  googleImport,
+}: ScheduleActionsBarProps) {
   const t = useT()
   const paintMode = useParticipantStore((s) => s.paintMode)
   const setPaintMode = useParticipantStore((s) => s.setPaintMode)
@@ -44,6 +52,20 @@ export function ScheduleActionsBar({ grid, triggerAutoSave, isSaving, onManualRa
             <SlidersHorizontal />
             {t('actions.selectRange')}
           </Button>
+          {googleImport.canImport && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={editLocked || googleImport.isImporting}
+              onClick={googleImport.importFromGoogle}
+              aria-label={t('import.button')}
+              title={t('import.button')}
+            >
+              {googleImport.isImporting ? <MeetlyLoader size="xs" decorative /> : <CalendarArrowDown />}
+              {/* Mobile chật: chỉ hiện icon, tên nút nằm ở aria-label */}
+              <span className="hidden sm:inline">{t('import.button')}</span>
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
