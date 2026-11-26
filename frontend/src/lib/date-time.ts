@@ -75,3 +75,56 @@ export function timeSteps(start: string, end: string, stepMinutes: number): stri
   for (let minute = from; minute < to; minute += stepMinutes) steps.push(minutesToTime(minute));
   return steps;
 }
+
+export function getViewerTimeZone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+}
+
+const civilFormatters = new Map<string, Intl.DateTimeFormat>();
+const zoneOffsets = new Map<string, number[]>();
+
+/** UTC instant to an ISO date and 24-hour local time in an IANA zone. */
+export function dateTimeInZone(epochMs: number, timeZone: string) {
+  let formatter = civilFormatters.get(timeZone);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+    });
+    civilFormatters.set(timeZone, formatter);
+  }
+  const parts = Object.fromEntries(formatter.formatToParts(epochMs).map(({ type, value }) => [type, value]));
+  const date = `${parts.year.padStart(4, '0')}-${parts.month}-${parts.day}`;
+  const time = `${parts.hour}:${parts.minute}`;
+  const localSeconds = Date.parse(`${date}T${time}:${parts.second}Z`);
+  return { date, time, offsetMinutes: (localSeconds - Math.floor(epochMs / 1000) * 1000) / 60000 };
+}
+
+/** Zero instants for a DST gap, two for a repeated local time. Results are chronological. */
+export function getZonedInstants(date: string, time: string, timeZone: string): number[] {
+  const hhmm = time.slice(0, 5);
+  const wallTime = Date.parse(`${date}T${hhmm}:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !TIME_PATTERN.test(hhmm) || !Number.isFinite(wallTime)) return [];
+  const key = `${timeZone}|${date}`;
+  let offsets = zoneOffsets.get(key);
+  if (!offsets) {
+    const midnight = Date.parse(`${date}T00:00:00Z`);
+    offsets = [...new Set([-36, -12, 12, 36].map((hour) =>
+      dateTimeInZone(midnight + hour * 3600000, timeZone).offsetMinutes,
+    ))];
+    zoneOffsets.set(key, offsets);
+  }
+  return offsets.map((offset) => wallTime - offset * 60000).filter((instant) => {
+    const local = dateTimeInZone(instant, timeZone);
+    return local.date === date && local.time === hhmm;
+  }).sort((a, b) => a - b);
+}
+
+/** Calendar arithmetic independent of the machine's timezone. */
+export function addIsoDays(date: string, days: number): string {
+  return new Date(Date.parse(`${date}T00:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
+}
+
+export function isoWeekday(date: string): number {
+  return new Date(`${date}T00:00:00Z`).getUTCDay();
+}

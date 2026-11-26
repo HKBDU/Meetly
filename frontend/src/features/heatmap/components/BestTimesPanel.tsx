@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Check, Sparkles, X } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
-import { formatDay } from '@/shared/grid/model'
+import { describeRange, useTimeView } from '@/shared/grid/time-view'
 import { Button } from '@/shared/components/ui/button'
 import { useT, type Translate } from '@/shared/i18n'
 import type { Participant } from '@/shared/types'
@@ -62,6 +62,7 @@ export function BestTimesPanel({
   onChooseManually,
 }: BestTimesPanelProps) {
   const t = useT()
+  const view = useTimeView()
   const [showAllPeople, setShowAllPeople] = useState(false)
   const total = participants.length
   const visiblePeople = showAllPeople ? participants : participants.slice(0, PARTICIPANTS_COLLAPSED)
@@ -134,6 +135,7 @@ export function BestTimesPanel({
           >
             {times.map((slot, index) => {
               const key = rankedKey(slot)
+              const display = describeRange(view, slot)
               const everyone = slot.missing.length === 0
               const highlighted = highlightedKey === key
               return (
@@ -158,9 +160,9 @@ export function BestTimesPanel({
                       {index + 1}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium">{formatDay(slot)}</p>
+                      <p className="text-sm font-medium">{display.day}</p>
                       <p className="text-sm text-muted-foreground tabular-nums">
-                        {slot.startTime} – {slot.endTime}
+                        {display.time}
                       </p>
                     </div>
                     <span

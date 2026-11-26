@@ -289,6 +289,13 @@ export const vi: Record<RequiredKey, string> = {
 
   // Lưới thời gian
   'grid.time': 'Giờ',
+  'tz.viewer': 'Giờ của tôi',
+  'tz.event': 'Giờ sự kiện',
+  'tz.change': 'Múi giờ hiển thị',
+  'tz.week': 'Tuần · {range}',
+  'calendar.google': 'Thêm vào Google Calendar',
+  'calendar.download': 'Tải .ics',
+  'calendar.new': 'Mới',
   'grid.weekly': 'Hằng tuần',
   'pager.previous': 'Trước',
   'pager.next': 'Sau',

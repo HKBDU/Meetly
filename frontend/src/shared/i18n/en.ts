@@ -289,6 +289,13 @@ export const en = {
 
   // Lưới thời gian
   'grid.time': 'Time',
+  'tz.viewer': 'My time',
+  'tz.event': 'Event time',
+  'tz.change': 'Display time zone',
+  'tz.week': 'Week · {range}',
+  'calendar.google': 'Add to Google Calendar',
+  'calendar.download': 'Download .ics',
+  'calendar.new': 'New',
   'grid.weekly': 'Weekly',
   'pager.previous': 'Previous',
   'pager.next': 'Next',

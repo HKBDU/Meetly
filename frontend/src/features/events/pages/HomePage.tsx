@@ -101,7 +101,7 @@ function AnnounceBar() {
   )
 }
 
-/** Giới thiệu tích hợp Google Calendar & Meet sắp ra mắt (tùy chọn): mỗi tính năng là một cảnh demo, tự chạy lần lượt */
+/** Mỗi tích hợp lịch có một cảnh demo và nhãn trạng thái ra mắt riêng. */
 function GoogleTeaser() {
   const t = useT()
   const sectionRef = useRef<HTMLElement>(null)
@@ -127,11 +127,7 @@ function GoogleTeaser() {
         </div>
 
         <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-xs font-medium text-brand">
-            <CalendarCheck className="size-3.5" aria-hidden="true" />
-            {t('home.extBadge')}
-          </span>
-          <h2 id="google-heading" className="mt-4 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
+          <h2 id="google-heading" className="text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
             {t('home.gTitle')}
           </h2>
           <p className="mt-3 max-w-md text-pretty text-muted-foreground">{t('home.gText')}</p>
@@ -161,7 +157,12 @@ function GoogleTeaser() {
                     >
                       <Icon className="size-3.5" strokeWidth={2.5} aria-hidden="true" />
                     </span>
-                    {t(key)}
+                    <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                      <span>{t(key)}</span>
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                        {t(key === 'home.gPoint1' ? 'calendar.new' : 'home.extBadge')}
+                      </span>
+                    </span>
                     {active && !reducedMotion && (
                       <span
                         key={`${scene}-${picks}`}
