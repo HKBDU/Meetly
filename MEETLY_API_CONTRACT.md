@@ -132,12 +132,12 @@ Tạo Event mới đồng thời tạo `EventParticipant` đầu tiên với `Is
   "dailyEndTime": "17:00",
   "admin": {
     "username": "Huy",
-    "password": "123"
+    "password": "1234"
   }
 }
 ```
 
-`password` có thể là `null` hoặc chuỗi rỗng.
+`admin.password` **bắt buộc**, dài 4-100 ký tự (nếu thiếu, ai biết username của admin cũng lấy được token admin). Giới hạn khác: `title` ≤ 255 ký tự, `admin.username` ≤ 50, tối đa 62 ngày, `dailyStartTime`/`dailyEndTime` theo bước 15 phút (`00:00`-`23:45`). Sai giới hạn trả `422`.
 
 ### Request - EventType = Weekdays
 
@@ -151,7 +151,7 @@ Tạo Event mới đồng thời tạo `EventParticipant` đầu tiên với `Is
   "dailyEndTime": "17:00",
   "admin": {
     "username": "Huy",
-    "password": null
+    "password": "1234"
   }
 }
 ```
@@ -661,7 +661,7 @@ Revision++
        ↓
 Commit Transaction
        ↓
-Gửi email
+Gửi email (kèm nút "Thêm vào Google Calendar" và file invite.ics)
        ↓
 SignalR EventFinalized
 ```
@@ -688,6 +688,64 @@ SignalR EventFinalized
 
 ---
 
+# 8.1. Tải lịch họp (.ics)
+
+## GET `/api/v1/events/{shortCode}/calendar.ics`
+
+### Authentication
+
+Không cần. Ai có link sự kiện đều tải được, giống `GET /events/{shortCode}`.
+
+### Mô tả
+
+Trả file iCalendar (RFC 5545) của lịch họp đã chốt, để thêm vào Google Calendar, Apple Calendar, Outlook. Không gọi API của Google, không cần OAuth.
+
+- `DTSTART`/`DTEND` theo giờ địa phương kèm `TZID=Asia/Ho_Chi_Minh` (có khối `VTIMEZONE`).
+- Event lặp theo tuần: bắt đầu từ lần gặp gần nhất kể từ hôm nay, thêm `RRULE:FREQ=WEEKLY;BYDAY=..`.
+- `UID` cố định theo event (`{shortCode}@meetly`), tải lại không tạo bản trùng trong lịch.
+
+### Response - `200 OK`
+
+Không bọc envelope `ApiResponse`.
+
+```http
+Content-Type: text/calendar; charset=utf-8
+Content-Disposition: attachment; filename=meetly-A1B2C3.ics
+```
+
+```text
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Meetly//Meetly//VI
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VTIMEZONE
+TZID:Asia/Ho_Chi_Minh
+...
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:A1B2C3@meetly
+DTSTAMP:20260905T020000Z
+DTSTART;TZID=Asia/Ho_Chi_Minh:20260910T080000
+DTEND;TZID=Asia/Ho_Chi_Minh:20260910T090000
+SUMMARY:Họp nhóm SWD
+DESCRIPTION:Lịch họp đã chốt trên Meetly.\nXem sự kiện: https://meetly-soon.vercel.app/e/A1B2C3
+URL:https://meetly-soon.vercel.app/e/A1B2C3
+END:VEVENT
+END:VCALENDAR
+```
+
+### Lỗi
+
+| Code | Khi nào |
+|---|---|
+| `404` | Sai `shortCode` |
+| `409` | Event chưa chốt |
+
+Lỗi trả về envelope `ApiResponse` như các API khác.
+
+---
+
 # 9. SignalR liên quan đến API
 
 ## Hub
@@ -704,7 +762,10 @@ FE connect bằng `accessToken`.
 
 ```text
 PUT /events/{shortCode}/participants/me/availability
+POST /events/{shortCode}/participants/access   (khi có participant mới)
 ```
+
+BE gộp các thay đổi của cùng event trong cửa sổ ~300ms rồi mới gửi một lần, với `revision` mới nhất trong DB. Vì vậy client có thể không nhận đủ mọi revision trung gian; chỉ cần áp payload có `revision` lớn hơn bản đang có.
 
 ### Payload
 
@@ -712,6 +773,7 @@ PUT /events/{shortCode}/participants/me/availability
 {
   "shortCode": "A1B2C3",
   "revision": 13,
+  "participants": [{ "username": "Huy" }, { "username": "Uyên" }, { "username": "Bảo" }],
   "heatmapGrid": [
     {
       "specificDate": "2026-09-10",
@@ -746,9 +808,12 @@ PUT /events/{shortCode}
   "availableWeekdays": [],
   "dailyStartTime": "09:00",
   "dailyEndTime": "18:00",
+  "heatmapGrid": [],
   "revision": 14
 }
 ```
+
+`heatmapGrid` là lưới đã tính lại theo ngày/giờ mới (time slot thuộc ngày bị bỏ đã bị xoá).
 
 ## EventFinalized
 
@@ -788,6 +853,7 @@ POST /events/{shortCode}/finalize
 | GET | `/api/v1/events/{shortCode}/suggestions` | Admin | Gợi ý khung giờ |
 | PUT | `/api/v1/events/{shortCode}` | Admin | Chỉnh sửa Event |
 | POST | `/api/v1/events/{shortCode}/finalize` | Admin | Chốt lịch họp |
+| GET | `/api/v1/events/{shortCode}/calendar.ics` | No | Tải file lịch họp đã chốt (.ics) |
 
 ---
 
@@ -983,3 +1049,14 @@ Status = 3 (Closed)
 ```
 
 Status này được giữ trong DB để mở rộng sau.
+
+## Giới hạn tần suất (rate limit)
+
+Vượt giới hạn trả `429` (envelope `ApiResponse`, có header `Retry-After`).
+
+| Phạm vi | Giới hạn |
+| :--- | :--- |
+| Mọi request, theo IP | 300 / phút |
+| `POST /events` | 10 / 10 phút / IP |
+| `POST /events/{shortCode}/participants/access` | 10 / phút / IP + shortCode |
+| Ghi dữ liệu đã đăng nhập (lưu lịch, sửa, chốt) | 120 / phút / IP |

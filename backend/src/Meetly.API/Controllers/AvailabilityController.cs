@@ -1,12 +1,15 @@
+using Meetly.API.Extensions;
 using Meetly.Contract.DTOs.Common;
 using Meetly.Service.Availability;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Meetly.API.Controllers;
 
 [ApiController]
 [Authorize]
+[EnableRateLimiting(RateLimitingExtensions.WritePolicy)]
 [Route("api/v1/events/{shortCode}/participants/me/availability")]
 public sealed class AvailabilityController : ControllerBase
 {

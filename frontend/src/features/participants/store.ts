@@ -1,162 +1,107 @@
-import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { create } from 'zustand'
+import { createJSONStorage, persist } from 'zustand/middleware'
 
-import type {
-  EventScheduleConfig,
-  ParticipantAuthInfo,
-  ParticipantView,
-  PaintMode,
-} from '@/features/participants/types';
+import type { ParticipantAuthInfo, PaintMode } from '@/features/participants/types'
 
-/** `Events.EventStatus.Open` bên BE */
-const EVENT_STATUS_OPEN = 1;
-
+/**
+ * Phiên của participant trên một event. Dữ liệu event (cấu hình lưới, trạng thái chốt)
+ * KHÔNG nằm ở đây mà lấy từ `useEventQuery`; màn đang xem lấy từ route.
+ */
 interface ParticipantState {
-  auth: ParticipantAuthInfo | null;
-  currentView: ParticipantView;
-  /** Cấu hình lưới của event - không persist, luôn tải mới khi vào lại app */
-  scheduleConfig: EventScheduleConfig | null;
+  auth: ParticipantAuthInfo | null
   /**
-   * Các slot đang được tô. Nghĩa là "rảnh" khi `paintMode = FREE`, "bận" khi
-   * `BUSY` (FE đảo ngược trước khi gửi API) - nên đổi mode sẽ xoá về rỗng.
+   * Các ô đang tô trên lưới cá nhân. Là "rảnh" khi `paintMode = FREE`, "bận" khi `BUSY`
+   * (đảo lại trước khi gửi API). Không persist: luôn tải lại từ `GET /participants/me`.
    */
-  selectedSlotIds: Set<string>;
-  paintMode: PaintMode;
-  hasSavedOnce: boolean;
-  isEmailDialogOpen: boolean;
-  hasEmailSubscribed: boolean;
-  isFinalized: boolean;
-  finalizedMessage: string | null;
+  selectedSlotIds: Set<string>
+  /** shortCode mà `selectedSlotIds` đã được nạp từ server, tránh nạp lại đè lên thao tác đang làm */
+  loadedSlotsFor: string | null
+  paintMode: PaintMode
+  hasSavedOnce: boolean
+  isEmailDialogOpen: boolean
+  hasEmailSubscribed: boolean
 
-  login: (auth: ParticipantAuthInfo, initialFreeSlotIds: string[]) => void;
-  setView: (view: ParticipantView) => void;
-  setScheduleConfig: (config: EventScheduleConfig) => void;
-  setPaintMode: (mode: PaintMode) => void;
-  setSlotPainted: (slotId: string, isPainted: boolean) => void;
-  addPaintedSlots: (slotIds: string[]) => void;
-  clearAllPainted: () => void;
-  markSavedOnce: () => void;
-  openEmailDialog: () => void;
-  closeEmailDialog: () => void;
-  markEmailSubscribed: () => void;
-  finalizeEvent: (message: string) => void;
+  login: (auth: ParticipantAuthInfo) => void
+  loadSlots: (shortCode: string, freeSlotIds: string[]) => void
+  setPaintMode: (mode: PaintMode, allSlotIds: string[]) => void
+  setSlotPainted: (slotId: string, isPainted: boolean) => void
+  setSlotsPainted: (slotIds: string[], isPainted: boolean) => void
+  clearAllPainted: () => void
+  markSavedOnce: () => void
+  openEmailDialog: () => void
+  closeEmailDialog: () => void
+  markEmailSubscribed: () => void
   /** Rời event hiện tại và quay về màn định danh */
-  resetSession: () => void;
+  resetSession: () => void
 }
 
-/** `JSON.stringify` biến `Set` thành `{}`, nên tự đổi Set <-> mảng khi lưu/đọc localStorage */
-const SET_MARKER = '__set__';
-
-interface SerializedSet {
-  [SET_MARKER]: true;
-  values: string[];
-}
-
-function isSerializedSet(value: unknown): value is SerializedSet {
-  return typeof value === 'object' && value !== null && SET_MARKER in value;
-}
-
-function persistReplacer(_key: string, value: unknown): unknown {
-  return value instanceof Set
-    ? ({ [SET_MARKER]: true, values: Array.from(value) } satisfies SerializedSet)
-    : value;
-}
-
-function persistReviver(_key: string, value: unknown): unknown {
-  return isSerializedSet(value) ? new Set(value.values) : value;
+const initialSession = {
+  auth: null,
+  selectedSlotIds: new Set<string>(),
+  loadedSlotsFor: null,
+  paintMode: 'FREE' as PaintMode,
+  hasSavedOnce: false,
+  isEmailDialogOpen: false,
+  hasEmailSubscribed: false,
 }
 
 export const useParticipantStore = create<ParticipantState>()(
   persist(
     (set) => ({
-      auth: null,
-      currentView: 'AUTH',
-      scheduleConfig: null,
-      selectedSlotIds: new Set<string>(),
-      paintMode: 'FREE',
-      hasSavedOnce: false,
-      isEmailDialogOpen: false,
-      hasEmailSubscribed: false,
-      isFinalized: false,
-      finalizedMessage: null,
+      ...initialSession,
 
-      login: (auth, initialFreeSlotIds) =>
-        set({
-          auth,
-          selectedSlotIds: new Set(initialFreeSlotIds),
-          currentView: 'OVERVIEW',
-        }),
+      login: (auth) => set({ ...initialSession, selectedSlotIds: new Set(), auth }),
 
-      setView: (view) => set({ currentView: view }),
+      loadSlots: (shortCode, freeSlotIds) =>
+        set({ selectedSlotIds: new Set(freeSlotIds), paintMode: 'FREE', loadedSlotsFor: shortCode }),
 
-      // Event đã chốt trước khi vào thì SignalR sẽ không bắn lại, nên lấy từ `status`
-      setScheduleConfig: (config) =>
-        set({ scheduleConfig: config, isFinalized: config.status !== EVENT_STATUS_OPEN }),
-
-      setPaintMode: (mode) => set({ paintMode: mode, selectedSlotIds: new Set<string>() }),
-
-      setSlotPainted: (slotId: string, isPainted: boolean) =>
+      // Đổi chế độ giữ nguyên lịch: tập ô tô mới là phần bù của tập cũ trên toàn lưới
+      setPaintMode: (mode, allSlotIds) =>
         set((state) => {
-          if (state.selectedSlotIds.has(slotId) === isPainted) return state;
-
-          const next = new Set(state.selectedSlotIds);
-          if (isPainted) {
-            next.add(slotId);
-          } else {
-            next.delete(slotId);
+          if (state.paintMode === mode) return state
+          return {
+            paintMode: mode,
+            selectedSlotIds: new Set(allSlotIds.filter((id) => !state.selectedSlotIds.has(id))),
           }
-          return { selectedSlotIds: next };
         }),
 
-      addPaintedSlots: (slotIds) =>
+      setSlotPainted: (slotId, isPainted) =>
         set((state) => {
-          const next = new Set(state.selectedSlotIds);
-          slotIds.forEach((id) => next.add(id));
-          return { selectedSlotIds: next };
+          if (state.selectedSlotIds.has(slotId) === isPainted) return state
+          const next = new Set(state.selectedSlotIds)
+          if (isPainted) next.add(slotId)
+          else next.delete(slotId)
+          return { selectedSlotIds: next }
+        }),
+
+      setSlotsPainted: (slotIds, isPainted) =>
+        set((state) => {
+          const next = new Set(state.selectedSlotIds)
+          for (const id of slotIds) {
+            if (isPainted) next.add(id)
+            else next.delete(id)
+          }
+          return { selectedSlotIds: next }
         }),
 
       clearAllPainted: () => set({ selectedSlotIds: new Set<string>() }),
-
       markSavedOnce: () => set({ hasSavedOnce: true }),
-
       openEmailDialog: () => set({ isEmailDialogOpen: true }),
       closeEmailDialog: () => set({ isEmailDialogOpen: false }),
       markEmailSubscribed: () => set({ hasEmailSubscribed: true, isEmailDialogOpen: false }),
-
-      finalizeEvent: (message) => set({ isFinalized: true, finalizedMessage: message }),
-
-      resetSession: () =>
-        set({
-          auth: null,
-          currentView: 'AUTH',
-          scheduleConfig: null,
-          selectedSlotIds: new Set<string>(),
-          paintMode: 'FREE',
-          hasSavedOnce: false,
-          isEmailDialogOpen: false,
-          hasEmailSubscribed: false,
-          isFinalized: false,
-          finalizedMessage: null,
-        }),
+      resetSession: () => set({ ...initialSession, selectedSlotIds: new Set() }),
     }),
     {
       name: 'meetly-participant-session',
       // Tăng version khi đổi shape của phần persist để bỏ bản lưu cũ không khớp
-      version: 4,
-      storage: createJSONStorage(() => localStorage, {
-        replacer: persistReplacer,
-        reviver: persistReviver,
-      }),
-      // Chỉ lưu phiên của participant; trạng thái chốt lịch và `scheduleConfig`
-      // luôn lấy mới từ server/SignalR để không bị kẹt bản cũ.
+      version: 5,
+      storage: createJSONStorage(() => localStorage),
+      migrate: () => ({}) as ParticipantState,
       partialize: (state) => ({
         auth: state.auth,
-        currentView: state.currentView,
-        selectedSlotIds: state.selectedSlotIds,
-        paintMode: state.paintMode,
         hasSavedOnce: state.hasSavedOnce,
         hasEmailSubscribed: state.hasEmailSubscribed,
       }),
     },
   ),
-);
+)

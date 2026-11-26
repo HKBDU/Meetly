@@ -1,252 +1,99 @@
-import { memo, useLayoutEffect, useMemo, useRef, useState } from "react"
+import { memo } from 'react'
 
-import { MOBILE_COLUMNS_PER_PAGE } from "@/features/heatmap/constants"
-import { getColumnPage, getPageCount } from "@/features/heatmap/time"
-import { formatDateLabel, getGridTimes, getSlotId } from "@/features/participants/gridUtils"
-import { useOptimizedDrag } from "@/features/participants/hooks/useOptimizedDrag"
-import { useParticipantStore } from "@/features/participants/store"
-import { ColumnPager } from "@/shared/components/ColumnPager"
-import { cn } from "@/lib/utils"
-import { formatDate, formatHourLabel } from "@/lib/date-time"
-
-/** Cột ngày không được nhỏ hơn mức này trước khi lưới chuyển sang trang kế tiếp. */
-const TIME_COLUMN_WIDTH = 44
-const MIN_DAY_COLUMN_WIDTH = 75
-/** Từ 1-3 ngày trên desktop, lưới không rộng hơn vùng table tối đa của heatmap tổng. */
-const COMPACT_LAYOUT_MAX_COLUMNS = 3
-const GROUP_HEATMAP_MAX_WIDTH = 1052
-const MOBILE_BREAKPOINT_QUERY = "(max-width: 767px)"
+import { cn } from '@/lib/utils'
+import { rowBoundaryClass } from '@/shared/grid/rowBoundary'
+import { TimeGrid } from '@/shared/grid/TimeGrid'
+import { getSlotId } from '@/features/participants/gridUtils'
+import { useOptimizedDrag } from '@/features/participants/hooks/useOptimizedDrag'
+import type { ScheduleGrid } from '@/features/participants/hooks/useScheduleGrid'
+import { useParticipantStore } from '@/features/participants/store'
+import { useT } from '@/shared/i18n'
 
 interface ScheduleCellProps {
   slotId: string
-  date: string
+  column: string
   row: number
-  /** Ô đầu của giờ tròn (09:00, 10:00...) */
-  isHourStart: boolean
-  /** Ô đầu của mốc nửa giờ (09:30, 10:30...) */
-  isHalfHourStart: boolean
+  startTime: string
+  locked: boolean
   onPointerDown: (event: React.PointerEvent<HTMLTableCellElement>) => void
   onPointerEnter: (event: React.PointerEvent<HTMLTableCellElement>) => void
 }
 
 /**
- * Memo hoá và chỉ subscribe boolean của riêng ô để khi kéo thả chỉ ô đổi
- * trạng thái mới re-render. `data-date`/`data-row` để `useOptimizedDrag` lấp
- * đầy các ô bị bỏ sót khi chuột di chuyển nhanh.
+ * Memo hoá và chỉ subscribe boolean của riêng ô, nên khi kéo thả chỉ ô đổi trạng thái
+ * mới vẽ lại. `data-column`/`data-row` để `useOptimizedDrag` lấp các ô bị bỏ sót.
  */
 const ScheduleCell = memo(function ScheduleCell({
   slotId,
-  date,
+  column,
   row,
-  isHourStart,
-  isHalfHourStart,
+  startTime,
+  locked,
   onPointerDown,
   onPointerEnter,
 }: ScheduleCellProps) {
-  // "Được tô" chỉ là rảnh hay bận tuỳ paintMode, xem useAutoSaveSchedule
+  // "Được tô" là rảnh hay bận tuỳ paintMode, xem `resolveFreeSlotIds`
   const isPainted = useParticipantStore((s) => s.selectedSlotIds.has(slotId))
-  const isFinalized = useParticipantStore((s) => s.isFinalized)
 
   return (
     <td
       data-slot-id={slotId}
-      data-date={date}
+      data-column={column}
       data-row={row}
-      onPointerDown={isFinalized ? undefined : onPointerDown}
-      onPointerEnter={isFinalized ? undefined : onPointerEnter}
+      onPointerDown={locked ? undefined : onPointerDown}
+      onPointerEnter={locked ? undefined : onPointerEnter}
       className={cn(
-        "h-5 border-r border-slate-300/60 p-0 transition-colors duration-75",
-        // Thiếu touch-none thì kéo ngang trên mobile bị hiểu thành cuộn trang
-        !isFinalized && "touch-none select-none",
-        isHourStart && "border-t border-solid border-slate-300",
-        isHalfHourStart && "border-t border-dashed border-slate-200/70",
-        isFinalized
-          ? cn("cursor-not-allowed", isPainted ? "availability-level-5 opacity-50" : "bg-muted")
-          : cn(
-              "cursor-pointer",
-              isPainted
-                ? "availability-level-5 hover:brightness-95"
-                : "availability-level-0 hover:bg-accent"
-            )
+        'h-5 border-r border-grid-line/60 p-0 transition-colors duration-75',
+        // Thiếu touch-none thì kéo trên mobile bị hiểu thành cuộn trang
+        !locked && 'touch-none select-none',
+        rowBoundaryClass(startTime),
+        locked
+          ? cn('cursor-not-allowed', isPainted ? 'bg-heat-5 opacity-50' : 'bg-muted')
+          : cn('cursor-pointer', isPainted ? 'bg-heat-5 hover:brightness-95' : 'bg-heat-0 hover:bg-accent'),
       )}
     />
   )
 })
 
 interface PersonalScheduleGridProps {
-  /** Nhận từ cha để kéo chuột, "Chọn thủ công" và "Xoá hết" dùng chung 1 debounce lưu */
+  grid: ScheduleGrid
+  /** Từ cha để kéo chuột, "Chọn thủ công" và "Xoá hết" dùng chung 1 debounce lưu */
   triggerAutoSave: () => void
-  manualSelection: { date: string; requestId: number } | null
+  manualSelection: { columnKey: string; requestId: number } | null
 }
 
-export function PersonalScheduleGrid({
-  triggerAutoSave,
-  manualSelection,
-}: PersonalScheduleGridProps) {
-  const config = useParticipantStore((s) => s.scheduleConfig)
-
+export function PersonalScheduleGrid({ grid, triggerAutoSave, manualSelection }: PersonalScheduleGridProps) {
+  const t = useT()
   const { handleCellPointerDown, handleCellPointerEnter } = useOptimizedDrag({
+    times: grid.times,
+    locked: grid.isLocked,
     onDragEnd: triggerAutoSave,
   })
 
-  const times = useMemo(() => (config ? getGridTimes(config) : []), [config])
-
-  const gridContainerRef = useRef<HTMLDivElement>(null)
-  const [isMobile, setIsMobile] = useState(
-    () => typeof window !== "undefined" && window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches
-  )
-  const [containerWidth, setContainerWidth] = useState(0)
-  const [page, setPage] = useState(0)
-  const [appliedManualSelectionKey, setAppliedManualSelectionKey] = useState<string | null>(null)
-  const dates = useMemo(() => config?.dates ?? [], [config])
-  const usesCompactLayout = !isMobile && dates.length <= COMPACT_LAYOUT_MAX_COLUMNS
-  const columnsThatFit =
-    containerWidth > TIME_COLUMN_WIDTH
-      ? Math.max(1, Math.floor((containerWidth - TIME_COLUMN_WIDTH) / MIN_DAY_COLUMN_WIDTH))
-      : Math.max(1, dates.length)
-  const pageSize = isMobile
-    ? MOBILE_COLUMNS_PER_PAGE
-    : usesCompactLayout
-      ? Math.max(1, dates.length)
-      : columnsThatFit
-  const pageCount = getPageCount(dates.length, pageSize)
-  const currentPage = Math.min(page, pageCount - 1)
-  const visibleDates = getColumnPage(dates, currentPage, pageSize)
-  const manualSelectionKey = manualSelection
-    ? `${manualSelection.requestId}:${manualSelection.date}:${pageSize}`
-    : null
-
-  // Điều chỉnh state ngay trong render có điều kiện để lần paint kế tiếp đã ở đúng page,
-  // tránh một frame hiển thị trang cũ sau khi dialog đóng.
-  if (manualSelection && manualSelectionKey !== appliedManualSelectionKey) {
-    const selectedDateIndex = dates.indexOf(manualSelection.date)
-    setAppliedManualSelectionKey(manualSelectionKey)
-    if (selectedDateIndex >= 0) {
-      setPage(Math.floor(selectedDateIndex / pageSize))
-    }
-  }
-
-  useLayoutEffect(() => {
-    const mediaQuery = window.matchMedia(MOBILE_BREAKPOINT_QUERY)
-    const updateViewportMode = () => setIsMobile(mediaQuery.matches)
-
-    updateViewportMode()
-    mediaQuery.addEventListener("change", updateViewportMode)
-    return () => mediaQuery.removeEventListener("change", updateViewportMode)
-  }, [])
-
-  useLayoutEffect(() => {
-    const container = gridContainerRef.current
-    if (!container) return
-
-    const updateContainerWidth = () => setContainerWidth(container.clientWidth)
-    updateContainerWidth()
-
-    const resizeObserver = new ResizeObserver(updateContainerWidth)
-    resizeObserver.observe(container)
-
-    return () => resizeObserver.disconnect()
-  }, [])
-
-  if (!config) {
-    return (
-      <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-        Loading schedule...
-      </div>
-    )
-  }
-
   return (
-    <section className="p-3 sm:p-4" aria-label="My schedule">
-      <ColumnPager
-        page={currentPage}
-        pageCount={pageCount}
-        onPageChange={setPage}
-        label="Schedule date pages"
+    <section className="p-3 sm:p-4" aria-label={t('schedule.label')}>
+      <TimeGrid
+        columns={grid.columns}
+        rows={grid.rows}
+        caption={t('schedule.caption')}
+        pagerLabel={t('schedule.pager')}
+        revealColumn={manualSelection ? { key: manualSelection.columnKey, requestId: manualSelection.requestId } : null}
+        renderCell={(column, row, rowIndex) => {
+          const slotId = getSlotId(column, row.startTime)
+          return (
+            <ScheduleCell
+              key={slotId}
+              slotId={slotId}
+              column={column.key}
+              row={rowIndex}
+              startTime={row.startTime}
+              locked={grid.isLocked}
+              onPointerDown={handleCellPointerDown}
+              onPointerEnter={handleCellPointerEnter}
+            />
+          )
+        }}
       />
-
-      <div ref={gridContainerRef} className="overflow-x-auto">
-        <div
-          className="mx-auto w-full border border-slate-300 bg-white"
-          style={
-            usesCompactLayout
-              ? {
-                  maxWidth: GROUP_HEATMAP_MAX_WIDTH,
-                }
-              : undefined
-          }
-        >
-        <table className="w-full table-fixed border-collapse select-none">
-          <thead className="bg-white">
-            <tr>
-              <th
-                scope="col"
-                style={{ width: TIME_COLUMN_WIDTH }}
-                className="border-b border-r border-slate-200 p-1 text-xs text-slate-500"
-              >
-                Time
-              </th>
-              {visibleDates.map((date) => {
-                const { weekday } = formatDateLabel(date)
-                const detail =
-                  config.dateMode === "SPECIFIC_DATES" ? formatDate(date) : "Weekly"
-                return (
-                  <th
-                    scope="col"
-                    key={date}
-                    title={`${weekday} ${detail}`}
-                    className="border-b border-r border-slate-200 px-1 py-2 text-xs font-semibold last:border-r-0 sm:py-3 sm:text-sm"
-                  >
-                    <span className="sm:hidden">{weekday.slice(0, 3)}</span>
-                    <span className="hidden sm:inline">{weekday}</span>
-                    <span className="mt-1 block truncate text-[10px] font-normal text-slate-500 sm:text-xs">
-                      {detail}
-                    </span>
-                  </th>
-                )
-              })}
-            </tr>
-          </thead>
-          <tbody>
-            {times.map((time, rowIndex) => {
-              const isHourStart = time.endsWith(":00")
-              const isHalfHourStart = time.endsWith(":30")
-              return (
-                <tr key={time}>
-                  <th
-                    scope="row"
-                    aria-label={time}
-                    className={cn(
-                      "border-r border-slate-200 bg-white px-1 text-left text-xs font-medium text-slate-500",
-                      isHourStart
-                        ? "border-t border-t-slate-300 align-top pt-1"
-                        : "border-t border-t-transparent"
-                    )}
-                  >
-                    {isHourStart ? formatHourLabel(time) : null}
-                  </th>
-                  {visibleDates.map((date) => {
-                    const slotId = getSlotId(date, time)
-                    return (
-                      <ScheduleCell
-                        key={slotId}
-                        slotId={slotId}
-                        date={date}
-                        row={rowIndex}
-                        isHourStart={isHourStart}
-                        isHalfHourStart={isHalfHourStart}
-                        onPointerDown={handleCellPointerDown}
-                        onPointerEnter={handleCellPointerEnter}
-                      />
-                    )
-                  })}
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-        </div>
-      </div>
     </section>
   )
 }

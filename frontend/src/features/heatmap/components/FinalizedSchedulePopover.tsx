@@ -3,11 +3,12 @@ import { CalendarCheck2, Check, Clock3, Copy, Globe2, Users, X } from 'lucide-re
 import { toast } from 'sonner';
 import { timeToMinutes } from '@/lib/date-time';
 import { Button, Popover, PopoverContent, PopoverTrigger } from '@/shared/components/ui';
-import { formatDay } from '../time';
-import type { HeatmapEvent } from '../types';
+import { formatDay } from '@/shared/grid/model';
+import { useT } from '@/shared/i18n';
+import type { EventDetail } from '@/shared/types';
 
 interface FinalizedSchedulePopoverProps {
-  event: HeatmapEvent;
+  event: EventDetail;
   children: ReactNode;
 }
 
@@ -31,6 +32,7 @@ function useMediaQuery(query: string) {
 }
 
 export function FinalizedSchedulePopover({ event, children }: FinalizedSchedulePopoverProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const closeTimer = useRef<number | null>(null);
   const isMobile = useMediaQuery(MOBILE_MEDIA_QUERY);
@@ -73,9 +75,9 @@ export function FinalizedSchedulePopover({ event, children }: FinalizedScheduleP
       await navigator.clipboard.writeText(
         `${event.title}: ${formatDay(finalizedSchedule)}, ${timeText} (${event.timezone})`,
       );
-      toast.success('Final meeting time copied.');
+      toast.success(t('final.copied'));
     } catch {
-      toast.error('Unable to copy the final meeting time.');
+      toast.error(t('final.copyFailed'));
     }
   }
 
@@ -96,40 +98,40 @@ export function FinalizedSchedulePopover({ event, children }: FinalizedScheduleP
         sideOffset={isMobile ? 8 : 4}
         collisionPadding={12}
         sticky="always"
-        className="flex max-h-[var(--radix-popover-content-available-height)] w-[calc(100vw-1.5rem)] max-w-[22rem] flex-col overflow-hidden rounded-2xl border-blue-200 p-0 shadow-xl sm:w-[min(22rem,calc(100vw-2rem))]"
+        className="flex max-h-[var(--radix-popover-content-available-height)] w-[calc(100vw-1.5rem)] max-w-[22rem] flex-col overflow-hidden rounded-2xl border-finalized/30 p-0 shadow-xl sm:w-[min(22rem,calc(100vw-2rem))]"
         onMouseEnter={openFromHover}
         onMouseLeave={closeFromHover}
       >
-        <div className="flex shrink-0 items-start gap-3 bg-blue-600 px-4 py-4 text-white">
-          <span className="rounded-xl bg-white/15 p-2.5">
+        <div className="flex shrink-0 items-start gap-3 bg-finalized px-4 py-4 text-finalized-foreground">
+          <span className="rounded-xl bg-finalized-foreground/15 p-2.5">
             <CalendarCheck2 className="size-5" aria-hidden="true" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-blue-100">Finalized schedule</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-finalized-foreground/80">{t('final.title')}</p>
             <p className="mt-1 truncate font-semibold">{event.title}</p>
           </div>
-          <Button type="button" size="icon-sm" variant="ghost" aria-label="Close final schedule details" className="text-white hover:bg-white/15 hover:text-white" onClick={() => setOpen(false)}>
+          <Button type="button" size="icon-sm" variant="ghost" aria-label={t('final.closeDetails')} className="text-finalized-foreground hover:bg-finalized-foreground/15 hover:text-finalized-foreground" onClick={() => setOpen(false)}>
             <X aria-hidden="true" />
           </Button>
         </div>
         <div className="min-h-0 space-y-4 overflow-y-auto overscroll-contain p-4">
           <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-3 text-sm">
-            <CalendarCheck2 className="mt-0.5 size-4 text-blue-600" aria-hidden="true" />
-            <div><dt className="text-xs text-muted-foreground">Date</dt><dd className="font-medium">{formatDay(finalizedSchedule)}</dd></div>
-            <Clock3 className="mt-0.5 size-4 text-blue-600" aria-hidden="true" />
-            <div><dt className="text-xs text-muted-foreground">Time</dt><dd className="font-medium tabular-nums">{timeText}</dd></div>
-            <Globe2 className="mt-0.5 size-4 text-blue-600" aria-hidden="true" />
-            <div><dt className="text-xs text-muted-foreground">Time zone</dt><dd className="font-medium">{event.timezone}</dd></div>
-            <Users className="mt-0.5 size-4 text-blue-600" aria-hidden="true" />
-            <div><dt className="text-xs text-muted-foreground">Meeting</dt><dd className="font-medium">{duration} min · {event.participants.length} participants</dd></div>
+            <CalendarCheck2 className="mt-0.5 size-4 text-finalized" aria-hidden="true" />
+            <div><dt className="text-xs text-muted-foreground">{t('final.date')}</dt><dd className="font-medium">{formatDay(finalizedSchedule)}</dd></div>
+            <Clock3 className="mt-0.5 size-4 text-finalized" aria-hidden="true" />
+            <div><dt className="text-xs text-muted-foreground">{t('final.time')}</dt><dd className="font-medium tabular-nums">{timeText}</dd></div>
+            <Globe2 className="mt-0.5 size-4 text-finalized" aria-hidden="true" />
+            <div><dt className="text-xs text-muted-foreground">{t('final.timezone')}</dt><dd className="font-medium">{event.timezone}</dd></div>
+            <Users className="mt-0.5 size-4 text-finalized" aria-hidden="true" />
+            <div><dt className="text-xs text-muted-foreground">{t('final.meeting')}</dt><dd className="font-medium">{t('duration.minutes', { count: duration })} · {t('common.participants', { count: event.participants.length })}</dd></div>
           </dl>
-          <p className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-xs font-medium text-blue-800">
+          <p className="flex items-center gap-2 rounded-lg bg-finalized-muted px-3 py-2 text-xs font-medium text-finalized">
             <Check className="size-4 shrink-0" aria-hidden="true" />
-            The meeting time has been finalized.
+            {t('final.done')}
           </p>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => void copyTime()}><Copy aria-hidden="true" />Copy time</Button>
-            <Button type="button" size="sm" onClick={() => setOpen(false)}>Close</Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => void copyTime()}><Copy aria-hidden="true" />{t('final.copyTime')}</Button>
+            <Button type="button" size="sm" onClick={() => setOpen(false)}>{t('common.close')}</Button>
           </div>
         </div>
       </PopoverContent>

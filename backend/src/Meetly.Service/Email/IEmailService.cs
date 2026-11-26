@@ -6,5 +6,6 @@ public interface IEmailService
         IReadOnlyCollection<string> recipients,
         string subject,
         string html,
+        IReadOnlyCollection<EmailAttachment> attachments,
         CancellationToken cancellationToken);
 }

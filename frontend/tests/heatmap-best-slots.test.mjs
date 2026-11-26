@@ -224,3 +224,69 @@ test('best slots respect the key participant and return nothing when nobody fits
     await close();
   }
 });
+
+async function loadRankBestTimes() {
+  const server = await createServer({
+    configFile: false,
+    resolve: { alias: { '@': fileURLToPath(new URL('../src', import.meta.url)) } },
+    optimizeDeps: { noDiscovery: true },
+    server: { middlewareMode: true, hmr: false, watch: null, ws: false },
+    appType: 'custom',
+  });
+  const { rankBestTimes } = await server.ssrLoadModule('/src/features/heatmap/suggestions.ts');
+  return { rankBestTimes, close: () => server.close() };
+}
+
+test('ranked best times order by people free for the whole meeting and list who is missing', async () => {
+  const { rankBestTimes, close } = await loadRankBestTimes();
+  try {
+    const day = '2026-09-25';
+    const event = buildEvent([
+      cell(day, '09:00', ['An', 'Binh', 'Chi']),
+      cell(day, '09:15', ['An', 'Binh', 'Chi']),
+      cell(day, '09:30', ['An', 'Binh', 'Chi', 'Dung', 'Em']),
+      cell(day, '09:45', ['An', 'Binh', 'Chi', 'Dung', 'Em']),
+      cell(day, '10:00', ['An']),
+      cell(day, '10:15', ['An']),
+    ]);
+
+    const ranked = rankBestTimes(event, { duration: 30 });
+
+    assert.deepEqual(
+      ranked.map(({ startTime, endTime, available, missing }) => ({ startTime, endTime, available: available.length, missing })),
+      [
+        { startTime: '09:30', endTime: '10:00', available: 5, missing: [] },
+        { startTime: '09:00', endTime: '09:30', available: 3, missing: ['Dung', 'Em'] },
+        { startTime: '10:00', endTime: '10:30', available: 1, missing: ['Binh', 'Chi', 'Dung', 'Em'] },
+      ],
+    );
+  } finally {
+    await close();
+  }
+});
+
+test('ranked best times never overlap within a day and respect must-include people', async () => {
+  const { rankBestTimes, close } = await loadRankBestTimes();
+  try {
+    const day = '2026-09-25';
+    const all = ['An', 'Binh', 'Chi', 'Dung', 'Em'];
+    const event = buildEvent([
+      cell(day, '09:00', all),
+      cell(day, '09:15', all),
+      cell(day, '09:30', all),
+      cell(day, '09:45', ['An']),
+    ]);
+
+    const ranked = rankBestTimes(event, { duration: 30 });
+    for (let i = 0; i < ranked.length; i++)
+      for (let j = i + 1; j < ranked.length; j++)
+        assert.ok(ranked[i].endTime <= ranked[j].startTime || ranked[j].endTime <= ranked[i].startTime);
+
+    const withEm = rankBestTimes(event, { duration: 30, mustInclude: ['em'] });
+    assert.ok(withEm.length > 0);
+    assert.ok(withEm.every((slot) => slot.available.includes('Em')));
+    assert.deepEqual(rankBestTimes(event, { duration: 60, mustInclude: ['Em'] }), []);
+  } finally {
+    await close();
+  }
+});

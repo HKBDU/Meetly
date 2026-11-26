@@ -18,10 +18,10 @@ async function createTestServer() {
   });
 }
 
-test('time rows use the canonical 15-minute frontend resolution', async () => {
+test('time rows stop before the configured end time', async () => {
   const server = await createTestServer();
   try {
-    const { buildRows } = await server.ssrLoadModule('/src/features/heatmap/time.ts');
+    const { buildRows } = await server.ssrLoadModule('/src/shared/grid/model.ts');
     assert.deepEqual(buildRows('08:00', '09:00'), [
       { startTime: '08:00', endTime: '08:15' },
       { startTime: '08:15', endTime: '08:30' },
@@ -36,7 +36,7 @@ test('time rows use the canonical 15-minute frontend resolution', async () => {
 test('column pages use stable desktop and mobile page sizes', async () => {
   const server = await createTestServer();
   try {
-    const { getColumnPage, getPageCount } = await server.ssrLoadModule('/src/features/heatmap/time.ts');
+    const { getColumnPage, getPageCount } = await server.ssrLoadModule('/src/shared/grid/model.ts');
     const { DESKTOP_COLUMNS_PER_PAGE, MOBILE_COLUMNS_PER_PAGE } = await server.ssrLoadModule(
       '/src/features/heatmap/constants.ts',
     );
@@ -52,7 +52,7 @@ test('column pages use stable desktop and mobile page sizes', async () => {
     assert.equal(getPageCount(12, 3), 4);
     assert.equal(getPageCount(0, 7), 1);
 
-    for (const count of [1, 7, 8, 12]) {
+    for (const count of [1, 5, 6, 10, 11, 12]) {
       const desktopColumns = columns.slice(0, count);
       const pages = getPageCount(count, DESKTOP_COLUMNS_PER_PAGE);
       for (let page = 0; page < pages; page += 1) {
@@ -71,120 +71,11 @@ test('column pages use stable desktop and mobile page sizes', async () => {
   }
 });
 
-test('shared app background includes the exact local-ui pixel grid', async () => {
-  {
-    const css = await readFile(
-      fileURLToPath(new URL('../src/styles/global.css', import.meta.url)),
-      'utf8',
-    );
-    assert.match(
-      css.replace(/\s+/g, ' '),
-      /\.app-event-background \{ background: radial-gradient\(circle at 12% 18%, rgba\(151, 190, 146, \.35\), transparent 27rem\), linear-gradient\(rgba\(16, 67, 48, \.055\) 1px, transparent 1px\), linear-gradient\(90deg, rgba\(16, 67, 48, \.055\) 1px, transparent 1px\), #eef1e7; background-size: auto, 100px 100px, 100px 100px, auto; \}/,
-    );
-<<<<<<< HEAD
-  } finally {
-    await server.close();
-  }
-});
-
-test('Edit Event guards direct past clicks without rejecting drag results', async () => {
-  const server = await createTestServer();
-  try {
-    const { createEditEventSchema, isBlockedPastDate } = await server.ssrLoadModule(
-      '/src/features/heatmap/schema.ts',
-    );
-    const { applyDirectDateSelection, applyDraggedDateRange } = await server.ssrLoadModule(
-      '/src/features/heatmap/date-selection.ts',
-    );
-    const today = new Date(2026, 8, 17);
-    const historicalDate = '2026-09-15';
-    const base = {
-      title: 'Planning',
-      eventType: 1,
-      availableDates: [historicalDate, '2026-09-17'],
-      availableWeekdays: [],
-      dailyStartTime: '08:00',
-      dailyEndTime: '09:00',
-    };
-
-    assert.equal(isBlockedPastDate(new Date(2026, 8, 15), [], today), true);
-    assert.equal(isBlockedPastDate(new Date(2026, 8, 16), [], today), true);
-    assert.equal(isBlockedPastDate(new Date(2026, 8, 15), [historicalDate], today), false);
-    assert.equal(isBlockedPastDate(new Date(2026, 8, 17), [historicalDate], today), false);
-    assert.equal(isBlockedPastDate(new Date(2026, 8, 18), [historicalDate], today), false);
-    assert.equal(createEditEventSchema([historicalDate], today).safeParse(base).success, true);
-    assert.deepEqual(
-      applyDirectDateSelection(
-        base.availableDates,
-        [...base.availableDates, '2026-09-16'],
-        new Date(2026, 8, 16),
-        [historicalDate],
-        today,
-      ),
-      base.availableDates,
-    );
-    assert.deepEqual(
-      applyDirectDateSelection(
-        base.availableDates,
-        [...base.availableDates, '2026-09-18'],
-        new Date(2026, 8, 18),
-        [historicalDate],
-        today,
-      ),
-      [historicalDate, '2026-09-17', '2026-09-18'],
-    );
-    assert.deepEqual(
-      applyDirectDateSelection(
-        base.availableDates,
-        [historicalDate],
-        new Date(2026, 8, 17),
-        [historicalDate],
-        today,
-      ),
-      [historicalDate],
-    );
-    assert.deepEqual(
-      applyDirectDateSelection(
-        base.availableDates,
-        ['2026-09-17'],
-        new Date(2026, 8, 15),
-        [historicalDate],
-        today,
-      ),
-      ['2026-09-17'],
-    );
-    assert.deepEqual(
-      applyDraggedDateRange([], new Date(2026, 8, 14), new Date(2026, 8, 18), true),
-      ['2026-09-14', '2026-09-15', '2026-09-16', '2026-09-17', '2026-09-18'],
-    );
-    assert.deepEqual(
-      applyDraggedDateRange([], new Date(2026, 8, 18), new Date(2026, 8, 14), true),
-      ['2026-09-14', '2026-09-15', '2026-09-16', '2026-09-17', '2026-09-18'],
-    );
-    assert.equal(
-      createEditEventSchema([historicalDate], today).safeParse({
-        ...base,
-        availableDates: [...base.availableDates, '2026-09-16'],
-      }).success,
-      true,
-    );
-
-    const dialogSource = await readFile(
-      fileURLToPath(new URL('../src/features/heatmap/components/EditEventDialog.tsx', import.meta.url)),
-      'utf8',
-    );
-    assert.doesNotMatch(dialogSource, /adminUsername|adminPassword|Admin username|Admin password/);
-    assert.match(dialogSource, /Drag either handle in 15-minute steps\./);
-    assert.doesNotMatch(dialogSource, /30-minute steps/);
-    assert.doesNotMatch(dialogSource, /disabled=\{\(date\) => isBlockedPastDate/);
-    assert.doesNotMatch(dialogSource, /calendarDayDisabled|opacity-50 \[&>button\]:cursor-not-allowed/);
-    assert.match(dialogSource, /modifiers=\{\{ blockedPast:/);
-    assert.match(dialogSource, /components=\{\{ DayButton: EditEventDayButton \}\}/);
-  } finally {
-    await server.close();
-=======
->>>>>>> a70dc91383b95562e44e6cdd8f79e117315377fc
-  }
+test('shared app background uses the brand glow on the base background', async () => {
+  const css = await readFile(fileURLToPath(new URL('../src/styles/global.css', import.meta.url)), 'utf8');
+  const rule = /\.app-event-background \{([^}]*)\}/.exec(css)?.[1] ?? '';
+  assert.match(rule, /radial-gradient\([^;]*var\(--brand\)/);
+  assert.match(rule, /var\(--background\)/);
 });
 
 test('historical event dates remain paginated and selectable in the Heatmap', async () => {
@@ -195,7 +86,7 @@ test('historical event dates remain paginated and selectable in the Heatmap', as
     );
     const { mockDatesEvent } = await server.ssrLoadModule('/tests/fixtures/heatmapEvent.ts');
     const { buildRows, getColumnPage, getColumns } = await server.ssrLoadModule(
-      '/src/features/heatmap/time.ts',
+      '/src/shared/grid/model.ts',
     );
     const availableDates = [
       '2026-09-15',
@@ -242,20 +133,22 @@ test('historical event dates remain paginated and selectable in the Heatmap', as
     };
     const started = [];
     const extended = [];
-    const cellElement = HeatmapCell({
-      event,
+    // HeatmapCell là memo(): gọi hàm render bên trong để lấy cây phần tử
+    const cellElement = HeatmapCell.type({
       point,
-      event,
-      cell: historicalCell,
+      names: historicalCell.participants,
       total: event.participants.length,
-      suggestions: [],
-      selected: null,
       selecting: true,
-      onInspect: () => undefined,
-      onInspectEnd: () => undefined,
-      onStart: (value) => started.push(value),
-      onExtend: (value) => extended.push(value),
-      onKeyboardSelect: () => undefined,
+      selection: null,
+      suggestion: null,
+      finalized: null,
+      handlers: {
+        inspect: () => undefined,
+        inspectEnd: () => undefined,
+        start: (value) => started.push(value),
+        extend: (value) => extended.push(value),
+        keyboardSelect: () => undefined,
+      },
     });
     const button = cellElement.props.children[0];
 
@@ -270,7 +163,7 @@ test('historical event dates remain paginated and selectable in the Heatmap', as
         releasePointerCapture: () => undefined,
       },
     });
-    button.props.onPointerEnter();
+    button.props.onPointerEnter({ pointerType: 'mouse' });
     assert.deepEqual(started, [point]);
     assert.deepEqual(extended, [point]);
   } finally {
@@ -278,19 +171,27 @@ test('historical event dates remain paginated and selectable in the Heatmap', as
   }
 });
 
-test('selecting a key participant preserves the API order', async () => {
+test('must-include chips in Best times preserve the API order', async () => {
   const server = await createTestServer();
   try {
-    const { KeyParticipantSelector } = await server.ssrLoadModule(
-      '/src/features/heatmap/components/KeyParticipantSelector.tsx',
+    const { BestTimesPanel } = await server.ssrLoadModule(
+      '/src/features/heatmap/components/BestTimesPanel.tsx',
     );
     const participants = ['Huy', 'Uyên', 'Bảo', 'Dương'].map((username) => ({ username }));
+    const noop = () => undefined;
     const html = renderToStaticMarkup(
-      createElement(KeyParticipantSelector, {
+      createElement(BestTimesPanel, {
+        times: [],
         participants,
-        selected: 'Bảo',
+        duration: 60,
+        mustInclude: ['Bảo'],
+        highlightedKey: null,
         disabled: false,
-        onChange: () => undefined,
+        onDurationChange: noop,
+        onMustIncludeChange: noop,
+        onHighlight: noop,
+        onPick: noop,
+        onChooseManually: noop,
       }),
     );
 
@@ -303,7 +204,7 @@ test('selecting a key participant preserves the API order', async () => {
   }
 });
 
-test('inspected cell details require real pointer movement, focus, or tap', async () => {
+test('inspected cell details can be shown by hover or tap and dismissed after leaving', async () => {
   const server = await createTestServer();
   try {
     const { HeatmapCell } = await server.ssrLoadModule(
@@ -311,7 +212,7 @@ test('inspected cell details require real pointer movement, focus, or tap', asyn
     );
     const { mockDatesEvent } = await server.ssrLoadModule('/tests/fixtures/heatmapEvent.ts');
     const { buildRows, getColumns } = await server.ssrLoadModule(
-      '/src/features/heatmap/time.ts',
+      '/src/shared/grid/model.ts',
     );
     const point = {
       column: getColumns(mockDatesEvent)[0],
@@ -319,33 +220,29 @@ test('inspected cell details require real pointer movement, focus, or tap', asyn
     };
     const inspected = [];
     let leaveCount = 0;
-    const cellElement = HeatmapCell({
-      event: mockDatesEvent,
+    const cellElement = HeatmapCell.type({
       point,
-      event: mockDatesEvent,
-      cell: mockDatesEvent.heatmapGrid[0],
+      names: mockDatesEvent.heatmapGrid[0].participants,
       total: mockDatesEvent.participants.length,
-      suggestions: [],
-      selected: null,
       selecting: false,
-      onInspect: (details) => inspected.push(details),
-      onInspectEnd: () => { leaveCount += 1; },
-      onStart: () => undefined,
-      onExtend: () => undefined,
-      onKeyboardSelect: () => undefined,
+      selection: null,
+      suggestion: null,
+      finalized: null,
+      handlers: {
+        inspect: (cellPoint, names, count) => inspected.push({ cellPoint, names, count }),
+        inspectEnd: () => { leaveCount += 1; },
+        start: () => undefined,
+        extend: () => undefined,
+        keyboardSelect: () => undefined,
+      },
     });
     const button = cellElement.props.children[0];
 
-<<<<<<< HEAD
-    assert.equal(button.props.onMouseEnter, undefined);
-    button.props.onPointerMove({ pointerType: 'mouse' });
-=======
->>>>>>> a70dc91383b95562e44e6cdd8f79e117315377fc
     button.props.onFocus();
     button.props.onClick({ detail: 1 });
     button.props.onMouseLeave();
 
-    assert.equal(inspected.length, 3);
+    assert.equal(inspected.length, 2);
     assert.equal(leaveCount, 1);
   } finally {
     await server.close();
@@ -391,7 +288,7 @@ test('participant details size to content and cap long lists', async () => {
           count: 20,
         },
         participants,
-        keyParticipant: 'Participant 1',
+        highlighted: ['Participant 1'],
       }),
     );
 
@@ -410,14 +307,7 @@ test('finalized schedule keeps the blue range on the Heatmap', async () => {
     const { Heatmap } = await server.ssrLoadModule(
       '/src/features/heatmap/components/Heatmap.tsx',
     );
-<<<<<<< HEAD
-    const { buildRows, containsCell, getColumns } = await server.ssrLoadModule(
-      '/src/features/heatmap/time.ts',
-    );
-    const { mockDatesEvent } = await server.ssrLoadModule('/src/features/heatmap/mock.ts');
-=======
     const { mockDatesEvent } = await server.ssrLoadModule('/tests/fixtures/heatmapEvent.ts');
->>>>>>> a70dc91383b95562e44e6cdd8f79e117315377fc
     const finalSchedule = {
       specificDate: mockDatesEvent.availableDates[0],
       dayOfWeek: null,
@@ -427,61 +317,24 @@ test('finalized schedule keeps the blue range on the Heatmap', async () => {
     const html = renderToStaticMarkup(
       createElement(Heatmap, {
         event: { ...mockDatesEvent, status: 2, finalSchedule },
-        suggestions: [],
+        bestTimes: [],
+        highlightedKey: null,
         selected: finalSchedule,
         selecting: false,
-        onInspect: () => undefined,
-        onInspectEnd: () => undefined,
-        onStart: () => undefined,
-        onExtend: () => undefined,
-        onKeyboardSelect: () => undefined,
+        handlers: {
+          inspect: () => undefined,
+          inspectEnd: () => undefined,
+          start: () => undefined,
+          extend: () => undefined,
+          keyboardSelect: () => undefined,
+        },
       }),
     );
 
-<<<<<<< HEAD
-    assert.equal(
-      buildRows(mockDatesEvent.dailyStartTime, mockDatesEvent.dailyEndTime)
-        .filter((row) => containsCell(finalSchedule, getColumns(mockDatesEvent)[0], row)).length,
-      4,
-    );
-    assert.ok((html.match(/data-slot="popover-trigger"/g) ?? []).length >= 4);
-    assert.match(html, /finalized meeting time/);
-=======
-    assert.equal((html.match(/border-blue-400/g) ?? []).length, 8);
->>>>>>> a70dc91383b95562e44e6cdd8f79e117315377fc
-    assert.equal((html.match(/border-red-500/g) ?? []).length, 0);
+    // Một bảng duy nhất (không còn bảng mobile + desktop): 4 ô 15 phút từ 10:00 tới 11:00
+    assert.equal((html.match(/border-finalized\/60/g) ?? []).length, 4);
+    assert.equal((html.match(/border-suggestion/g) ?? []).length, 0);
   } finally {
     await server.close();
   }
-});
-
-test('duration menu uses Radix popper and finalized details stay attached to the grid', async () => {
-  const eventHeader = await readFile(
-    fileURLToPath(new URL('../src/features/heatmap/components/EventHeader.tsx', import.meta.url)),
-    'utf8',
-  );
-  const heatmapPage = await readFile(
-    fileURLToPath(new URL('../src/features/heatmap/pages/HeatmapPage.tsx', import.meta.url)),
-    'utf8',
-  );
-  const finalizedPopover = await readFile(
-    fileURLToPath(new URL('../src/features/heatmap/components/FinalizedSchedulePopover.tsx', import.meta.url)),
-    'utf8',
-  );
-
-  assert.match(eventHeader, /SelectContent position="popper" side="bottom" align="start"/);
-  assert.doesNotMatch(heatmapPage, /Final Meeting Time/);
-  assert.match(finalizedPopover, /Finalized schedule/);
-  assert.match(finalizedPopover, /Copy time/);
-  assert.match(finalizedPopover, /PopoverTrigger asChild/);
-});
-
-test('Heatmap workspace closes hover details immediately on scroll', async () => {
-  const source = await readFile(
-    fileURLToPath(new URL('../src/features/heatmap/components/HeatmapWorkspace.tsx', import.meta.url)),
-    'utf8',
-  );
-
-  assert.match(source, /addEventListener\('scroll',\s*hideDetailsImmediately,\s*true\)/);
-  assert.match(source, /removeEventListener\('scroll',\s*hideDetailsImmediately,\s*true\)/);
 });

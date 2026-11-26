@@ -1,7 +1,8 @@
 import { useRef } from 'react';
 import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui';
 import type { FinalizeDialogProps } from '../types';
-import { formatDay } from '../time';
+import { formatDay } from '@/shared/grid/model';
+import { useT } from '@/shared/i18n';
 
 export function FinalizeDialog({
   open,
@@ -11,6 +12,7 @@ export function FinalizeDialog({
   onClose,
   onConfirm,
 }: FinalizeDialogProps) {
+  const t = useT();
   const cancelButton = useRef<HTMLButtonElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
 
@@ -43,19 +45,18 @@ export function FinalizeDialog({
           }}
         >
           <DialogHeader className="gap-1.5">
-            <DialogTitle>Finalize this meeting?</DialogTitle>
-            <DialogDescription className="leading-5 text-slate-600">
-              Confirming will lock this event. Participants will no longer be able to edit their
-              availability.
+            <DialogTitle>{t('finalize.title')}</DialogTitle>
+            <DialogDescription className="leading-5 text-muted-foreground">
+              {t('finalize.description')}
             </DialogDescription>
           </DialogHeader>
           {selected && (
-            <div className="rounded-lg bg-emerald-50 px-3 py-2.5">
+            <div className="rounded-lg bg-secondary px-3 py-2.5">
               <p className="text-sm font-medium">{formatDay(selected)}</p>
               <p className="mt-0.5 text-lg font-semibold">
                 {selected.startTime} – {selected.endTime}
               </p>
-              <p className="mt-1 text-xs text-slate-600">{timezone}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{timezone}</p>
             </div>
           )}
           <DialogFooter className="mt-1">
@@ -65,13 +66,13 @@ export function FinalizeDialog({
               disabled={pending}
               onClick={onClose}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               disabled={pending}
               onClick={onConfirm}
             >
-              {pending ? 'Confirming…' : 'Confirm Final Time'}
+              {pending ? t('finalize.confirming') : t('finalize.confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>

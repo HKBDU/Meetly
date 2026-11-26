@@ -9,6 +9,9 @@ lerna-debug.log*
 
 node_modules
 dist
+dist-extension
+# Gói extension nén để tải lên Chrome Web Store
+*.zip
 dist-ssr
 *.local
 

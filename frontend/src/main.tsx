@@ -1,7 +1,23 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+// Font tự phục vụ cùng bundle (cache lâu dài), không chờ thêm kết nối tới Google Fonts
+import '@fontsource-variable/geist'
+import '@fontsource/instrument-serif/400.css'
+import '@fontsource/instrument-serif/400-italic.css'
 import '@/styles/global.css'
 import App from '@/app/App.tsx'
+import { initAnalytics } from '@/lib/analytics'
+import { useParticipantStore } from '@/features/participants/store'
+import { readHandoff } from '@/shared/lib/handoff'
+
+initAnalytics()
+
+// Mở từ extension: đăng nhập sẵn bằng phiên được chuyển qua URL rồi xoá nó khỏi thanh địa chỉ
+const handoff = readHandoff(window.location)
+if (handoff) useParticipantStore.getState().login(handoff)
+if (window.location.hash.includes('handoff=')) {
+  window.history.replaceState(null, '', window.location.pathname + window.location.search)
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
