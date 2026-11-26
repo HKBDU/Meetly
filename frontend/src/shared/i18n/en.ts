@@ -68,6 +68,17 @@ export const en = {
   'error.notFoundText': 'Check the link, or head back home.',
   'error.genericText': 'Please reload the page. If it keeps happening, try again in a moment.',
   'error.reload': 'Reload',
+
+  // Maintenance screen (API returns 5xx or cannot be reached)
+  'maint.badge': 'Under maintenance',
+  'maint.titleBefore': 'Meetly is taking a',
+  'maint.titleEmphasis': 'short break',
+  'maint.text': 'Meetly is temporarily unavailable, either for maintenance or because of high traffic. Your data is safe, please try again in a few minutes.',
+  'maint.retry': 'Try again',
+  'maint.checking': 'Checking...',
+  'maint.nextCheck': 'Checking again in {seconds}s',
+  'maint.stillDown': 'Still unreachable.',
+  'maint.contact': 'Contact support',
   'error.goHome': 'Go home',
 
   'legal.updated': 'Last updated: {date}',

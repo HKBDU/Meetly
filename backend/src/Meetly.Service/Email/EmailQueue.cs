@@ -5,7 +5,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Meetly.Service.Email;
 
-public sealed record EmailMessage(IReadOnlyCollection<string> Recipients, string Subject, string Html);
+public sealed record EmailAttachment(string Name, byte[] Content);
+
+public sealed record EmailMessage(
+    IReadOnlyCollection<string> Recipients,
+    string Subject,
+    string Html,
+    IReadOnlyList<EmailAttachment>? Attachments = null);
 
 /// <summary>Xếp email để gửi nền: request (VD chốt lịch) trả về ngay, không chờ nhà cung cấp email.</summary>
 public interface IEmailQueue
@@ -50,7 +56,7 @@ public sealed class BackgroundEmailQueue(
                 // IEmailService là typed HttpClient (transient), lấy mới mỗi lần gửi
                 using var scope = scopeFactory.CreateScope();
                 await scope.ServiceProvider.GetRequiredService<IEmailService>()
-                    .SendAsync(message.Recipients, message.Subject, message.Html, stoppingToken);
+                    .SendAsync(message.Recipients, message.Subject, message.Html, message.Attachments ?? [], stoppingToken);
                 return;
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
