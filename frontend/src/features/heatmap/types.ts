@@ -91,6 +91,8 @@ export interface EventHeaderProps {
   onOpenMySchedule?: () => void
   onInvite?: () => void
   onUpdateEvent: (payload: EditableEvent) => Promise<void>
+  /** Để không báo "vừa cập nhật" cho chính mình */
+  currentUsername?: string
 }
 
 export interface HeatmapWorkspaceProps {
