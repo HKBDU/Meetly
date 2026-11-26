@@ -857,6 +857,30 @@ POST /events/{shortCode}/finalize
 | PUT | `/api/v1/events/{shortCode}` | Admin | Chỉnh sửa Event |
 | POST | `/api/v1/events/{shortCode}/finalize` | Admin | Chốt lịch họp |
 | GET | `/api/v1/events/{shortCode}/calendar.ics` | No | Tải file lịch họp đã chốt (.ics) |
+| GET | `/api/v1/stats` | No | Số liệu công khai cho trang chủ |
+
+## GET `/api/v1/stats`
+
+Số liệu tổng hiện trên trang chủ. Chỉ đếm, không trả dữ liệu cá nhân. Server cache 10 phút và trả `Cache-Control: public, max-age=300`, nên con số có thể trễ vài phút.
+
+```json
+{
+  "isSuccess": true,
+  "code": 200,
+  "message": "Stats loaded successfully",
+  "value": {
+    "events": 1284,
+    "participants": 5310,
+    "finalized": 642
+  }
+}
+```
+
+- `events`: số event đã tạo.
+- `participants`: tổng lượt tham gia (một người vào 2 event tính 2 lượt).
+- `finalized`: số event đã chốt lịch.
+
+FE gọi bằng `fetch` thường (không qua axios) và ẩn dải số liệu nếu lỗi, để trang chủ không chuyển sang màn bảo trì khi server đang ngủ.
 
 ---
 

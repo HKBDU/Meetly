@@ -6,6 +6,7 @@ using Meetly.API.Serialization;
 using Meetly.Repository;
 using Meetly.Repository.Availability;
 using Meetly.Repository.EventScheduling;
+using Meetly.Repository.Stats;
 using Meetly.Repository.SuggestionSlots;
 using Meetly.Service.Availability;
 using Meetly.Service.Common;
@@ -13,6 +14,7 @@ using Meetly.Service.Email;
 using Meetly.Service.EventScheduling;
 using Meetly.Service.JwtService;
 using Meetly.Service.Realtime;
+using Meetly.Service.Stats;
 using Meetly.Service.SuggestionSlots;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -100,6 +102,9 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IEventRealtimeNotifier, EventRealtimeNotifier>();
 builder.Services.AddScoped<ISuggestionRepository, SuggestionRepository>();
 builder.Services.AddScoped<ISuggestionService, SuggestionService>();
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IStatsRepository, StatsRepository>();
+builder.Services.AddScoped<IStatsService, StatsService>();
 
 var app = builder.Build();
 
