@@ -54,10 +54,17 @@ function toZonedWallTime(instant: Date, timeZone: string): { date: string; minut
   }
 }
 
-/** Ngày "YYYY-MM-DD" kế tiếp; tính theo UTC để không phụ thuộc múi giờ của máy */
-function nextIsoDate(date: string): string {
+/** Ngày "YYYY-MM-DD" cách `date` `days` ngày; tính theo UTC để không phụ thuộc múi giờ của máy */
+export function addIsoDays(date: string, days: number): string {
   const [year, month, day] = date.split('-').map(Number)
-  return new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10)
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10)
+}
+
+const nextIsoDate = (date: string) => addIsoDays(date, 1)
+
+/** Hôm nay "YYYY-MM-DD" theo giờ địa phương của `timeZone` */
+export function todayInTimeZone(timeZone: string, now: Date = new Date()): string {
+  return toZonedWallTime(now, timeZone).date
 }
 
 function isoWeekday(date: string): number {
@@ -85,9 +92,13 @@ function splitIntoDaySegments(interval: BusyInterval, timeZone: string): DaySegm
   return segments
 }
 
-/** Cột ngày cụ thể khớp đúng ngày; cột thứ trong tuần khớp mọi ngày cùng thứ trong khoảng đã hỏi Google */
-function segmentMatchesColumn(segment: DaySegment, column: TimeColumn): boolean {
-  return column.specificDate !== null ? segment.date === column.specificDate : segment.dayOfWeek === column.dayOfWeek
+/**
+ * Cột ngày cụ thể khớp đúng ngày; cột thứ trong tuần khớp mọi ngày cùng thứ,
+ * chỉ trong `weeklyDates` nếu có truyền.
+ */
+function segmentMatchesColumn(segment: DaySegment, column: TimeColumn, weeklyDates: ReadonlySet<string> | null): boolean {
+  if (column.specificDate !== null) return segment.date === column.specificDate
+  return segment.dayOfWeek === column.dayOfWeek && (!weeklyDates || weeklyDates.has(segment.date))
 }
 
 export interface BusyToFreeSlotIdsInput {
@@ -96,6 +107,11 @@ export interface BusyToFreeSlotIdsInput {
   rows: readonly TimeRow[]
   /** Múi giờ IANA của event (VD "Asia/Ho_Chi_Minh"); giờ trên lưới hiểu theo múi này */
   timeZone: string
+  /**
+   * Event lặp theo tuần: các ngày thật "YYYY-MM-DD" dùng làm tham chiếu (VD 2 tuần tới).
+   * Bỏ trống thì mọi ngày trong kết quả của Google đều được tính.
+   */
+  weeklyDates?: readonly string[]
 }
 
 /**
@@ -104,11 +120,12 @@ export interface BusyToFreeSlotIdsInput {
  * Event lặp theo tuần: bận ở bất kỳ tuần nào trong khoảng đã hỏi Google thì ô đó là bận.
  * Ném `RangeError` nếu `timeZone` không hợp lệ.
  */
-export function busyToFreeSlotIds({ busy, columns, rows, timeZone }: BusyToFreeSlotIdsInput): string[] {
+export function busyToFreeSlotIds({ busy, columns, rows, timeZone, weeklyDates }: BusyToFreeSlotIdsInput): string[] {
   const segments = busy.flatMap((interval) => splitIntoDaySegments(interval, timeZone))
+  const weeklyDateSet = weeklyDates ? new Set(weeklyDates) : null
   const free: string[] = []
   for (const column of columns) {
-    const columnSegments = segments.filter((segment) => segmentMatchesColumn(segment, column))
+    const columnSegments = segments.filter((segment) => segmentMatchesColumn(segment, column, weeklyDateSet))
     for (const row of rows) {
       const cellStart = timeToMinutes(row.startTime)
       const cellEnd = timeToMinutes(row.endTime)
