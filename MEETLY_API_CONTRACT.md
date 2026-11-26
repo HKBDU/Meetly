@@ -130,12 +130,15 @@ Tạo Event mới đồng thời tạo `EventParticipant` đầu tiên với `Is
   "availableWeekdays": [],
   "dailyStartTime": "08:00",
   "dailyEndTime": "17:00",
+  "timezone": "Asia/Ho_Chi_Minh",
   "admin": {
     "username": "Huy",
     "password": "1234"
   }
 }
 ```
+
+`timezone` **không bắt buộc**: tên múi giờ IANA của người tạo (FE gửi `Intl.DateTimeFormat().resolvedOptions().timeZone`). Giờ trong event (`dailyStartTime`, lịch rảnh, lịch chốt) là giờ địa phương theo múi này, dùng khi xuất `.ics` và link Google Calendar. Bỏ trống, quá 50 ký tự hoặc server không nhận ra thì dùng `Asia/Ho_Chi_Minh`; tên kiểu Windows (`SE Asia Standard Time`) được đổi sang IANA.
 
 `admin.password` **bắt buộc**, dài 4-100 ký tự (nếu thiếu, ai biết username của admin cũng lấy được token admin). Giới hạn khác: `title` ≤ 255 ký tự, `admin.username` ≤ 50, tối đa 62 ngày, `dailyStartTime`/`dailyEndTime` theo bước 15 phút (`00:00`-`23:45`). Sai giới hạn trả `422`.
 
@@ -169,7 +172,7 @@ Tạo Event mới đồng thời tạo `EventParticipant` đầu tiên với `Is
     "participantId": "8fd2f02a-0cdc-4abc-a222-9bc3771a02fc",
     "isAdmin": true,
     "accessToken": "eyJhbGciOi...",
-    "expiresAt": "2026-09-11T15:00:00+07:00",
+    "expiresAt": "2026-09-11T08:00:00+00:00",
     "status": 1,
     "revision": 0
   }
@@ -307,7 +310,7 @@ Hoặc:
     "isAdmin": false,
     "isNewParticipant": false,
     "accessToken": "eyJhbGciOi...",
-    "expiresAt": "2026-09-11T15:00:00+07:00",
+    "expiresAt": "2026-09-11T08:00:00+00:00",
     "eventStatus": 1,
     "revision": 12,
     "timeSlots": [
@@ -700,7 +703,7 @@ Không cần. Ai có link sự kiện đều tải được, giống `GET /event
 
 Trả file iCalendar (RFC 5545) của lịch họp đã chốt, để thêm vào Google Calendar, Apple Calendar, Outlook. Không gọi API của Google, không cần OAuth.
 
-- `DTSTART`/`DTEND` theo giờ địa phương kèm `TZID=Asia/Ho_Chi_Minh` (có khối `VTIMEZONE`).
+- `DTSTART`/`DTEND` theo giờ địa phương kèm `TZID` là múi giờ của event (VD `Asia/Ho_Chi_Minh`, có khối `VTIMEZONE`). Múi giờ có đổi giờ mùa hè quanh thời điểm họp thì ghi theo UTC (`...Z`).
 - Event lặp theo tuần: bắt đầu từ lần gặp gần nhất kể từ hôm nay, thêm `RRULE:FREQ=WEEKLY;BYDAY=..`.
 - `UID` cố định theo event (`{shortCode}@meetly`), tải lại không tạo bản trùng trong lịch.
 

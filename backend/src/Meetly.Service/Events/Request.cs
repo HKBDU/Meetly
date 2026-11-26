@@ -8,6 +8,8 @@ public sealed record CreateEventRequest
     public List<DayOfWeek> AvailableWeekdays { get; init; } = [];
     public TimeOnly DailyStartTime { get; init; }
     public TimeOnly DailyEndTime { get; init; }
+    /// <summary>Múi giờ IANA của người tạo (VD "Asia/Tokyo"); bỏ trống hoặc không hợp lệ thì dùng Asia/Ho_Chi_Minh.</summary>
+    public string? TimeZone { get; init; }
     public AdminRequest Admin { get; init; } = new();
 }
 
