@@ -10,6 +10,7 @@ declare module 'axios' {
 import { env } from '@/lib/env';
 import { t, type MessageKey } from '@/shared/i18n';
 import { useParticipantStore } from '@/features/participants/store';
+import { useServerStatus } from '@/shared/lib/serverStatus';
 
 /** Envelope `ApiResponse<T>` của BE; response lỗi trả PascalCase nên chuẩn hóa về camelCase */
 export interface ApiEnvelope<T = unknown> {
@@ -60,6 +61,17 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+/**
+ * Lỗi 5xx hoặc không có response (server tắt/tạm dừng thì trình duyệt thấy lỗi mạng hoặc CORS)
+ * thì bật màn bảo trì. Bỏ qua request bị huỷ và khi chính máy người dùng mất mạng.
+ */
+function markServerDownIfUnavailable(error: unknown) {
+  if (!isAxiosError(error) || axios.isCancel(error)) return;
+  const status = error.response?.status;
+  const unreachable = !error.response && navigator.onLine;
+  if (unreachable || (status !== undefined && status >= 500)) useServerStatus.getState().markDown();
+}
+
 /** Gắn Bearer token của participant hiện tại; BE xác định participant/admin qua claim trong JWT */
 api.interceptors.request.use((config) => {
   const accessToken = useParticipantStore.getState().auth?.accessToken;
@@ -78,6 +90,7 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response) error.response.data = normalizeEnvelope(error.response.data);
+    markServerDownIfUnavailable(error);
     // BE không có endpoint refresh token, nên 401 chỉ có thể đưa về màn định danh
     if (error.response?.status === 401 && !error.config?.keepSessionOn401) {
       useParticipantStore.getState().resetSession();
