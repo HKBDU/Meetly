@@ -89,9 +89,19 @@ export function getEvent(shortCode: string): Promise<EventDetail> {
   return unwrap(api.get<EventDetail>(eventEndpoint(shortCode)), 'api.loadEvent')
 }
 
+/** Múi giờ IANA của máy người tạo (VD "Asia/Tokyo"); BE tự dùng giờ Việt Nam nếu không đọc được */
+function browserTimeZone(): string | undefined {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined
+  } catch {
+    return undefined
+  }
+}
+
+/** Gửi kèm múi giờ của người tạo để lịch .ics và Google Calendar ra đúng giờ địa phương của họ */
 export function createEvent(payload: CreateEventRequest): Promise<CreatedEvent> {
   return unwrap(
-    api.post<CreatedEvent>('/events', payload),
+    api.post<CreatedEvent>('/events', { ...payload, timezone: browserTimeZone() }),
     'api.createEvent',
   )
 }
