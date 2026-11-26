@@ -70,6 +70,17 @@ export const vi: Record<RequiredKey, string> = {
   'error.notFoundText': 'Kiểm tra lại link hoặc quay về trang chủ.',
   'error.genericText': 'Hãy tải lại trang. Nếu vẫn lỗi, thử lại sau ít phút.',
   'error.reload': 'Tải lại',
+
+  // Màn bảo trì (API lỗi 5xx hoặc không kết nối được)
+  'maint.badge': 'Đang bảo trì',
+  'maint.titleBefore': 'Hệ thống đang',
+  'maint.titleEmphasis': 'bảo trì',
+  'maint.text': 'Meetly đang tạm gián đoạn, có thể do bảo trì hoặc đang quá tải. Dữ liệu của bạn vẫn an toàn, vui lòng thử lại sau ít phút.',
+  'maint.retry': 'Thử lại',
+  'maint.checking': 'Đang kiểm tra...',
+  'maint.nextCheck': 'Tự kiểm tra lại sau {seconds} giây',
+  'maint.stillDown': 'Vẫn chưa kết nối được.',
+  'maint.contact': 'Liên hệ hỗ trợ',
   'error.goHome': 'Về trang chủ',
 
   'legal.updated': 'Cập nhật lần cuối: {date}',
