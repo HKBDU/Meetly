@@ -315,6 +315,10 @@ export const en = {
   'actions.paintBusy': 'Paint busy time',
   'actions.busy': 'Busy',
   'actions.saved': 'Saved',
+  'import.draftTitle': 'Imported from Google Calendar',
+  'import.draftSummary': '{free} free · {busy} busy slots. Review and adjust on the grid, then apply.',
+  'import.apply': 'Apply',
+  'import.discard': 'Discard',
 
   // Tổng quan / heatmap
   'overview.readOnly': 'Overview · Read-only',

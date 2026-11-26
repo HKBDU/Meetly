@@ -315,6 +315,10 @@ export const vi: Record<RequiredKey, string> = {
   'actions.paintBusy': 'Tô thời gian bận',
   'actions.busy': 'Bận',
   'actions.saved': 'Đã lưu',
+  'import.draftTitle': 'Đã nhập từ Google Calendar',
+  'import.draftSummary': '{free} ô rảnh · {busy} ô bận. Xem lại, chỉnh trên lưới rồi bấm Áp dụng.',
+  'import.apply': 'Áp dụng',
+  'import.discard': 'Huỷ',
 
   // Tổng quan / heatmap
   'overview.readOnly': 'Tổng quan · Chỉ xem',

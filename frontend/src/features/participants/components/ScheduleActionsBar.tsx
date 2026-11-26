@@ -30,14 +30,17 @@ export function ScheduleActionsBar({ grid, triggerAutoSave, isSaving, onManualRa
   const clearAllPainted = useParticipantStore((s) => s.clearAllPainted)
   const hasEmailSubscribed = useParticipantStore((s) => s.hasEmailSubscribed)
   const openEmailDialog = useParticipantStore((s) => s.openEmailDialog)
+  const hasDraft = useParticipantStore((s) => s.draftFreeSlotIds !== null)
   const [isManualDialogOpen, setIsManualDialogOpen] = useState(false)
   const locked = grid.isLocked
+  // Đang xem bản nháp từ Google Calendar thì chỉ sửa bằng cách kéo trên lưới, xong mới Áp dụng / Huỷ
+  const editLocked = locked || hasDraft
 
   return (
     <>
       <div className="flex flex-col gap-3 px-3 pt-1 pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-4">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" disabled={locked} onClick={() => setIsManualDialogOpen(true)}>
+          <Button variant="outline" size="sm" disabled={editLocked} onClick={() => setIsManualDialogOpen(true)}>
             <SlidersHorizontal />
             {t('actions.selectRange')}
           </Button>
@@ -45,7 +48,7 @@ export function ScheduleActionsBar({ grid, triggerAutoSave, isSaving, onManualRa
             variant="ghost"
             size="sm"
             className="text-muted-foreground"
-            disabled={locked}
+            disabled={editLocked}
             onClick={() => {
               clearAllPainted()
               triggerAutoSave()
@@ -70,7 +73,7 @@ export function ScheduleActionsBar({ grid, triggerAutoSave, isSaving, onManualRa
           <ToggleGroup
             type="single"
             value={paintMode}
-            disabled={locked}
+            disabled={editLocked}
             aria-label={t('actions.paintMode')}
             className="rounded-full bg-muted p-1"
             // Đổi chế độ giữ nguyên lịch (lấy phần bù), nên không cần lưu lại
