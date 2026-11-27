@@ -1,100 +1,22 @@
-import { useState } from 'react'
+import { useRef, useState, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, ArrowUpRight, CalendarCheck, CalendarPlus, Check, Puzzle, Sparkles, Video, type LucideIcon } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, CalendarCheck, Check, Puzzle, Sparkles, type LucideIcon } from 'lucide-react'
 
 import { env } from '@/lib/env'
 import { cn } from '@/lib/utils'
-import { formatHourLabel } from '@/lib/date-time'
-import { WEEKDAYS } from '@/shared/constants'
 import { useT, type MessageKey } from '@/shared/i18n'
 import { parseEventCode } from '@/shared/lib/share'
 import { Button } from '@/shared/components/ui/button'
 import { FieldError, FieldLabel } from '@/shared/components/ui/field'
 import { AnnouncementCard } from '../components/AnnouncementCard'
+import { GoogleFlowDemo } from '../components/home/GoogleFlowDemo'
+import { GOOGLE_DURATIONS, GOOGLE_FRAMES, GOOGLE_SCENES, sceneLength, sceneStart } from '../components/home/googleScenes'
+import { ExtensionDemo } from '../components/home/ExtensionDemo'
+import { HowItWorks } from '../components/home/HowItWorks'
+import { LiveHeatmapDemo } from '../components/home/LiveHeatmapDemo'
+import { StatsStrip } from '../components/home/StatsStrip'
+import { useDemoPlaying, useFrameLoop, useReducedMotion } from '../components/home/demoPlayback'
 
-const STEPS: { title: MessageKey; text: MessageKey }[] = [
-  { title: 'home.step1Title', text: 'home.step1Text' },
-  { title: 'home.step2Title', text: 'home.step2Text' },
-  { title: 'home.step3Title', text: 'home.step3Text' },
-]
-
-/** Lưới mẫu cho bản xem trước: 0-5 = mức rảnh của mỗi ô */
-const DEMO_GRID = [
-  [1, 2, 0, 1, 2],
-  [2, 3, 1, 2, 3],
-  [3, 5, 2, 3, 4],
-  [2, 4, 3, 4, 3],
-  [1, 2, 3, 2, 1],
-]
-const HEAT = ['bg-heat-0', 'bg-heat-1', 'bg-heat-2', 'bg-heat-3', 'bg-heat-4', 'bg-heat-5']
-/** Thứ 2 → thứ 6 và 17:00 → 21:00 */
-const DAYS = [1, 2, 3, 4, 5] as const
-const HOURS = ['17:00', '18:00', '19:00', '20:00', '21:00']
-
-/** Bản xem trước trang trí của heatmap, không mang dữ liệu thật */
-function ProductPreview() {
-  const t = useT()
-  return (
-    <div aria-hidden="true" className="relative mx-auto mt-16 w-full max-w-2xl select-none">
-      <div className="rounded-2xl border bg-card p-5 shadow-lift sm:p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium">{t('home.demoTitle')}</p>
-            <p className="text-xs text-muted-foreground">{t('home.demoResponded')}</p>
-          </div>
-          <div className="flex -space-x-1.5">
-            {['A', 'M', 'K', 'L'].map((initial, index) => (
-              <span
-                key={initial}
-                className={cn(
-                  'grid size-7 place-items-center rounded-full border-2 border-card text-[11px] font-medium',
-                  ['bg-secondary', 'bg-brand-soft', 'bg-heat-2', 'bg-muted'][index],
-                )}
-              >
-                {initial}
-              </span>
-            ))}
-            <span className="grid size-7 place-items-center rounded-full border-2 border-card bg-muted text-[10px] text-muted-foreground">
-              +5
-            </span>
-          </div>
-        </div>
-
-        <div className="mt-5 grid grid-cols-[2.75rem_repeat(5,1fr)] gap-1.5 text-[11px] text-muted-foreground">
-          <span />
-          {DAYS.map((day) => (
-            <span key={day} className="text-center">
-              {WEEKDAYS[day].shortLabel}
-            </span>
-          ))}
-          {DEMO_GRID.map((row, rowIndex) => (
-            <div key={HOURS[rowIndex]} className="contents">
-              <span className="self-center">{formatHourLabel(HOURS[rowIndex])}</span>
-              {row.map((level, columnIndex) => (
-                <span
-                  key={columnIndex}
-                  className={cn(
-                    'h-7 rounded-md border border-foreground/4',
-                    HEAT[level],
-                    rowIndex === 2 && columnIndex === 1 && 'ring-2 ring-foreground ring-offset-2 ring-offset-card',
-                  )}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="absolute -bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-2.5 rounded-full border bg-card px-4 py-2 text-sm whitespace-nowrap shadow-lift">
-        <span className="size-2 rounded-full bg-brand" />
-        <span className="font-medium">
-          {WEEKDAYS[2].shortLabel}, {formatHourLabel('19:00')}
-        </span>
-        <span className="text-muted-foreground">{t('home.demoAvailable')}</span>
-      </div>
-    </div>
-  )
-}
 
 /** Giới thiệu extension sắp ra mắt, kèm bản xem trước popup (chỉ để trang trí) */
 function ExtensionTeaser() {
@@ -132,26 +54,7 @@ function ExtensionTeaser() {
           )}
         </div>
 
-        <div aria-hidden="true" className="relative mx-auto w-full max-w-80 select-none">
-          <div className="absolute -inset-6 rounded-[2rem] bg-brand/10 blur-2xl" />
-          <div className="relative rounded-2xl border bg-background p-4 shadow-lift">
-            <div className="flex items-center gap-2 border-b pb-3 text-sm font-semibold">
-              <img src="/meetly-logo.png" alt="" className="h-4 w-5 object-contain" />
-              Meetly
-            </div>
-            <p className="mt-3 text-[11px] text-muted-foreground">{t('common.eventName')}</p>
-            <div className="mt-1 rounded-lg border bg-card px-3 py-2 text-sm">{t('home.extDemoTitle')}</div>
-            <div className="mt-3 flex flex-wrap gap-1.5 text-[11px]">
-              <span className="rounded-full border border-primary bg-brand-soft px-2.5 py-1 font-medium text-brand">{t('days.next7')}</span>
-              <span className="rounded-full border px-2.5 py-1">{t('days.next5Weekdays')}</span>
-              <span className="rounded-full border border-primary bg-brand-soft px-2.5 py-1 font-medium text-brand">{t('preset.working')}</span>
-              <span className="rounded-full border px-2.5 py-1">{t('preset.evening')}</span>
-            </div>
-            <div className="mt-4 rounded-full bg-primary py-2 text-center text-sm font-medium text-primary-foreground">
-              {t('ext.createAndCopy')}
-            </div>
-          </div>
-        </div>
+        <ExtensionDemo />
       </div>
     </section>
   )
@@ -198,58 +101,85 @@ function AnnounceBar() {
   )
 }
 
-const GOOGLE_POINTS = [
-  { key: 'home.gPoint1', icon: CalendarPlus },
-  { key: 'home.gPoint2', icon: Video },
-  { key: 'home.gPoint3', icon: CalendarCheck },
-] as const
-
-/** Giới thiệu tích hợp Google Calendar & Meet sắp ra mắt (tùy chọn), kèm bản xem trước trang trí */
+/** Mỗi tích hợp lịch có một cảnh demo và nhãn trạng thái ra mắt riêng. */
 function GoogleTeaser() {
   const t = useT()
+  const sectionRef = useRef<HTMLElement>(null)
+  const reducedMotion = useReducedMotion()
+  const playing = useDemoPlaying(sectionRef) && !reducedMotion
+  const [frameIndex, setFrameIndex] = useFrameLoop(GOOGLE_DURATIONS, playing)
+  const { scene, phase } = GOOGLE_FRAMES[frameIndex]
+  // Bấm chọn lại thì thanh tiến trình chạy lại từ đầu
+  const [picks, setPicks] = useState(0)
+  // Tắt chuyển động: giữ cảnh đang chọn ở trạng thái đã xong
+  const shownPhase = reducedMotion ? GOOGLE_SCENES[scene].phases.length - 1 : phase
+
   return (
-    <section id="google" aria-labelledby="google-heading" className="mt-8 scroll-mt-24 overflow-hidden rounded-3xl border bg-card shadow-soft">
+    <section
+      ref={sectionRef}
+      id="google"
+      aria-labelledby="google-heading"
+      className="mt-8 scroll-mt-24 overflow-hidden rounded-3xl border bg-card shadow-soft"
+    >
       <div className="grid items-center gap-10 p-6 sm:p-10 md:grid-cols-[20rem_minmax(0,1fr)]">
-        <div aria-hidden="true" className="relative order-last mx-auto w-full max-w-80 select-none md:order-first">
-          <div className="absolute -inset-6 rounded-[2rem] bg-brand/10 blur-2xl" />
-          <div className="relative rounded-2xl border bg-background p-4 shadow-lift">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-medium text-brand">
-              <Check className="size-3" strokeWidth={3} />
-              {t('home.gDemoFinal')}
-            </span>
-            <p className="mt-3 text-sm font-semibold">{t('home.demoTitle')}</p>
-            <p className="text-xs text-muted-foreground">{t('home.gDemoWhen')}</p>
-            <div className="mt-4 grid gap-2 text-sm">
-              <div className="flex items-center gap-2 rounded-full border bg-card px-3 py-2">
-                <CalendarPlus className="size-4 text-brand" />
-                {t('home.gDemoAddCalendar')}
-              </div>
-              <div className="flex items-center gap-2 rounded-full bg-primary px-3 py-2 font-medium text-primary-foreground">
-                <Video className="size-4" />
-                {t('home.gDemoMeet')}
-              </div>
-            </div>
-          </div>
+        <div className="order-last md:order-first">
+          <GoogleFlowDemo scene={scene} phase={shownPhase} />
         </div>
 
         <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-xs font-medium text-brand">
-            <CalendarCheck className="size-3.5" aria-hidden="true" />
-            {t('home.extBadge')}
-          </span>
-          <h2 id="google-heading" className="mt-4 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
+          <h2 id="google-heading" className="text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
             {t('home.gTitle')}
           </h2>
           <p className="mt-3 max-w-md text-pretty text-muted-foreground">{t('home.gText')}</p>
-          <ul className="mt-6 grid gap-2.5 text-sm">
-            {GOOGLE_POINTS.map(({ key, icon: Icon }) => (
-              <li key={key} className="flex items-center gap-2.5">
-                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-brand-soft text-brand">
-                  <Icon className="size-3" strokeWidth={2.5} aria-hidden="true" />
-                </span>
-                {t(key)}
-              </li>
-            ))}
+          {/* Bấm một tính năng để xem demo của nó; thanh mảnh bên dưới cho biết còn bao lâu tới cảnh kế */}
+          <ul className="mt-6 grid gap-1 text-sm">
+            {GOOGLE_SCENES.map(({ key, icon: Icon }, index) => {
+              const active = index === scene
+              return (
+                <li key={key}>
+                  <button
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => {
+                      setFrameIndex(sceneStart(index))
+                      setPicks((count) => count + 1)
+                    }}
+                    className={cn(
+                      'relative flex w-full items-center gap-2.5 overflow-hidden rounded-xl px-3 py-2.5 text-left transition-colors',
+                      active ? 'bg-brand-soft/70 text-foreground' : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'grid size-6 shrink-0 place-items-center rounded-full transition-colors',
+                        active ? 'bg-primary text-primary-foreground' : 'bg-brand-soft text-brand',
+                      )}
+                    >
+                      <Icon className="size-3.5" strokeWidth={2.5} aria-hidden="true" />
+                    </span>
+                    <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                      <span>{t(key)}</span>
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                        {t(key === 'home.gPoint1' ? 'calendar.new' : 'home.extBadge')}
+                      </span>
+                    </span>
+                    {active && !reducedMotion && (
+                      <span
+                        key={`${scene}-${picks}`}
+                        aria-hidden="true"
+                        style={
+                          {
+                            animationDuration: `${sceneLength(index)}ms`,
+                            animationPlayState: playing ? 'running' : 'paused',
+                          } as CSSProperties
+                        }
+                        className="demo-progress absolute inset-x-3 bottom-0 h-0.5 origin-left rounded-full bg-primary/60"
+                      />
+                    )}
+                  </button>
+                </li>
+              )
+            })}
           </ul>
           <p className="mt-5 text-xs text-muted-foreground">{t('home.gOptional')}</p>
         </div>
@@ -321,17 +251,10 @@ export function HomePage() {
         </div>
       </section>
 
-      <ProductPreview />
+      <LiveHeatmapDemo />
 
-      <ol className="mt-24 grid divide-y border-y sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-        {STEPS.map(({ title, text }, index) => (
-          <li key={title} className="px-1 py-6 sm:px-6">
-            <p className="font-serif text-2xl text-muted-foreground italic">0{index + 1}</p>
-            <p className="mt-2 font-medium">{t(title)}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{t(text)}</p>
-          </li>
-        ))}
-      </ol>
+      <HowItWorks />
+      <StatsStrip />
 
       <ExtensionTeaser />
       <GoogleTeaser />

@@ -2,8 +2,10 @@ import { memo } from 'react'
 import { CalendarCheck2 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import { formatDate } from '@/lib/date-time'
 import { formatDay } from '@/shared/grid/model'
 import { rowBoundaryClass } from '@/shared/grid/rowBoundary'
+import { formatUtcOffset, type ViewerCell } from '@/shared/grid/viewer-grid'
 import { t, type Locale } from '@/shared/i18n'
 import type { EventDetail } from '@/shared/types'
 import { getAvailabilityClass } from '../availability'
@@ -14,7 +16,7 @@ import { FinalizedSchedulePopover } from './FinalizedSchedulePopover'
 export type RangeEdge = 'single' | 'top' | 'middle' | 'bottom' | null
 
 export interface HeatmapCellHandlers {
-  inspect: (point: SelectedCell, names: string[], count: number) => void
+  inspect: (point: SelectedCell, names: string[], count: number, pinned?: boolean) => void
   inspectEnd: () => void
   start: (point: SelectedCell) => void
   extend: (point: SelectedCell) => void
@@ -23,6 +25,8 @@ export interface HeatmapCellHandlers {
 
 export interface HeatmapCellProps {
   point: SelectedCell
+  viewerCell?: ViewerCell
+  inspected?: boolean
   names: string[]
   total: number
   selecting: boolean
@@ -36,6 +40,7 @@ export interface HeatmapCellProps {
   finalizedEvent?: EventDetail
   /** Số ô của lịch đã chốt, để nhãn ở ô đầu phủ hết khoảng */
   finalizedCellCount?: number
+  finalizedTime?: string
   handlers: HeatmapCellHandlers
   /** Chỉ để memo vẽ lại ô khi đổi ngôn ngữ (nhãn đọc ngôn ngữ hiện tại qua `t`) */
   locale?: Locale
@@ -47,6 +52,8 @@ const edgeClass = (edge: RangeEdge) =>
 /** Memo hoá: props đều là giá trị nguyên thuỷ hoặc tham chiếu ổn định nên di chuột không làm cả lưới vẽ lại */
 export const HeatmapCell = memo(function HeatmapCell({
   point,
+  viewerCell,
+  inspected,
   names,
   total,
   selecting,
@@ -57,6 +64,7 @@ export const HeatmapCell = memo(function HeatmapCell({
   finalized,
   finalizedEvent,
   finalizedCellCount = 0,
+  finalizedTime,
   handlers,
 }: HeatmapCellProps) {
   const count = total === 0 ? 0 : names.length
@@ -64,8 +72,13 @@ export const HeatmapCell = memo(function HeatmapCell({
   const isFinalizedStart = finalized === 'top' || finalized === 'single'
   const schedule = finalizedEvent?.finalSchedule
 
+  const start = viewerCell?.startTime ?? row.startTime
+  const end = viewerCell && viewerCell.date !== viewerCell.endDate
+    ? `${formatDate(viewerCell.endDate)} · ${viewerCell.endTime}`
+    : viewerCell?.endTime ?? row.endTime
   const label =
-    t('cell.label', { day: formatDay(column), start: row.startTime, end: row.endTime, count, total }) +
+    t('cell.label', { day: viewerCell ? formatDate(viewerCell.date) : formatDay(column), start, end, count, total }) +
+    (viewerCell?.repeated ? ` · ${formatUtcOffset(viewerCell.offsetMinutes)}` : '') +
     (suggestion ? t('cell.suggested') : '') +
     (finalized ? t('cell.finalized') : '')
 
@@ -76,6 +89,7 @@ export const HeatmapCell = memo(function HeatmapCell({
         'relative block h-5 w-full outline-offset-[-2px] hover:brightness-[0.98] focus-visible:z-20 focus-visible:outline-2 focus-visible:outline-selection',
         finalized ? 'z-10 bg-finalized text-finalized-foreground' : 'bg-transparent',
         selecting ? 'cursor-crosshair touch-none select-none' : 'cursor-pointer',
+        inspected && 'ring-2 ring-inset ring-selection',
       )}
       aria-label={label}
       title={label}
@@ -103,7 +117,7 @@ export const HeatmapCell = memo(function HeatmapCell({
         }
       }}
       onClick={(event) => {
-        handlers.inspect(point, names, count)
+        handlers.inspect(point, names, count, true)
         if (selecting && event.detail === 0) handlers.keyboardSelect(point)
       }}
     >
@@ -116,9 +130,9 @@ export const HeatmapCell = memo(function HeatmapCell({
           <CalendarCheck2 className="mt-0.5 size-4 shrink-0" />
           <span>
             <span className="block whitespace-nowrap">
-              {schedule.startTime} – {schedule.endTime}
+              {finalizedTime ?? `${schedule.startTime} – ${schedule.endTime}`}
             </span>
-            <span className="block text-finalized-foreground/80">{t('info.finalized')}</span>
+            {!viewerCell && <span className="block text-finalized-foreground/80">{t('info.finalized')}</span>}
           </span>
         </span>
       )}
@@ -126,7 +140,7 @@ export const HeatmapCell = memo(function HeatmapCell({
   )
 
   return (
-    <td className={cn('relative border-r border-grid-line/60 p-0', getAvailabilityClass(count, total), rowBoundaryClass(row.startTime))}>
+    <td className={cn('relative border-r border-grid-line/60 p-0', getAvailabilityClass(count, total), rowBoundaryClass(start))}>
       {finalized && finalizedEvent ? <FinalizedSchedulePopover event={finalizedEvent}>{button}</FinalizedSchedulePopover> : button}
       {suggestion && !finalized && (
         <span

@@ -1,6 +1,6 @@
 import { Button, Card, CardContent, CardHeader } from '@/shared/components/ui';
 import type { ScheduleControlsProps } from '../types';
-import { formatDay } from '@/shared/grid/model';
+import { describeRange, useTimeView } from '@/shared/grid/time-view';
 import { useT } from '@/shared/i18n';
 
 export function ScheduleControls({
@@ -12,6 +12,8 @@ export function ScheduleControls({
   onConfirm,
 }: ScheduleControlsProps) {
   const t = useT();
+  const view = useTimeView();
+  const display = selected ? describeRange(view, selected) : null;
   return (
     <Card
       className="gap-4"
@@ -40,11 +42,11 @@ export function ScheduleControls({
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             {t('select.help')}
           </p>
-          {selected && (
+          {display && (
             <div className="mt-4 rounded-lg border border-border p-4">
-              <p className="text-sm font-medium">{formatDay(selected)}</p>
+              <p className="text-sm font-medium">{display.day}</p>
               <p className="mt-1 text-xl font-bold">
-                {selected.startTime} – {selected.endTime}
+                {display.time}
               </p>
             </div>
           )}
