@@ -88,6 +88,7 @@ export function HeatmapPage({
         />
       )}
 
+      {/* Đã chốt: giờ họp + "Thêm vào Google Calendar" / "Tải .ics" ngay trên đầu, không phải mở popover */}
       <FinalizedScheduleSummary event={event} />
 
       <HeatmapWorkspace
