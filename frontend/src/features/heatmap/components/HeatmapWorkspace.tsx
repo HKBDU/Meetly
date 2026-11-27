@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
+import { formatDate } from '@/lib/date-time'
 import { columnKey, formatDay } from '@/shared/grid/model'
+import { useTimeView } from '@/shared/grid/time-view'
+import { formatUtcOffset } from '@/shared/grid/viewer-grid'
 import { t } from '@/shared/i18n'
 import type { FinalSchedule } from '@/shared/types'
 import { isValidSchedule, normalizeSelection } from '../selection'
 import {
   HeatmapPendingAction,
   HeatmapSelectionMode,
-  type CellDetails,
   type HeatmapWorkspaceProps,
   type SelectedCell,
 } from '../types'
@@ -35,8 +37,10 @@ export function HeatmapWorkspace({
   onPendingChange,
 }: HeatmapWorkspaceProps) {
   const [highlighted, setHighlighted] = useState<RankedTime | null>(null)
-  const [reveal, setReveal] = useState<{ key: string; requestId: number } | null>(null)
-  const [details, setDetails] = useState<CellDetails | null>(null)
+  const [reveal, setReveal] = useState<{ key: string; requestId: number; startTime: string } | null>(null)
+  const [inspected, setInspected] = useState<{ point: SelectedCell; availableNames: string[]; count: number } | null>(null)
+  const view = useTimeView()
+  const pinned = useRef(false)
   const [mode, setMode] = useState<HeatmapSelectionMode>(HeatmapSelectionMode.View)
   const [selected, setSelected] = useState<FinalSchedule | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -59,9 +63,10 @@ export function HeatmapWorkspace({
     hideTimer.current = null
   }
   const scheduleHide = () => {
+    if (pinned.current) return
     cancelHide()
     hideTimer.current = setTimeout(() => {
-      setDetails(null)
+      setInspected(null)
       hideTimer.current = null
     }, DETAILS_HIDE_DELAY_MS)
   }
@@ -72,9 +77,10 @@ export function HeatmapWorkspace({
       anchor.current = null
     }
     const hideNow = () => {
+      if (pinned.current) return
       if (hideTimer.current) clearTimeout(hideTimer.current)
       hideTimer.current = null
-      setDetails(null)
+      setInspected(null)
     }
     window.addEventListener('pointerup', stopDragging)
     window.addEventListener('pointercancel', stopDragging)
@@ -92,20 +98,21 @@ export function HeatmapWorkspace({
 
   const handlers = useMemo<HeatmapCellHandlers>(
     () => ({
-      inspect: ({ column, row }, names, count) => {
+      inspect: (point, names, count, pin = false) => {
         if (hideTimer.current) clearTimeout(hideTimer.current)
         hideTimer.current = null
-        const dayLabel = formatDay(column)
-        setDetails((current) =>
-          current && current.dayLabel === dayLabel && current.startTime === row.startTime && current.availableNames === names
+        pinned.current = pin
+        setInspected((current) =>
+          current && current.point === point && current.availableNames === names
             ? current
-            : { dayLabel, startTime: row.startTime, endTime: row.endTime, availableNames: names, count },
+            : { point, availableNames: names, count },
         )
       },
       inspectEnd: () => {
+        if (pinned.current) return
         if (hideTimer.current) clearTimeout(hideTimer.current)
         hideTimer.current = setTimeout(() => {
-          setDetails(null)
+          setInspected(null)
           hideTimer.current = null
         }, DETAILS_HIDE_DELAY_MS)
       },
@@ -132,7 +139,20 @@ export function HeatmapWorkspace({
   function highlight(slot: RankedTime | null) {
     setHighlighted(slot)
     // Lật lưới tới trang chứa khung đang xem
-    if (slot) setReveal((current) => ({ key: columnKey(slot), requestId: (current?.requestId ?? 0) + 1 }))
+    if (slot) setReveal((current) => ({ key: columnKey(slot), startTime: slot.startTime, requestId: (current?.requestId ?? 0) + 1 }))
+  }
+
+  const point = inspected?.point
+  const local = point && view?.projected?.firstBySource.get(`${point.column.key}|${point.row.startTime}`)
+  const details = inspected && {
+    ...inspected,
+    dayLabel: local ? formatDate(local.date) : formatDay(inspected.point.column),
+    startTime: local
+      ? `${local.startTime}${local.repeated ? ` ${formatUtcOffset(local.offsetMinutes)}` : ''}`
+      : inspected.point.row.startTime,
+    endTime: local
+      ? `${local.date === local.endDate ? '' : `${formatDate(local.endDate)} · `}${local.endTime}${local.offsetMinutes === local.endOffsetMinutes ? '' : ` ${formatUtcOffset(local.endOffsetMinutes)}`}`
+      : inspected.point.row.endTime,
   }
 
   /** Chốt nhanh từ Best times: đặt sẵn khung rồi mở hộp xác nhận */
@@ -202,6 +222,7 @@ export function HeatmapWorkspace({
             bestTimes={bestTimes}
             highlightedKey={highlighted ? rankedKey(highlighted) : null}
             reveal={reveal}
+            inspected={point}
             selected={selected}
             selecting={interactive && selectingFinal}
             handlers={handlers}

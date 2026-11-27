@@ -1,8 +1,9 @@
 import { useRef, useState, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, ArrowUpRight, CalendarCheck, Check, Puzzle, Sparkles, type LucideIcon } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, CalendarCheck, Check, Puzzle, Sparkles, Video, type LucideIcon } from 'lucide-react'
 
 import { env } from '@/lib/env'
+import { isGoogleConfigured } from '@/lib/google'
 import { cn } from '@/lib/utils'
 import { useT, type MessageKey } from '@/shared/i18n'
 import { parseEventCode } from '@/shared/lib/share'
@@ -60,11 +61,26 @@ function ExtensionTeaser() {
   )
 }
 
-/** Extension đã lên Chrome Web Store thì không còn là "sắp ra mắt" nữa */
+/**
+ * Ý nào trong khối Google đã dùng được: "Thêm vào lịch" không cần OAuth nên luôn mới;
+ * nhập giờ bận chỉ mới khi có OAuth client ID (không có thì nút nhập bị ẩn); Google Meet chưa làm.
+ */
+const GOOGLE_POINT_LIVE: Record<string, boolean> = {
+  'home.gPoint1': true,
+  'home.gPoint2': false,
+  'home.gPoint3': isGoogleConfigured,
+}
+
+/**
+ * Thanh "Sắp ra mắt" chỉ giữ thứ chưa ra mắt: extension bị bỏ khi đã lên Chrome Web Store;
+ * khi có OAuth client ID thì Google Calendar đã dùng được, mục Google chỉ còn Google Meet.
+ */
 const ANNOUNCEMENTS = (
   [
     { target: 'extension', icon: Puzzle, label: 'home.extTitle' },
-    { target: 'google', icon: CalendarCheck, label: 'home.gShort' },
+    isGoogleConfigured
+      ? { target: 'google', icon: Video, label: 'home.gMeet' }
+      : { target: 'google', icon: CalendarCheck, label: 'home.gShort' },
   ] satisfies { target: string; icon: LucideIcon; label: MessageKey }[]
 ).filter(({ target }) => !(target === 'extension' && env.extensionStoreUrl))
 
@@ -101,7 +117,7 @@ function AnnounceBar() {
   )
 }
 
-/** Giới thiệu tích hợp Google Calendar & Meet sắp ra mắt (tùy chọn): mỗi tính năng là một cảnh demo, tự chạy lần lượt */
+/** Mỗi tích hợp lịch có một cảnh demo và nhãn trạng thái ra mắt riêng. */
 function GoogleTeaser() {
   const t = useT()
   const sectionRef = useRef<HTMLElement>(null)
@@ -127,11 +143,7 @@ function GoogleTeaser() {
         </div>
 
         <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-xs font-medium text-brand">
-            <CalendarCheck className="size-3.5" aria-hidden="true" />
-            {t('home.extBadge')}
-          </span>
-          <h2 id="google-heading" className="mt-4 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
+          <h2 id="google-heading" className="text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
             {t('home.gTitle')}
           </h2>
           <p className="mt-3 max-w-md text-pretty text-muted-foreground">{t('home.gText')}</p>
@@ -161,7 +173,12 @@ function GoogleTeaser() {
                     >
                       <Icon className="size-3.5" strokeWidth={2.5} aria-hidden="true" />
                     </span>
-                    {t(key)}
+                    <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                      <span>{t(key)}</span>
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                        {t(GOOGLE_POINT_LIVE[key] ? 'calendar.new' : 'home.extBadge')}
+                      </span>
+                    </span>
                     {active && !reducedMotion && (
                       <span
                         key={`${scene}-${picks}`}

@@ -4,15 +4,16 @@ import { Link } from 'react-router-dom'
 import { formatDate } from '@/lib/date-time'
 import { EventType, WEEKDAYS, weekdayRank } from '@/shared/constants'
 import { buttonVariants } from '@/shared/components/ui/button'
+import { useTimeView, type TimeView } from '@/shared/grid/time-view'
 import { t, useT } from '@/shared/i18n'
 import type { EventDetail } from '@/shared/types'
 
-function formatRangeLabel(event: EventDetail): string {
-  if (event.eventType === EventType.Weekdays) {
+function formatRangeLabel(event: EventDetail, view: TimeView | null): string {
+  if (event.eventType === EventType.Weekdays && !view?.projected) {
     const days = [...event.availableWeekdays].sort((a, b) => weekdayRank(a) - weekdayRank(b))
     return days.map((day) => WEEKDAYS[day].label).join(', ')
   }
-  const dates = [...event.availableDates].sort()
+  const dates = view?.projected?.columns.map((column) => column.specificDate!) ?? [...event.availableDates].sort()
   if (dates.length <= 1) return dates.map(formatDate).join('')
   return `${formatDate(dates[0])} – ${formatDate(dates[dates.length - 1])} · ${t('common.days', { count: dates.length })}`
 }
@@ -20,6 +21,7 @@ function formatRangeLabel(event: EventDetail): string {
 /** Tên event, các ngày và nút quay lại Overview */
 export function EventInfoBar({ event, locked }: { event: EventDetail; locked: boolean }) {
   const tr = useT()
+  const view = useTimeView()
   return (
     <div className="flex flex-col gap-1 px-4 pt-4 pb-2 sm:px-6">
       <div className="flex items-center justify-between gap-3">
@@ -39,7 +41,7 @@ export function EventInfoBar({ event, locked }: { event: EventDetail; locked: bo
           <span className="sm:hidden">{tr('common.back')}</span>
         </Link>
       </div>
-      <p className="text-xs text-muted-foreground">{formatRangeLabel(event)}</p>
+      <p className="text-xs text-muted-foreground">{formatRangeLabel(event, view)}</p>
     </div>
   )
 }

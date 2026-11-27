@@ -3,6 +3,7 @@ import { ArrowRight, Heart, Mail } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import { env } from "@/lib/env"
+import { isGoogleConfigured } from "@/lib/google"
 import { CONTACT_EMAIL } from "@/shared/constants"
 import { useT } from "@/shared/i18n"
 import { DiscordIcon, GithubIcon, LinkedinIcon, RedditIcon, XIcon } from "@/shared/layouts/SocialIcons"
@@ -81,14 +82,36 @@ export function AppFooter() {
                 </Link>
               )}
             </li>
-            <li>
-              <Link to="/#google" className={`${linkClass} inline-flex flex-wrap items-center gap-2`}>
-                {t("home.gTitle")}
-                <span className="rounded-full bg-brand-soft px-1.5 py-0.5 text-[10px] font-medium text-brand">
-                  {t("home.extBadge")}
-                </span>
-              </Link>
-            </li>
+            {/* Google Calendar ra mắt khi có OAuth client ID; Google Meet chưa làm nên tách riêng để nhãn không lẫn */}
+            {isGoogleConfigured ? (
+              <>
+                <li>
+                  <Link to="/#google" className={`${linkClass} inline-flex flex-wrap items-center gap-2`}>
+                    {t("home.gCalendar")}
+                    <span className="rounded-full bg-brand-soft px-1.5 py-0.5 text-[10px] font-medium text-brand">
+                      {t("home.extNew")}
+                    </span>
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/#google" className={`${linkClass} inline-flex flex-wrap items-center gap-2`}>
+                    {t("home.gMeet")}
+                    <span className="rounded-full bg-brand-soft px-1.5 py-0.5 text-[10px] font-medium text-brand">
+                      {t("home.extBadge")}
+                    </span>
+                  </Link>
+                </li>
+              </>
+            ) : (
+              <li>
+                <Link to="/#google" className={`${linkClass} inline-flex flex-wrap items-center gap-2`}>
+                  {t("home.gTitle")}
+                  <span className="rounded-full bg-brand-soft px-1.5 py-0.5 text-[10px] font-medium text-brand">
+                    {t("home.extBadge")}
+                  </span>
+                </Link>
+              </li>
+            )}
           </Column>
 
           <Column title={t("footer.legal")}>

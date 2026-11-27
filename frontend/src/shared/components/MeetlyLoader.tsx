@@ -1,31 +1,19 @@
-import type { CSSProperties } from 'react'
+import { useId } from 'react'
 
 import { cn } from '@/lib/utils'
 import { useT } from '@/shared/i18n'
 
-/** Mức màu tĩnh của từng ô khi người dùng tắt chuyển động (vẫn đọc ra là một góc heatmap) */
-const STATIC_LEVELS = [1, 2, 3, 2, 3, 4, 3, 4, 5]
-/** Mỗi bước chéo trễ hơn một nhịp để ô sáng lan từ góc trên trái xuống góc dưới phải */
-const WAVE_STEP_SECONDS = 0.13
-
 const SIZE = {
-  xs: 'size-3.5 gap-px',
-  sm: 'size-5 gap-[2px]',
-  md: 'size-9 gap-[3px]',
-  lg: 'size-16 gap-[5px]',
-} as const
-
-const CELL_RADIUS = {
-  xs: 'rounded-[1px]',
-  sm: 'rounded-[2px]',
-  md: 'rounded-[3px]',
-  lg: 'rounded-[6px]',
+  xs: 'w-3.5',
+  sm: 'w-5',
+  md: 'w-9',
+  lg: 'w-16',
 } as const
 
 export interface MeetlyLoaderProps {
   size?: keyof typeof SIZE
   /**
-   * `brand`: các ô đổi màu theo thang heatmap (dùng trên nền thường).
+   * `brand`: giữ màu gốc của logo (dùng trên nền thường).
    * `current`: dùng màu chữ hiện tại, hợp với trong nút hoặc trên nền màu.
    */
   tone?: 'brand' | 'current'
@@ -36,39 +24,41 @@ export interface MeetlyLoaderProps {
   className?: string
 }
 
-/**
- * Loader đặc trưng của Meetly: lưới 3×3 như một góc heatmap, các ô sáng lên theo đường
- * chéo giống lịch rảnh đang được lấp dần. Animation nằm trong `global.css` (`.meetly-loader-cell`).
- */
 export function MeetlyLoader({ size = 'md', tone = 'brand', label, decorative = false, className }: MeetlyLoaderProps) {
   const t = useT()
+  const id = useId()
+  const logo = <image href="/meetly-logo.png" width="256" height="193" />
+  const mark = tone === 'current'
+    ? <rect width="256" height="193" fill="currentColor" mask={`url(#${id}-logo)`} />
+    : logo
+
   return (
     <span
       role={decorative ? undefined : 'status'}
       aria-live={decorative ? undefined : 'polite'}
       aria-hidden={decorative || undefined}
-      data-tone={tone}
-      className={cn('meetly-loader inline-flex flex-col items-center gap-3', className)}
+      className={cn('inline-flex flex-col items-center gap-3', className)}
     >
-      <span aria-hidden="true" className={cn('grid shrink-0 grid-cols-3 grid-rows-3', SIZE[size])}>
-        {STATIC_LEVELS.map((level, index) => {
-          const row = Math.floor(index / 3)
-          const column = index % 3
-          return (
-            <span
-              key={index}
-              className={cn('meetly-loader-cell', CELL_RADIUS[size])}
-              style={
-                {
-                  '--delay': `${(row + column) * WAVE_STEP_SECONDS}s`,
-                  '--static-heat': `var(--heat-${level})`,
-                  '--static-opacity': 0.3 + level * 0.14,
-                } as CSSProperties
-              }
+      <svg aria-hidden="true" viewBox="0 0 256 193" className={cn('block h-auto shrink-0', SIZE[size])}>
+        <defs>
+          {tone === 'current' && <mask id={`${id}-logo`} maskContentUnits="userSpaceOnUse" style={{ maskType: 'alpha' }}>{logo}</mask>}
+          <mask id={`${id}-trace`} maskContentUnits="userSpaceOnUse">
+            {/* The broad stroke reveals the original logo without changing its silhouette. */}
+            <path
+              className="meetly-loader-trace"
+              d="M 37 156 V 45 Q 37 35 46 45 L 114 112 Q 128 128 142 112 L 210 45 Q 219 35 219 45 V 156"
+              pathLength="1"
+              fill="none"
+              stroke="white"
+              strokeWidth="100"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             />
-          )
-        })}
-      </span>
+          </mask>
+        </defs>
+        <g className="meetly-loader-base">{mark}</g>
+        <g className="meetly-loader-fill" mask={`url(#${id}-trace)`}>{mark}</g>
+      </svg>
       {label ? (
         <span className="text-sm text-muted-foreground">{label}</span>
       ) : (

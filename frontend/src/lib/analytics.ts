@@ -62,9 +62,12 @@ export type AnalyticsEvent =
   | 'create_event'
   | 'join_event'
   | 'save_availability'
+  | 'import_google_busy'
   | 'subscribe_email'
   | 'finalize_event'
   | 'share_invite'
+  | 'add_to_google_calendar'
+  | 'download_calendar_ics'
 
 export function trackEvent(name: AnalyticsEvent, params?: Record<string, string | number | boolean>) {
   if (!gaEnabled) return

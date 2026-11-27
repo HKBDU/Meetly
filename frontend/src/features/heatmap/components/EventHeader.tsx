@@ -2,6 +2,7 @@ import { Globe2, UserPlus, Users } from 'lucide-react';
 import { CopyButton } from '@/shared/components/CopyButton';
 import { eventShareUrl } from '@/shared/lib/share';
 import { Button } from '@/shared/components/ui';
+import { useTimeView } from '@/shared/grid/time-view';
 import { useT } from '@/shared/i18n';
 import type { EventHeaderProps } from '../types';
 import { EditEventDialog } from './EditEventDialog';
@@ -18,6 +19,7 @@ export function EventHeader({
   currentUsername,
 }: EventHeaderProps) {
   const t = useT();
+  const timeView = useTimeView();
   const canOpenMySchedule = Boolean(onOpenMySchedule);
   return (
     <header className="mb-8 flex flex-wrap items-start justify-between gap-6">
@@ -31,10 +33,10 @@ export function EventHeader({
               {event.status === 1 ? t('overview.readOnly') : t('overview.locked')}
             </span>
           )}
-          {canEdit && (
+          {canEdit && canUpdate && (
             <EditEventDialog
               event={event}
-              disabled={disabled || !canUpdate}
+              disabled={disabled}
               onSave={onUpdateEvent}
             />
           )}
@@ -47,10 +49,12 @@ export function EventHeader({
             <Users size={15} aria-hidden="true" />
             {t('common.participants', { count: event.participants.length })}
           </span>
-          <span className="flex items-center gap-2">
-            <Globe2 size={15} aria-hidden="true" />
-            {event.timezone}
-          </span>
+          {!timeView?.canSwitch && (
+            <span className="flex items-center gap-2">
+              <Globe2 size={15} aria-hidden="true" />
+              {event.timezone}
+            </span>
+          )}
         </div>
       </div>
       <div className="grid w-full min-w-0 shrink-0 gap-2 sm:w-72">

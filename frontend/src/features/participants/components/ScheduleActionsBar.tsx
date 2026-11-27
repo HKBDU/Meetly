@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BellRing, CloudCheck, SlidersHorizontal } from 'lucide-react'
+import { BellRing, CalendarArrowDown, CloudCheck, SlidersHorizontal } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Button, ToggleGroup, ToggleGroupItem } from '@/shared/components/ui'
@@ -14,7 +14,9 @@ interface ScheduleActionsBarProps {
   grid: ScheduleGrid
   triggerAutoSave: () => void
   isSaving: boolean
-  onManualRangeApplied: (columnKey: string) => void
+  onManualRangeApplied: (columnKey: string, startTime?: string) => void
+  /** Nhập giờ bận từ Google Calendar; `canImport = false` thì ẩn nút */
+  googleImport: { canImport: boolean; isImporting: boolean; importFromGoogle: () => void; prepareImport: () => void }
 }
 
 const modeItemClass = cn(
@@ -23,29 +25,54 @@ const modeItemClass = cn(
 )
 
 /** Hàng điều khiển phía trên lưới: chọn thủ công, xoá hết, trạng thái lưu và chế độ Busy/Available */
-export function ScheduleActionsBar({ grid, triggerAutoSave, isSaving, onManualRangeApplied }: ScheduleActionsBarProps) {
+export function ScheduleActionsBar({
+  grid,
+  triggerAutoSave,
+  isSaving,
+  onManualRangeApplied,
+  googleImport,
+}: ScheduleActionsBarProps) {
   const t = useT()
   const paintMode = useParticipantStore((s) => s.paintMode)
   const setPaintMode = useParticipantStore((s) => s.setPaintMode)
   const clearAllPainted = useParticipantStore((s) => s.clearAllPainted)
   const hasEmailSubscribed = useParticipantStore((s) => s.hasEmailSubscribed)
   const openEmailDialog = useParticipantStore((s) => s.openEmailDialog)
+  const hasDraft = useParticipantStore((s) => s.draftFreeSlotIds !== null)
   const [isManualDialogOpen, setIsManualDialogOpen] = useState(false)
   const locked = grid.isLocked
+  // Đang xem bản nháp từ Google Calendar thì chỉ sửa bằng cách kéo trên lưới, xong mới Áp dụng / Huỷ
+  const editLocked = locked || hasDraft
 
   return (
     <>
       <div className="flex flex-col gap-3 px-3 pt-1 pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-4">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" disabled={locked} onClick={() => setIsManualDialogOpen(true)}>
+          <Button variant="outline" size="sm" disabled={editLocked} onClick={() => setIsManualDialogOpen(true)}>
             <SlidersHorizontal />
             {t('actions.selectRange')}
           </Button>
+          {googleImport.canImport && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={editLocked || googleImport.isImporting}
+              onClick={googleImport.importFromGoogle}
+              onPointerEnter={googleImport.prepareImport}
+              onFocus={googleImport.prepareImport}
+              aria-label={t('import.button')}
+              title={t('import.button')}
+            >
+              {googleImport.isImporting ? <MeetlyLoader size="xs" decorative /> : <CalendarArrowDown />}
+              {/* Mobile chật: chỉ hiện icon, tên nút nằm ở aria-label */}
+              <span className="hidden sm:inline">{t('import.button')}</span>
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
             className="text-muted-foreground"
-            disabled={locked}
+            disabled={editLocked}
             onClick={() => {
               clearAllPainted()
               triggerAutoSave()
@@ -70,7 +97,7 @@ export function ScheduleActionsBar({ grid, triggerAutoSave, isSaving, onManualRa
           <ToggleGroup
             type="single"
             value={paintMode}
-            disabled={locked}
+            disabled={editLocked}
             aria-label={t('actions.paintMode')}
             className="rounded-full bg-muted p-1"
             // Đổi chế độ giữ nguyên lịch (lấy phần bù), nên không cần lưu lại

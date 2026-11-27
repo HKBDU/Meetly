@@ -15,4 +15,6 @@ export const env = {
   signalRHubUrl: requireEnv("VITE_SIGNALR_HUB_URL", import.meta.env.VITE_SIGNALR_HUB_URL),
   /** Trang extension trên Chrome Web Store; có giá trị thì web đổi "Sắp ra mắt" thành nút "Thêm vào Chrome" */
   extensionStoreUrl: import.meta.env.VITE_EXTENSION_STORE_URL?.trim() || undefined,
+  /** OAuth client ID (loại Web) của Google Cloud; bỏ trống thì ẩn mọi tính năng cần đăng nhập Google */
+  googleClientId: import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || undefined,
 } as const
