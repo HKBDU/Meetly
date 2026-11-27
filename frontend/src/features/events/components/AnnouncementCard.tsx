@@ -35,13 +35,17 @@ const LAUNCH_ITEMS: AnnouncementItem[] = [
 ]
 
 const STORAGE_KEY = 'meetly-announcement-dismissed'
-/** Đổi id khi có thông báo mới để mọi người thấy lại thẻ (kể cả người đã tắt thẻ "extension đã có") */
+/** Đổi id khi có thông báo mới */
 const ANNOUNCEMENT_ID = env.extensionStoreUrl ? 'launch-3-features-v1' : 'coming-soon-v1'
 const SHOW_DELAY_MS = 1800
 
+/**
+ * Đóng thẻ chỉ có tác dụng trong lần vào web hiện tại (sessionStorage): quay lại trang chủ trong
+ * cùng tab không bật lại, còn lần sau mở web thì thẻ hiện lại.
+ */
 function wasDismissed() {
   try {
-    return window.localStorage.getItem(STORAGE_KEY) === ANNOUNCEMENT_ID
+    return window.sessionStorage.getItem(STORAGE_KEY) === ANNOUNCEMENT_ID
   } catch {
     return false
   }
@@ -49,15 +53,15 @@ function wasDismissed() {
 
 function rememberDismissed() {
   try {
-    window.localStorage.setItem(STORAGE_KEY, ANNOUNCEMENT_ID)
+    window.sessionStorage.setItem(STORAGE_KEY, ANNOUNCEMENT_ID)
   } catch {
-    // localStorage bị chặn: chỉ ẩn trong lần xem này
+    // sessionStorage bị chặn: chỉ ẩn tới khi tải lại trang
   }
 }
 
 /**
- * Thẻ thông báo góc dưới trang chủ: mỗi thông báo chỉ hiện một lần (hiện ra là coi như đã xem,
- * không đợi người dùng bấm đóng), không chặn thao tác. Ẩn trên màn hình nhỏ để không che nội dung.
+ * Thẻ thông báo góc dưới trang chủ: mỗi lần vào web đều hiện sau một nhịp ngắn, không chặn thao tác.
+ * Ẩn trên màn hình nhỏ để không che nội dung.
  */
 export function AnnouncementCard() {
   const t = useT()
@@ -66,11 +70,7 @@ export function AnnouncementCard() {
 
   useEffect(() => {
     if (wasDismissed()) return
-    const timer = window.setTimeout(() => {
-      // Ghi nhớ ngay khi hiện: lần sau vào web không bật lại dù người dùng không bấm gì
-      rememberDismissed()
-      setOpen(true)
-    }, SHOW_DELAY_MS)
+    const timer = window.setTimeout(() => setOpen(true), SHOW_DELAY_MS)
     return () => window.clearTimeout(timer)
   }, [])
 
