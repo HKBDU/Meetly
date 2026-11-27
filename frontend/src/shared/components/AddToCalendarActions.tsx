@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { ArrowUpRight, CalendarPlus, Download, Video } from 'lucide-react'
 
 import { env } from '@/lib/env'
@@ -8,6 +9,7 @@ import { EventStatus } from '@/shared/constants'
 import { useT } from '@/shared/i18n'
 import { buildCalendarDownloadUrl, buildGoogleCalendarUrl } from '@/shared/lib/calendar'
 import type { EventDetail } from '@/shared/types'
+import { meetingProvider } from '@/features/heatmap/meetingLink'
 
 const iconMotion = 'motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out'
 
@@ -20,30 +22,44 @@ export function AddToCalendarActions({
   event,
   source,
   compact = false,
+  showJoin = true,
+  extra,
   className,
 }: {
   event: EventDetail
   source: 'overview' | 'heatmap'
   compact?: boolean
+  /** Tắt ở chỗ đã có dòng "Meeting room" để link họp không lặp lại */
+  showJoin?: boolean
+  /** Nút phụ đặt cùng hàng với .ics (VD "Chép giờ" trong popover) */
+  extra?: ReactNode
   className?: string
 }) {
   const t = useT()
   if (event.status !== EventStatus.Finalized || !event.finalSchedule) return null
   const { meetingUrl } = event
   const googleUrl = buildGoogleCalendarUrl(event, event.finalSchedule)
+  const provider = meetingUrl ? meetingProvider(meetingUrl) : null
+  const joinLabel = provider === 'google' ? 'calendar.joinMeet' : provider === 'jitsi' ? 'calendar.joinJitsi' : 'calendar.joinMeeting'
 
   return (
-    <div className={cn('flex flex-wrap items-center gap-2', className)}>
-      {meetingUrl && (
-        <Button size="sm" className="hover-shine rounded-full" asChild>
+    <div className={cn(compact ? 'grid gap-2' : 'flex flex-wrap items-center gap-2', className)}>
+      {showJoin && meetingUrl && (
+        <Button size="sm" className={cn('hover-shine rounded-full', compact && 'w-full')} asChild>
           <a href={meetingUrl} target="_blank" rel="noopener noreferrer">
             <Video aria-hidden="true" />
-            {t('calendar.joinMeet')}
+            {t(joinLabel)}
           </a>
         </Button>
       )}
+      <div className={cn('flex items-center gap-2', compact ? 'min-w-0' : 'contents')}>
       {googleUrl && (
-        <Button size="sm" className="group/calendar hover-shine rounded-full" asChild>
+        <Button
+          size="sm"
+          variant={compact ? 'outline' : 'default'}
+          className={cn('group/calendar hover-shine rounded-full', compact && 'min-w-0 flex-1')}
+          asChild
+        >
           <a
             href={googleUrl}
             target="_blank"
@@ -51,7 +67,7 @@ export function AddToCalendarActions({
             onClick={() => trackEvent('add_to_google_calendar', { source })}
           >
             <CalendarPlus aria-hidden="true" />
-            {t('calendar.google')}
+            {t(compact ? 'calendar.googleShort' : 'calendar.google')}
             <ArrowUpRight
               className={cn(
                 'opacity-70',
@@ -87,6 +103,8 @@ export function AddToCalendarActions({
           {compact ? '.ics' : t('calendar.download')}
         </a>
       </Button>
+      {extra}
+      </div>
     </div>
   )
 }
