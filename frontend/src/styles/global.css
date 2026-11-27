@@ -333,6 +333,28 @@
   animation: announce-shine 3.2s ease-in-out infinite;
 }
 
+/* Vệt sáng chạy qua khi hover/focus, rời chuột thì chạy ngược về.
+   Màu vệt sáng chỉnh qua biến --shine (mặc định trắng, hợp nút nền đậm) */
+.hover-shine {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.hover-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, var(--shine, rgb(255 255 255 / 0.45)), transparent);
+  transform: translateX(-120%) skewX(-20deg);
+  transition: transform 0.6s ease-out;
+  pointer-events: none;
+}
+.hover-shine:hover::after,
+.hover-shine:focus-visible::after {
+  transform: translateX(260%) skewX(-20deg);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .announce-pill {
     animation: none !important;
@@ -340,7 +362,8 @@
       linear-gradient(var(--card), var(--card)) padding-box,
       linear-gradient(color-mix(in oklab, var(--brand) 55%, transparent), color-mix(in oklab, var(--brand) 55%, transparent)) border-box;
   }
-  .announce-shine::after {
+  .announce-shine::after,
+  .hover-shine::after {
     display: none;
   }
   .announce-float,

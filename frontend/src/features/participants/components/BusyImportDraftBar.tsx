@@ -7,7 +7,7 @@ import { useParticipantStore } from '@/features/participants/store'
 import { useT } from '@/shared/i18n'
 
 /**
- * Bản nháp nhập từ Google Calendar gồm 2 phần: dòng thông báo nhỏ phía trên lưới và cụm nút
+ * Bản nháp nhập từ Google Calendar gồm 2 phần: dòng thông báo nhỏ phía trên lưới và 2 nút
  * Huỷ / Áp dụng dính ở giữa đáy màn hình. Người dùng xem, sửa trên lưới rồi bấm Áp dụng mới lưu.
  * Không có bản nháp (hoặc lịch đã khoá) thì cả hai không hiện gì.
  */
@@ -37,7 +37,7 @@ interface BusyImportDraftActionsProps {
 }
 
 /**
- * Cụm nút dính đáy màn hình. Đặt ngay sau lưới: khi cuộn qua lưới thì dính ở đáy,
+ * Hai nút dính đáy màn hình. Đặt ngay sau lưới: khi cuộn qua lưới thì dính ở đáy,
  * hết lưới thì nằm yên dưới lưới (sticky, không che footer).
  */
 export function BusyImportDraftActions({ grid, triggerAutoSave }: BusyImportDraftActionsProps) {
@@ -54,26 +54,29 @@ export function BusyImportDraftActions({ grid, triggerAutoSave }: BusyImportDraf
   if (!hasDraft || grid.isLocked) return null
 
   return (
-    <div className="pointer-events-none sticky bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex justify-center px-3 pb-4">
-      <div
-        role="toolbar"
-        aria-label={t('import.draftTitle')}
-        className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-border bg-card/95 p-1.5 shadow-lg backdrop-blur"
+    <div
+      role="toolbar"
+      aria-label={t('import.draftTitle')}
+      className="pointer-events-none sticky bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex justify-center gap-2 px-3 pb-4"
+    >
+      <Button
+        variant="outline"
+        size="sm"
+        className="hover-shine pointer-events-auto h-8 rounded-full bg-card/95 px-4 shadow-lg backdrop-blur [--shine:color-mix(in_oklab,var(--foreground)_16%,transparent)]"
+        onClick={discardDraft}
       >
-        <Button variant="ghost" size="sm" className="rounded-full px-4" onClick={discardDraft}>
-          {t('import.discard')}
-        </Button>
-        <Button
-          size="sm"
-          className="rounded-full px-5"
-          onClick={() => {
-            applyDraft()
-            triggerAutoSave()
-          }}
-        >
-          {t('import.apply')}
-        </Button>
-      </div>
+        {t('import.discard')}
+      </Button>
+      <Button
+        size="sm"
+        className="hover-shine pointer-events-auto h-8 rounded-full px-5 shadow-lg"
+        onClick={() => {
+          applyDraft()
+          triggerAutoSave()
+        }}
+      >
+        {t('import.apply')}
+      </Button>
     </div>
   )
 }
