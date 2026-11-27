@@ -13,7 +13,7 @@ export function FinalizedScheduleSummary({ event }: { event: EventDetail }) {
   const display = describeRange(view, event.finalSchedule, event.timezone, true)
 
   return (
-    <section aria-labelledby="finalized-overview-title" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-finalized/30 bg-finalized-muted p-3 sm:p-4">
+    <section aria-labelledby="finalized-overview-title" className="mb-6 flex w-fit max-w-full flex-wrap items-center gap-x-6 gap-y-3 rounded-xl border border-finalized/30 bg-finalized-muted px-4 py-3">
       <div className="flex min-w-0 items-start gap-2">
         <CalendarCheck2 className="mt-0.5 size-5 shrink-0 text-finalized" aria-hidden="true" />
         <div className="min-w-0">
