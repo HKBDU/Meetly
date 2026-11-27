@@ -62,42 +62,42 @@ function ExtensionTeaser() {
 }
 
 /**
- * Ý nào trong khối Google đã dùng được: "Thêm vào lịch" không cần OAuth nên luôn mới;
- * nhập giờ bận chỉ mới khi có OAuth client ID (không có thì nút nhập bị ẩn); Google Meet chưa làm.
+ * Ý nào trong khối Google đã dùng được: "Thêm vào lịch" và link phòng họp (dán link hoặc tạo phòng
+ * Jitsi) không cần OAuth nên luôn mới; nhập giờ bận chỉ mới khi có OAuth client ID (không có thì nút nhập bị ẩn).
  */
 const GOOGLE_POINT_LIVE: Record<string, boolean> = {
   'home.gPoint1': true,
-  'home.gPoint2': false,
+  'home.gPoint2': true,
   'home.gPoint3': isGoogleConfigured,
 }
 
 /**
- * Thanh "Sắp ra mắt" chỉ giữ thứ chưa ra mắt: extension bị bỏ khi đã lên Chrome Web Store;
- * khi có OAuth client ID thì Google Calendar đã dùng được, mục Google chỉ còn Google Meet.
+ * Thanh "Mới" đầu trang: các tính năng vừa ra mắt, bấm để cuộn tới khối giới thiệu.
+ * Extension chỉ có khi đã lên Chrome Web Store; Google Calendar (thêm vào lịch) và phòng họp
+ * (dán link / tạo phòng Jitsi) không cần cấu hình gì nên luôn có.
  */
-const ANNOUNCEMENTS = (
+const LAUNCHES = (
   [
-    { target: 'extension', icon: Puzzle, label: 'home.extTitle' },
-    isGoogleConfigured
-      ? { target: 'google', icon: Video, label: 'home.gMeet' }
-      : { target: 'google', icon: CalendarCheck, label: 'home.gShort' },
+    { target: 'extension', icon: Puzzle, label: 'home.launchExt' },
+    { target: 'google', icon: CalendarCheck, label: 'home.gCalendar' },
+    { target: 'google', icon: Video, label: 'home.launchMeet' },
   ] satisfies { target: string; icon: LucideIcon; label: MessageKey }[]
-).filter(({ target }) => !(target === 'extension' && env.extensionStoreUrl))
+).filter(({ target }) => target !== 'extension' || Boolean(env.extensionStoreUrl))
 
-/** Thanh "Sắp ra mắt" đầu trang: một nhãn chung, mỗi sản phẩm là một link cuộn mượt tới khối giới thiệu */
-function AnnounceBar() {
+/** Thanh ra mắt đầu trang: nhãn "Mới" + mỗi tính năng là một link cuộn mượt tới khối giới thiệu */
+function LaunchBar() {
   const t = useT()
   return (
     <nav
-      aria-label={t('home.extBadge')}
+      aria-label={t('home.launchLabel')}
       className="announce-pill inline-flex max-w-full items-center gap-1 rounded-full py-1 pr-1.5 pl-1 text-xs"
     >
       <span className="announce-shine inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-2 py-0.5 font-medium text-primary-foreground">
         <Sparkles className="size-3" aria-hidden="true" />
-        <span className="sr-only sm:not-sr-only">{t('home.extBadge')}</span>
+        {t('home.extNew')}
       </span>
-      {ANNOUNCEMENTS.map(({ target, icon: Icon, label }, index) => (
-        <span key={target} className="flex min-w-0 items-center">
+      {LAUNCHES.map(({ target, icon: Icon, label }, index) => (
+        <span key={label} className="flex min-w-0 items-center">
           {index > 0 && <span className="mx-0.5 h-3.5 w-px shrink-0 bg-border" aria-hidden="true" />}
           <a
             href={`#${target}`}
@@ -105,10 +105,12 @@ function AnnounceBar() {
               event.preventDefault()
               document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
             }}
+            aria-label={t(label)}
             className="group inline-flex min-w-0 items-center gap-1.5 rounded-full px-2 py-0.5 font-medium text-foreground transition-colors hover:bg-brand-soft hover:text-brand"
           >
             <Icon className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-brand" aria-hidden="true" />
-            <span className="truncate">{t(label)}</span>
+            {/* Điện thoại hẹp: chỉ để icon (tên vẫn ở aria-label) cho thanh nằm gọn một hàng */}
+            <span className="hidden truncate sm:inline">{t(label)}</span>
             <ArrowRight className="hidden size-3 shrink-0 transition-transform group-hover:translate-x-0.5 sm:block" aria-hidden="true" />
           </a>
         </span>
@@ -225,7 +227,7 @@ export function HomePage() {
     <div className="mx-auto w-full max-w-5xl px-4 pt-10 pb-20 sm:pt-20">
       <section className="text-center">
         {/* Thông báo sắp ra mắt ngay đầu trang; bấm để cuộn tới phần giới thiệu bên dưới */}
-        <AnnounceBar />
+        <LaunchBar />
         <h1 className="mx-auto mt-6 max-w-3xl text-5xl leading-[1.05] font-semibold tracking-[-0.035em] text-balance sm:text-6xl lg:text-7xl">
           {t('home.titleBefore')}{' '}
           <span className="font-serif font-normal tracking-normal italic">{t('home.titleEmphasis')}</span>
