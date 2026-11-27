@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { ArrowUpRight } from 'lucide-react'
-import Marquee from 'react-fast-marquee'
+import MarqueeImport from 'react-fast-marquee'
 
 import { cn } from '@/lib/utils'
 import { CopyButton } from '@/shared/components/CopyButton'
 import { buttonVariants } from '@/shared/components/ui/button'
 import { useT } from '@/shared/i18n'
 import { normalizeMeetingLink } from '../meetingLink'
+
+// The package ships CommonJS with a nested default export in Vite's browser bundle.
+const Marquee = (MarqueeImport as unknown as { default?: typeof MarqueeImport }).default ?? MarqueeImport
 
 function MeetingUrlText({ url }: { url: string }) {
   const viewportRef = useRef<HTMLDivElement>(null)
