@@ -66,6 +66,8 @@ export function useAutoSaveSchedule(shortCode: string, grid: ScheduleGrid | null
   const debouncedSaveNow = useDebouncedCallback(saveNow, AUTO_SAVE_DEBOUNCE_MS)
 
   const triggerAutoSave = useCallback(() => {
+    // Sửa trên bản nháp không cần lưu: bản nháp chỉ được lưu khi bấm Áp dụng
+    if (useParticipantStore.getState().draftFreeSlotIds) return
     setIsSavePending(true)
     debouncedSaveNow()
   }, [debouncedSaveNow])
