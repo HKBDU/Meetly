@@ -1,11 +1,10 @@
 import type { CSSProperties, ReactNode } from 'react'
-import { CalendarCheck, CalendarPlus, Check, Copy, Video } from 'lucide-react'
+import { CalendarCheck, CalendarPlus, Check, ClipboardPaste, Copy, Video } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { formatHourLabel } from '@/lib/date-time'
 import { WEEKDAYS } from '@/shared/constants'
 import { useT } from '@/shared/i18n'
-import { MeetlyLoader } from '@/shared/components/MeetlyLoader'
 import { DemoCursor } from './DemoCursor'
 
 /** Con trỏ bay vào nút rồi bấm; sau khi bấm thì mờ đi */
@@ -81,10 +80,10 @@ function CalendarScene({ phase }: { phase: number }) {
   )
 }
 
-/** Cảnh 2: bấm "Tạo link Google Meet", chờ một nhịp rồi ra link và nút tham gia */
+/** Cảnh 2: admin dán link phòng họp, cả nhóm có thể tham gia. */
 function MeetScene({ phase }: { phase: number }) {
   const t = useT()
-  const creating = phase === 2
+  const pasted = phase >= 2
   const ready = phase >= 3
   return (
     <>
@@ -97,15 +96,15 @@ function MeetScene({ phase }: { phase: number }) {
             ready ? 'bg-primary font-medium text-primary-foreground' : 'border bg-card',
           )}
         >
-          {creating ? <MeetlyLoader size="xs" decorative /> : <Video className={cn('size-4', !ready && 'text-brand')} />}
-          <span className="truncate">{t(ready ? 'home.gDemoMeet' : 'home.gDemoCreateMeet')}</span>
+          {ready ? <Video className="size-4" /> : <ClipboardPaste className="size-4 text-brand" />}
+          <span className="truncate">{t(ready ? 'home.gDemoMeet' : pasted ? 'home.gDemoPasted' : 'home.gDemoPaste')}</span>
         </div>
       </ClickTarget>
 
       <div
         className={cn(
           'mt-3 flex items-center gap-2 rounded-xl border bg-card px-3 py-2.5 transition-all duration-500',
-          ready ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0',
+          pasted ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0',
         )}
       >
         <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand">
