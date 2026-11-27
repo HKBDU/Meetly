@@ -18,6 +18,8 @@ public class Events : BaseEntity, IAuditableEntity
     public TimeOnly? FinalStartTime { get; set; }
     public TimeOnly? FinalEndTime { get; set; }
     public long Revision { get; set; }
+    /// <summary>Link cuộc họp (Meet, Zoom, Teams...) do admin dán vào; null nếu chưa có.</summary>
+    public string? MeetingUrl { get; set; }
 
     public ICollection<EventAvailableDates> AvailableDates { get; set; } = [];
     public ICollection<EventEmails> Emails { get; set; } = [];

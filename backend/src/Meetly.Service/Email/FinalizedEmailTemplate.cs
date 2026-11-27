@@ -15,7 +15,8 @@ public sealed record FinalizedEmailModel(
     string EventUrl,
     string FrontendBaseUrl,
     string? GoogleCalendarUrl = null,
-    bool HasCalendarAttachment = false);
+    bool HasCalendarAttachment = false,
+    string? MeetingUrl = null);
 
 /// <summary>
 /// HTML email "Lịch họp đã được chốt". Dựng bằng bảng + style inline vì Gmail/Outlook bỏ
@@ -99,7 +100,7 @@ public static class FinalizedEmailTemplate
         <tr><td align="center" style="padding:28px 32px 8px;">
           <a href="{url}" style="display:inline-block;padding:14px 32px;border-radius:999px;background:{Brand};color:#ffffff;font-family:{Font};font-size:15px;font-weight:600;text-decoration:none;">Xem chi tiết sự kiện</a>
         </td></tr>
-{CalendarRow(model)}
+{MeetingRow(model)}{CalendarRow(model)}
         <tr><td style="padding:12px 32px 32px;font-family:{Font};font-size:12px;line-height:1.6;color:{Muted};text-align:center;">
           Nút không bấm được? Mở link này:<br>
           <a href="{url}" style="color:{Brand};word-break:break-all;">{url}</a>
@@ -115,6 +116,21 @@ public static class FinalizedEmailTemplate
 </table>
 </body>
 </html>
+""";
+    }
+
+    /// <summary>Nút "Tham gia cuộc họp" kèm link dạng chữ (cho client không bấm được nút); trống nếu chưa có link.</summary>
+    private static string MeetingRow(FinalizedEmailModel model)
+    {
+        if (string.IsNullOrEmpty(model.MeetingUrl))
+            return "";
+        var meetingUrl = Encoder.Encode(model.MeetingUrl);
+        return $"""
+        <tr><td align="center" style="padding:10px 32px 0;">
+          <a href="{meetingUrl}" style="display:inline-block;padding:12px 26px;border-radius:999px;border:1px solid {Brand};background:{BrandSoft};color:{Brand};font-family:{Font};font-size:14px;font-weight:600;text-decoration:none;">&#127909;&nbsp; Tham gia cuộc họp</a>
+          <p style="margin:8px 0 0;font-family:{Font};font-size:12px;line-height:1.6;color:{Muted};word-break:break-all;">{meetingUrl}</p>
+        </td></tr>
+
 """;
     }
 

@@ -22,6 +22,7 @@ public class AppDbContext : DbContext
         var events = modelBuilder.Entity<Events>();
         events.Property(x => x.Title).HasMaxLength(255);
         events.Property(x => x.URL).HasMaxLength(255);
+        events.Property(x => x.MeetingUrl).HasMaxLength(500);
         events.Property(x => x.ShortCode).HasMaxLength(6);
         events.Property(x => x.EventType).HasConversion<short>();
         events.Property(x => x.TimeZone).HasMaxLength(50);

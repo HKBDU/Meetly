@@ -149,7 +149,11 @@ public sealed class EventService(
         var entity = await GetEventAsync(shortCode, cancellationToken);
         RequireAdmin(entity, user);
         if (entity.Status != EventStatus.Open) throw new EventException(409, "Event is already finalized.");
+        // Kiểm tra link trước khi đụng vào entity: link sai thì trả 422 và event vẫn Open
+        var meetingUrl = NormalizeMeetingUrl(request.MeetingUrl);
         SetFinalTime(entity, request);
+        // Không gửi link thì giữ link admin đã gắn trước đó (muốn xoá thì dùng PUT /meeting-url)
+        if (meetingUrl is not null) entity.MeetingUrl = meetingUrl;
 
         await using (var transaction = await repository.BeginTransactionAsync(cancellationToken))
         {
@@ -168,7 +172,8 @@ public sealed class EventService(
                 entity.FinalDayOfWeek is null ? null : (int)entity.FinalDayOfWeek.Value,
                 Format(entity.FinalStartTime!.Value),
                 Format(entity.FinalEndTime!.Value)),
-            entity.Revision);
+            entity.Revision,
+            entity.MeetingUrl);
         await notifier.NotifyEventFinalizedAsync(shortCode, response, cancellationToken);
 
         // Gửi nền (có retry): lỗi email không được làm hỏng việc chốt lịch, cũng không bắt admin chờ
@@ -218,6 +223,29 @@ public sealed class EventService(
             logger.LogWarning(exception, "Could not build calendar invite for {ShortCode}", entity.ShortCode);
             return (null, []);
         }
+    }
+
+    public async Task<MeetingUrlResponse> UpdateMeetingUrlAsync(string shortCode, ClaimsPrincipal user, UpdateMeetingUrlRequest request, CancellationToken cancellationToken)
+    {
+        var entity = await GetEventAsync(shortCode, cancellationToken);
+        RequireAdmin(entity, user);
+        var meetingUrl = NormalizeMeetingUrl(request.MeetingUrl);
+
+        await using (var transaction = await repository.BeginTransactionAsync(cancellationToken))
+        {
+            // Link đổi được cả sau khi chốt nên không bắt event phải còn Open
+            entity.Revision = await repository.TryBumpRevisionAsync(entity.Id, requireOpen: false, cancellationToken)
+                ?? throw new EventException(404, "Event not found.");
+            entity.UpdatedAt = DateTimeOffset.UtcNow;
+            entity.MeetingUrl = meetingUrl;
+            await repository.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+
+        // Không gửi lại email khi chỉ đổi link (tránh spam); cả nhóm thấy link mới qua realtime
+        var response = new MeetingUrlResponse(entity.MeetingUrl, entity.Revision);
+        await notifier.NotifyMeetingUrlUpdatedAsync(entity.ShortCode, response, cancellationToken);
+        return response;
     }
 
     public async Task UpdateAsync(string shortCode, ClaimsPrincipal user, UpdateEventRequest request, CancellationToken cancellationToken)
@@ -321,7 +349,8 @@ public sealed class EventService(
         FinalSchedule = entity.Status != EventStatus.Finalized ? null : new FinalScheduleResponse(
             entity.EventType == EventType.Dates ? entity.FinalDate?.ToString("yyyy-MM-dd") : null,
             entity.EventType == EventType.Weekdays ? (int?)entity.FinalDayOfWeek : null,
-            Format(entity.FinalStartTime!.Value), Format(entity.FinalEndTime!.Value))
+            Format(entity.FinalStartTime!.Value), Format(entity.FinalEndTime!.Value)),
+        MeetingUrl = entity.MeetingUrl
     };
 
     private string BuildFinalizedEmail(Events entity, FinalizeEventResponse response, string? googleCalendarUrl, bool hasCalendarAttachment)
@@ -337,7 +366,8 @@ public sealed class EventService(
             appOptions.Value.EventUrl(entity.ShortCode),
             appOptions.Value.FrontendBaseUrl,
             googleCalendarUrl,
-            hasCalendarAttachment));
+            hasCalendarAttachment,
+            entity.MeetingUrl));
     }
 
 
@@ -382,6 +412,24 @@ public sealed class EventService(
         entity.FinalEndTime = request.EndTime;
     }
     private static string Format(TimeOnly time) => time.ToString("HH:mm");
+
+    /// <summary>
+    /// Link cuộc họp: bỏ trống thì null (không có / xoá link). Chỉ nhận URL https tuyệt đối để FE gắn
+    /// vào thẻ &lt;a&gt; an toàn (chặn javascript:, data:...). Không giới hạn host: Meet, Zoom, Teams đều được.
+    /// </summary>
+    public static string? NormalizeMeetingUrl(string? value)
+    {
+        var url = value?.Trim();
+        if (string.IsNullOrEmpty(url)) return null;
+        if (url.Length > InputLimits.MeetingUrlMaxLength)
+            throw new EventException(422, $"meetingUrl must be at most {InputLimits.MeetingUrlMaxLength} characters.");
+        if (url.Any(char.IsWhiteSpace) ||
+            !Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+            uri.Scheme != Uri.UriSchemeHttps ||
+            string.IsNullOrEmpty(uri.Host))
+            throw new EventException(422, "meetingUrl must be a valid https URL.");
+        return url;
+    }
 
     /// <summary>
     /// Múi giờ của event theo tên IANA (dùng cho lịch .ics và Google Calendar). Client cũ không gửi,

@@ -14,7 +14,9 @@ public sealed record CreateEventResponse
     public long Revision { get; init; }
 }
 
-public sealed record FinalizeEventResponse(int Status, FinalScheduleResponse FinalSchedule, long Revision);
+public sealed record FinalizeEventResponse(int Status, FinalScheduleResponse FinalSchedule, long Revision, string? MeetingUrl = null);
+
+public sealed record MeetingUrlResponse(string? MeetingUrl, long Revision);
 
 public sealed record EventResponse
 {
@@ -33,6 +35,7 @@ public sealed record EventResponse
     public List<EventParticipantResponse> Participants { get; init; } = [];
     public List<HeatmapCellResponse> HeatmapGrid { get; init; } = [];
     public FinalScheduleResponse? FinalSchedule { get; init; }
+    public string? MeetingUrl { get; init; }
 }
 
 public sealed record EventParticipantResponse(string Username);

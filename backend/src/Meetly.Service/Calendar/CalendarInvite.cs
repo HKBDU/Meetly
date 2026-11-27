@@ -8,6 +8,7 @@ namespace Meetly.Service.Calendar;
 /// <summary>
 /// Lịch họp đã chốt, dùng chung cho file .ics và link Google Calendar.
 /// <see cref="Start"/>/<see cref="End"/> là giờ địa phương theo <see cref="TimeZone"/> của event.
+/// <see cref="Location"/> là link cuộc họp (Meet, Zoom...) nếu admin đã gắn.
 /// </summary>
 public sealed record CalendarInvite(
     string Uid,
@@ -17,7 +18,8 @@ public sealed record CalendarInvite(
     DateTime Start,
     DateTime End,
     string TimeZone,
-    System.DayOfWeek? RepeatWeeklyOn);
+    System.DayOfWeek? RepeatWeeklyOn,
+    string? Location = null);
 
 /// <summary>
 /// Dựng file iCalendar (RFC 5545) và link "Thêm vào Google Calendar" cho event đã chốt.
@@ -50,15 +52,21 @@ public static class CalendarInviteBuilder
         else
             return null;
 
+        var meetingUrl = string.IsNullOrWhiteSpace(entity.MeetingUrl) ? null : entity.MeetingUrl;
+        var description = meetingUrl is null
+            ? $"Lịch họp đã chốt trên Meetly.\nXem sự kiện: {eventUrl}"
+            : $"Lịch họp đã chốt trên Meetly.\nLink cuộc họp: {meetingUrl}\nXem sự kiện: {eventUrl}";
+
         return new CalendarInvite(
             $"{entity.ShortCode}@meetly",
             entity.Title,
-            $"Lịch họp đã chốt trên Meetly.\nXem sự kiện: {eventUrl}",
+            description,
             eventUrl,
             date.ToDateTime(start),
             date.ToDateTime(end),
             entity.TimeZone,
-            weekly);
+            weekly,
+            meetingUrl);
     }
 
     public static string GoogleCalendarUrl(CalendarInvite invite)
@@ -73,6 +81,8 @@ public static class CalendarInviteBuilder
         };
         if (invite.RepeatWeeklyOn is { } day)
             query.Add($"recur={Uri.EscapeDataString(WeeklyRule(day))}");
+        if (!string.IsNullOrEmpty(invite.Location))
+            query.Add($"location={Uri.EscapeDataString(invite.Location)}");
         return $"{GoogleCalendarBaseUrl}?{string.Join('&', query)}";
     }
 
@@ -118,6 +128,8 @@ public static class CalendarInviteBuilder
             lines.Add(WeeklyRule(day));
         lines.Add($"SUMMARY:{EscapeText(invite.Title)}");
         lines.Add($"DESCRIPTION:{EscapeText(invite.Description)}");
+        if (!string.IsNullOrEmpty(invite.Location))
+            lines.Add($"LOCATION:{EscapeText(invite.Location)}");
         lines.Add($"URL:{invite.Url.Replace("\r", "").Replace("\n", "")}");
         lines.Add("END:VEVENT");
         lines.Add("END:VCALENDAR");

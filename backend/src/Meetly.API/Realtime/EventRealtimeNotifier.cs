@@ -44,6 +44,12 @@ public sealed class EventRealtimeNotifier(
     public Task NotifyEventFinalizedAsync(string shortCode, FinalizeEventResponse response, CancellationToken cancellationToken) =>
         hub.Clients.Group(EventHub.GroupName(shortCode)).SendAsync(
             "EventFinalized",
-            new { shortCode, status = response.Status, finalSchedule = response.FinalSchedule, revision = response.Revision },
+            new { shortCode, status = response.Status, finalSchedule = response.FinalSchedule, meetingUrl = response.MeetingUrl, revision = response.Revision },
+            cancellationToken);
+
+    public Task NotifyMeetingUrlUpdatedAsync(string shortCode, MeetingUrlResponse response, CancellationToken cancellationToken) =>
+        hub.Clients.Group(EventHub.GroupName(shortCode)).SendAsync(
+            "MeetingUrlUpdated",
+            new { shortCode, meetingUrl = response.MeetingUrl, revision = response.Revision },
             cancellationToken);
 }

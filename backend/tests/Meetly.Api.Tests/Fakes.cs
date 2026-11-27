@@ -74,9 +74,17 @@ internal sealed class FakeTransaction : IDbContextTransaction
 
 internal sealed class NoopNotifier : IEventRealtimeNotifier
 {
+    public List<(string ShortCode, MeetingUrlResponse Response)> MeetingUrlUpdates { get; } = [];
+
     public Task NotifyHeatmapUpdatedAsync(string shortCode, long revision, CancellationToken cancellationToken) => Task.CompletedTask;
     public Task NotifyEventUpdatedAsync(string shortCode, long revision, CancellationToken cancellationToken) => Task.CompletedTask;
     public Task NotifyEventFinalizedAsync(string shortCode, FinalizeEventResponse response, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task NotifyMeetingUrlUpdatedAsync(string shortCode, MeetingUrlResponse response, CancellationToken cancellationToken)
+    {
+        MeetingUrlUpdates.Add((shortCode, response));
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class FakeEmailQueue : IEmailQueue
@@ -99,10 +107,10 @@ internal static class TestServices
         ["JwtOptions:ExpirationMinutes"] = "60"
     }).Build());
 
-    public static EventService EventService(FakeEventRepository repository, FakeEmailQueue? emailQueue = null) => new(
+    public static EventService EventService(FakeEventRepository repository, FakeEmailQueue? emailQueue = null, NoopNotifier? notifier = null) => new(
         repository,
         Jwt(),
-        new NoopNotifier(),
+        notifier ?? new NoopNotifier(),
         emailQueue ?? new FakeEmailQueue(),
         Options.Create(new AppOptions { FrontendBaseUrl = "https://app.test" }),
         NullLogger<EventService>.Instance);
