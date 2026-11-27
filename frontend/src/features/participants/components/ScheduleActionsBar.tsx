@@ -16,7 +16,7 @@ interface ScheduleActionsBarProps {
   isSaving: boolean
   onManualRangeApplied: (columnKey: string, startTime?: string) => void
   /** Nhập giờ bận từ Google Calendar; `canImport = false` thì ẩn nút */
-  googleImport: { canImport: boolean; isImporting: boolean; importFromGoogle: () => void }
+  googleImport: { canImport: boolean; isImporting: boolean; importFromGoogle: () => void; prepareImport: () => void }
 }
 
 const modeItemClass = cn(
@@ -58,6 +58,8 @@ export function ScheduleActionsBar({
               size="sm"
               disabled={editLocked || googleImport.isImporting}
               onClick={googleImport.importFromGoogle}
+              onPointerEnter={googleImport.prepareImport}
+              onFocus={googleImport.prepareImport}
               aria-label={t('import.button')}
               title={t('import.button')}
             >

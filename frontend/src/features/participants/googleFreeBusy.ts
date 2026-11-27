@@ -1,3 +1,4 @@
+import { isGoogleConfigured, requestGoogleAccessToken } from '@/lib/google'
 import { EventType } from '@/shared/constants'
 import type { EventDetail } from '@/shared/types'
 import type { TimeColumn, TimeRow } from '@/shared/grid/model'
@@ -5,7 +6,7 @@ import { addIsoDays, busyToFreeSlotIds, todayInTimeZone, type BusyInterval } fro
 
 /**
  * Hỏi Google Calendar giờ bận của người dùng (freeBusy) cho đúng khoảng ngày của event.
- * Chỉ nhận access token có sẵn; việc xin token (scope `calendar.freebusy`) nằm ở `lib/google.ts`.
+ * Hàm gọi Google chỉ nhận access token có sẵn; việc xin token (scope `calendar.freebusy`) nằm ở `lib/google.ts`.
  * Gọi thẳng từ trình duyệt tới Google, không đi qua server Meetly.
  */
 
@@ -17,12 +18,10 @@ export const FREEBUSY_SCOPE = 'https://www.googleapis.com/auth/calendar.freebusy
 /** Xin access token Google cho một scope (mở popup cấp quyền nếu cần); từ chối hoặc lỗi thì reject */
 export type GoogleTokenProvider = (scope: string) => Promise<string>
 
-/**
- * Nguồn token cho nút "Nhập từ Google Calendar". Đang `null` nên nút bị ẩn.
- * TODO: khi `lib/google.ts` (Google Identity Services) được merge, gán bằng hàm xin token ở đó,
- * và để `null` khi không có `VITE_GOOGLE_CLIENT_ID`.
- */
-export const googleCalendarTokenProvider: GoogleTokenProvider | null = null
+/** Nguồn token cho nút "Nhập từ Google Calendar"; `null` (nút bị ẩn) khi chưa có `VITE_GOOGLE_CLIENT_ID` */
+export const googleCalendarTokenProvider: GoogleTokenProvider | null = isGoogleConfigured
+  ? requestGoogleAccessToken
+  : null
 
 /** Event lặp theo tuần không có ngày thật: lấy số tuần tới tính từ hôm nay làm tham chiếu */
 export const WEEKLY_REFERENCE_WEEKS = 2

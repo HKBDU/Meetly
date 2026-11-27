@@ -343,6 +343,7 @@ export const vi: Record<RequiredKey, string> = {
   'actions.saved': 'Đã lưu',
   'import.button': 'Nhập từ Google Calendar',
   'import.error.permission': 'Chưa được cấp quyền xem Google Calendar.',
+  'import.error.popup': 'Trình duyệt đã chặn cửa sổ đăng nhập Google. Hãy cho phép cửa sổ bật lên cho Meetly rồi thử lại.',
   'import.error.unauthorized': 'Phiên Google đã hết hạn, hãy thử lại.',
   'import.error.forbidden': 'Google từ chối yêu cầu. Thử lại sau ít phút.',
   'import.error.calendar': 'Không đọc được Google Calendar của bạn.',

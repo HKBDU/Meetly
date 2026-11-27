@@ -343,6 +343,7 @@ export const en = {
   'actions.saved': 'Saved',
   'import.button': 'Import from Google Calendar',
   'import.error.permission': "Google Calendar access wasn't granted.",
+  'import.error.popup': 'Your browser blocked the Google sign-in window. Allow pop-ups for Meetly and try again.',
   'import.error.unauthorized': 'Your Google session expired. Please try again.',
   'import.error.forbidden': 'Google refused the request. Try again in a few minutes.',
   'import.error.calendar': "Couldn't read your Google Calendar.",

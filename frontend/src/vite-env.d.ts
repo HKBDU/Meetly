@@ -11,4 +11,6 @@ interface ImportMetaEnv {
   readonly VITE_APP_URL?: string
   /** Link Meetly Extension trên Chrome Web Store; bỏ trống thì web hiện "Sắp ra mắt" */
   readonly VITE_EXTENSION_STORE_URL?: string
+  /** OAuth client ID của Google (Google Identity Services); bỏ trống thì ẩn các nút cần quyền Google */
+  readonly VITE_GOOGLE_CLIENT_ID?: string
 }
