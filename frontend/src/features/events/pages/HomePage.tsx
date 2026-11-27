@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowRight, ArrowUpRight, CalendarCheck, Check, Puzzle, Sparkles, type LucideIcon } from 'lucide-react'
 
 import { env } from '@/lib/env'
+import { isGoogleConfigured } from '@/lib/google'
 import { cn } from '@/lib/utils'
 import { useT, type MessageKey } from '@/shared/i18n'
 import { parseEventCode } from '@/shared/lib/share'
@@ -58,6 +59,16 @@ function ExtensionTeaser() {
       </div>
     </section>
   )
+}
+
+/**
+ * Ý nào trong khối Google đã dùng được: "Thêm vào lịch" không cần OAuth nên luôn mới;
+ * nhập giờ bận chỉ mới khi có OAuth client ID (không có thì nút nhập bị ẩn); Google Meet chưa làm.
+ */
+const GOOGLE_POINT_LIVE: Record<string, boolean> = {
+  'home.gPoint1': true,
+  'home.gPoint2': false,
+  'home.gPoint3': isGoogleConfigured,
 }
 
 /** Extension đã lên Chrome Web Store thì không còn là "sắp ra mắt" nữa */
@@ -160,7 +171,7 @@ function GoogleTeaser() {
                     <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                       <span>{t(key)}</span>
                       <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                        {t(key === 'home.gPoint1' ? 'calendar.new' : 'home.extBadge')}
+                        {t(GOOGLE_POINT_LIVE[key] ? 'calendar.new' : 'home.extBadge')}
                       </span>
                     </span>
                     {active && !reducedMotion && (
