@@ -260,13 +260,13 @@ Nếu Event đã Finalized:
     "specificDate": "2026-09-10",
     "dayOfWeek": null,
     "startTime": "08:00",
-    "endTime": "09:00",
-    "meetingUrl": "https://meet.google.com/abc-defg-hij"
-  }
+    "endTime": "09:00"
+  },
+  "meetingUrl": "https://meet.google.com/abc-defg-hij"
 }
 ```
 
-`finalSchedule.meetingUrl` có mặt khi sự kiện có link cuộc họp (thêm lúc chốt hoặc sau đó qua mục 8.2).
+`meetingUrl` nằm **ở cấp event** (cùng cấp `finalSchedule`), luôn có trong response: link cuộc họp admin đã gắn, `null` nếu chưa có. Có thể có cả khi event còn Open (xem mục 8.2).
 
 ---
 
@@ -651,7 +651,7 @@ StartTime < EndTime
 Khoảng thời gian nằm trong DailyStartTime → DailyEndTime
 ```
 
-`meetingUrl` là trường tùy chọn cho cả hai loại sự kiện: link cuộc họp (Google Meet, Zoom, Teams...) admin tự dán vào. Meetly không gọi API Google để tạo phòng (FE có lối tắt mở `https://meet.new`). Quy tắc xem mục 8.2. Bỏ trường này, gửi `null` hoặc chuỗi rỗng để chốt lịch không kèm link. Link sai → `422` và event **không** bị chốt.
+`meetingUrl` là trường tùy chọn cho cả hai loại sự kiện: link cuộc họp (Google Meet, Zoom, Teams...) admin tự dán vào. Meetly không gọi API Google để tạo phòng. Quy tắc xem mục 8.2. Bỏ trường này, gửi `null` hoặc chuỗi rỗng thì **giữ link đã gắn trước đó** qua `PUT /meeting-url` (FE hiện không gửi trường này khi chốt). Link sai → `422` và event **không** bị chốt.
 
 ### BE xử lý
 
@@ -689,10 +689,10 @@ SignalR EventFinalized
       "specificDate": "2026-09-10",
       "dayOfWeek": null,
       "startTime": "08:00",
-      "endTime": "09:00",
-      "meetingUrl": "https://meet.google.com/abc-defg-hij"
+      "endTime": "09:00"
     },
-    "revision": 15
+    "revision": 15,
+    "meetingUrl": "https://meet.google.com/abc-defg-hij"
   }
 }
 ```
@@ -768,7 +768,7 @@ Admin Required.
 
 ### Mô tả
 
-Thêm, sửa hoặc xoá link cuộc họp của event **đã chốt**. Link nằm trong `finalSchedule.meetingUrl` nên event còn Open thì gắn link lúc gọi `POST /finalize`. Ai mở được event đều thấy link này.
+Thêm, sửa hoặc xoá link cuộc họp (`meetingUrl` ở cấp event). Dùng được cả khi event còn **Open** (chuẩn bị link trước) lẫn đã chốt; chốt lịch không làm mất link. Ai mở được event đều thấy link này.
 
 ### Request
 
@@ -788,8 +788,6 @@ Gửi `"meetingUrl": null` hoặc `""` để **xoá** link.
 
 ```text
 Validate Admin
-       ↓
-Event.Status == Finalized (không thì 409)
        ↓
 Validate meetingUrl
        ↓
@@ -820,7 +818,6 @@ Không gửi lại email khi chỉ đổi link.
 | `401` | Không có token |
 | `403` | Không phải admin của event |
 | `404` | Sai `shortCode` |
-| `409` | Event chưa chốt |
 | `422` | `meetingUrl` sai định dạng / quá dài |
 
 ---
@@ -912,9 +909,9 @@ POST /events/{shortCode}/finalize
     "specificDate": "2026-09-10",
     "dayOfWeek": null,
     "startTime": "08:00",
-    "endTime": "09:00",
-    "meetingUrl": "https://meet.google.com/abc-defg-hij"
+    "endTime": "09:00"
   },
+  "meetingUrl": "https://meet.google.com/abc-defg-hij",
   "revision": 15
 }
 ```
@@ -937,7 +934,7 @@ PUT /events/{shortCode}/meeting-url
 }
 ```
 
-`meetingUrl` là `null` khi admin xoá link. FE cập nhật `finalSchedule.meetingUrl`.
+`meetingUrl` là `null` khi admin xoá link. FE cập nhật `event.meetingUrl`.
 
 ---
 
@@ -953,7 +950,7 @@ PUT /events/{shortCode}/meeting-url
 | GET | `/api/v1/events/{shortCode}/suggestions` | Admin | Gợi ý khung giờ |
 | PUT | `/api/v1/events/{shortCode}` | Admin | Chỉnh sửa Event |
 | POST | `/api/v1/events/{shortCode}/finalize` | Admin | Chốt lịch họp |
-| PUT | `/api/v1/events/{shortCode}/meeting-url` | Admin | Thêm / sửa / xoá link cuộc họp (event đã chốt) |
+| PUT | `/api/v1/events/{shortCode}/meeting-url` | Admin | Thêm / sửa / xoá link cuộc họp (Open hoặc đã chốt) |
 | GET | `/api/v1/events/{shortCode}/calendar.ics` | No | Tải file lịch họp đã chốt (.ics) |
 | GET | `/api/v1/stats` | No | Số liệu công khai cho trang chủ |
 

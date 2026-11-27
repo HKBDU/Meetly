@@ -108,7 +108,7 @@ public class MeetingUrlTests
             "ABC234", TestServices.User(admin.Id, "ABC234"), Finalize(MeetUrl), CancellationToken.None);
 
         Assert.Equal(MeetUrl, entity.MeetingUrl);
-        Assert.Equal(MeetUrl, response.FinalSchedule.MeetingUrl);
+        Assert.Equal(MeetUrl, response.MeetingUrl);
     }
 
     [Fact]
@@ -133,7 +133,20 @@ public class MeetingUrlTests
             "ABC234", TestServices.User(admin.Id, "ABC234"), Finalize("  "), CancellationToken.None);
 
         Assert.Null(entity.MeetingUrl);
-        Assert.Null(response.FinalSchedule.MeetingUrl);
+        Assert.Null(response.MeetingUrl);
+    }
+
+    [Fact]
+    public async Task Finalize_WithoutMeetingUrl_KeepsLinkAddedBeforeFinalizing()
+    {
+        var (repo, entity, admin, _) = Seed(meetingUrl: MeetUrl);
+
+        var response = await TestServices.EventService(repo).FinalizeAsync(
+            "ABC234", TestServices.User(admin.Id, "ABC234"), Finalize(null), CancellationToken.None);
+
+        Assert.Equal(EventStatus.Finalized, entity.Status);
+        Assert.Equal(MeetUrl, entity.MeetingUrl);
+        Assert.Equal(MeetUrl, response.MeetingUrl);
     }
 
     [Fact]
@@ -190,15 +203,16 @@ public class MeetingUrlTests
     }
 
     [Fact]
-    public async Task UpdateMeetingUrl_Returns409_WhenNotFinalized()
+    public async Task UpdateMeetingUrl_WorksWhileEventIsStillOpen()
     {
         var (repo, entity, admin, _) = Seed();
 
-        var error = await Assert.ThrowsAsync<EventException>(() => TestServices.EventService(repo).UpdateMeetingUrlAsync(
-            "ABC234", TestServices.User(admin.Id, "ABC234"), new UpdateMeetingUrlRequest { MeetingUrl = MeetUrl }, CancellationToken.None));
+        var response = await TestServices.EventService(repo).UpdateMeetingUrlAsync(
+            "ABC234", TestServices.User(admin.Id, "ABC234"), new UpdateMeetingUrlRequest { MeetingUrl = MeetUrl }, CancellationToken.None);
 
-        Assert.Equal(409, error.StatusCode);
-        Assert.Null(entity.MeetingUrl);
+        Assert.Equal(EventStatus.Open, entity.Status);
+        Assert.Equal(MeetUrl, entity.MeetingUrl);
+        Assert.Equal(MeetUrl, response.MeetingUrl);
     }
 
     [Fact]
@@ -210,14 +224,16 @@ public class MeetingUrlTests
         Assert.Equal(404, error.StatusCode);
     }
 
-    [Fact]
-    public async Task GetEvent_IncludesMeetingUrlInFinalSchedule()
+    [Theory]
+    [InlineData(EventStatus.Open)]
+    [InlineData(EventStatus.Finalized)]
+    public async Task GetEvent_IncludesMeetingUrlAtEventLevel(EventStatus status)
     {
-        var (repo, _, _, _) = Seed(EventStatus.Finalized, MeetUrl);
+        var (repo, _, _, _) = Seed(status, MeetUrl);
 
         var response = await TestServices.EventService(repo).GetAsync("ABC234", CancellationToken.None);
 
-        Assert.Equal(MeetUrl, response.FinalSchedule?.MeetingUrl);
+        Assert.Equal(MeetUrl, response.MeetingUrl);
     }
 
     [Fact]

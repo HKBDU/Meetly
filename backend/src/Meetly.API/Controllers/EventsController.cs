@@ -45,7 +45,7 @@ public sealed class EventsController(IEventService service) : ControllerBase
     public async Task<ActionResult<ApiResponse<FinalizeEventResponse>>> Finalize(string shortCode, FinalizeEventRequest request, CancellationToken ct) =>
         Ok(ApiResponse<FinalizeEventResponse>.Success(200, "Event finalized successfully", await service.FinalizeAsync(shortCode, User, request, ct)));
 
-    /// <summary>Thêm, sửa hoặc xoá link cuộc họp (Meet, Zoom, Teams...) của event đã chốt. Gửi null hoặc rỗng để xoá.</summary>
+    /// <summary>Thêm, sửa hoặc xoá link cuộc họp (Meet, Zoom, Teams...), event Open hay đã chốt đều được. Gửi null hoặc rỗng để xoá.</summary>
     [Authorize]
     [HttpPut("{shortCode}/meeting-url")]
     [EnableRateLimiting(RateLimitingExtensions.WritePolicy)]

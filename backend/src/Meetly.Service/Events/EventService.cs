@@ -158,13 +158,14 @@ public sealed class EventService(
             // Chặn race với participant đang lưu lịch: sau dòng này mọi lần lưu mới đều thấy Status != Open
             await BumpRevisionAsync(entity, cancellationToken);
             entity.Status = EventStatus.Finalized;
-            entity.MeetingUrl = meetingUrl;
+            // Không gửi link thì giữ link admin đã gắn trước khi chốt (PUT /meeting-url)
+            if (meetingUrl is not null) entity.MeetingUrl = meetingUrl;
             await repository.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         }
 
         shortCode = entity.ShortCode;
-        var response = new FinalizeEventResponse((int)entity.Status, ToFinalSchedule(entity), entity.Revision);
+        var response = new FinalizeEventResponse((int)entity.Status, ToFinalSchedule(entity), entity.Revision, entity.MeetingUrl);
         await notifier.NotifyEventFinalizedAsync(shortCode, response, cancellationToken);
 
         // Gửi nền (có retry): lỗi email không được làm hỏng việc chốt lịch, cũng không bắt admin chờ
@@ -188,8 +189,7 @@ public sealed class EventService(
     {
         var entity = await GetEventAsync(shortCode, cancellationToken);
         RequireAdmin(entity, user);
-        // Link cuộc họp là một phần của lịch đã chốt (trả trong finalSchedule); chưa chốt thì gắn kèm lúc chốt
-        if (entity.Status != EventStatus.Finalized) throw new EventException(409, "Event is not finalized yet.");
+        // Gắn được cả khi event còn Open (link họp chuẩn bị trước) lẫn sau khi chốt
         var meetingUrl = NormalizeMeetingUrl(request.MeetingUrl);
 
         await using (var transaction = await repository.BeginTransactionAsync(cancellationToken))
@@ -338,15 +338,15 @@ public sealed class EventService(
         Revision = entity.Revision,
         Participants = entity.Participants.Select(x => new EventParticipantResponse(x.Username)).ToList(),
         HeatmapGrid = HeatmapBuilder.Build(entity),
-        FinalSchedule = entity.Status == EventStatus.Finalized ? ToFinalSchedule(entity) : null
+        FinalSchedule = entity.Status == EventStatus.Finalized ? ToFinalSchedule(entity) : null,
+        MeetingUrl = entity.MeetingUrl
     };
 
     private static FinalScheduleResponse ToFinalSchedule(Events entity) => new(
         entity.EventType == EventType.Dates ? entity.FinalDate?.ToString("yyyy-MM-dd") : null,
         entity.EventType == EventType.Weekdays ? (int?)entity.FinalDayOfWeek : null,
         Format(entity.FinalStartTime!.Value),
-        Format(entity.FinalEndTime!.Value),
-        entity.MeetingUrl);
+        Format(entity.FinalEndTime!.Value));
 
     private string BuildFinalizedEmail(Events entity, FinalizeEventResponse response, string? googleCalendarUrl, bool hasCalendarAttachment)
     {
@@ -362,7 +362,7 @@ public sealed class EventService(
             appOptions.Value.FrontendBaseUrl,
             googleCalendarUrl,
             hasCalendarAttachment,
-            schedule.MeetingUrl));
+            entity.MeetingUrl));
     }
 
 
