@@ -31,4 +31,18 @@ public class EventContractTests
         Assert.DoesNotContain("username", request, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("password", request, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void Finalize_MeetingUrlIsOptionalAndUsesCamelCase()
+    {
+        const string link = "https://meet.google.com/abc-defg-hij";
+        var request = JsonSerializer.Deserialize<FinalizeEventRequest>("""{"meetingUrl":"https://meet.google.com/abc-defg-hij"}""", Json);
+        Assert.Equal(link, request!.MeetingUrl);
+        Assert.Null(JsonSerializer.Deserialize<FinalizeEventRequest>("{}", Json)!.MeetingUrl);
+
+        var schedule = new FinalScheduleResponse("2026-12-02", null, "09:45", "11:15", link);
+        using var response = JsonSerializer.SerializeToDocument(new FinalizeEventResponse(2, schedule, 15), Json);
+        Assert.Equal(link, response.RootElement.GetProperty("finalSchedule").GetProperty("meetingUrl").GetString());
+        Assert.DoesNotContain("meetingUrl", JsonSerializer.Serialize(schedule with { MeetingUrl = null }, Json));
+    }
 }

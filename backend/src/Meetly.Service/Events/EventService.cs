@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using Meetly.Repository.Entity;
 using Meetly.Repository.Enum;
 using Meetly.Repository.EventScheduling;
@@ -149,6 +150,8 @@ public sealed class EventService(
         var entity = await GetEventAsync(shortCode, cancellationToken);
         RequireAdmin(entity, user);
         if (entity.Status != EventStatus.Open) throw new EventException(409, "Event is already finalized.");
+        if (request.MeetingUrl is { } meetingUrl && !Regex.IsMatch(meetingUrl, @"\Ahttps://meet\.google\.com/[a-z]{3}-[a-z]{4}-[a-z]{3}\z"))
+            throw new EventException(422, "meetingUrl must be a Google Meet link (https://meet.google.com/abc-defg-hij).");
         SetFinalTime(entity, request);
 
         await using (var transaction = await repository.BeginTransactionAsync(cancellationToken))
@@ -156,19 +159,13 @@ public sealed class EventService(
             // Chặn race với participant đang lưu lịch: sau dòng này mọi lần lưu mới đều thấy Status != Open
             await BumpRevisionAsync(entity, cancellationToken);
             entity.Status = EventStatus.Finalized;
+            entity.MeetingUrl = request.MeetingUrl;
             await repository.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         }
 
         shortCode = entity.ShortCode;
-        var response = new FinalizeEventResponse(
-            (int)entity.Status,
-            new FinalScheduleResponse(
-                entity.FinalDate?.ToString("yyyy-MM-dd"),
-                entity.FinalDayOfWeek is null ? null : (int)entity.FinalDayOfWeek.Value,
-                Format(entity.FinalStartTime!.Value),
-                Format(entity.FinalEndTime!.Value)),
-            entity.Revision);
+        var response = new FinalizeEventResponse((int)entity.Status, ToFinalSchedule(entity), entity.Revision);
         await notifier.NotifyEventFinalizedAsync(shortCode, response, cancellationToken);
 
         // Gửi nền (có retry): lỗi email không được làm hỏng việc chốt lịch, cũng không bắt admin chờ
@@ -318,11 +315,15 @@ public sealed class EventService(
         Revision = entity.Revision,
         Participants = entity.Participants.Select(x => new EventParticipantResponse(x.Username)).ToList(),
         HeatmapGrid = HeatmapBuilder.Build(entity),
-        FinalSchedule = entity.Status != EventStatus.Finalized ? null : new FinalScheduleResponse(
-            entity.EventType == EventType.Dates ? entity.FinalDate?.ToString("yyyy-MM-dd") : null,
-            entity.EventType == EventType.Weekdays ? (int?)entity.FinalDayOfWeek : null,
-            Format(entity.FinalStartTime!.Value), Format(entity.FinalEndTime!.Value))
+        FinalSchedule = entity.Status == EventStatus.Finalized ? ToFinalSchedule(entity) : null
     };
+
+    private static FinalScheduleResponse ToFinalSchedule(Events entity) => new(
+        entity.EventType == EventType.Dates ? entity.FinalDate?.ToString("yyyy-MM-dd") : null,
+        entity.EventType == EventType.Weekdays ? (int?)entity.FinalDayOfWeek : null,
+        Format(entity.FinalStartTime!.Value),
+        Format(entity.FinalEndTime!.Value),
+        entity.MeetingUrl);
 
     private string BuildFinalizedEmail(Events entity, FinalizeEventResponse response, string? googleCalendarUrl, bool hasCalendarAttachment)
     {
@@ -337,7 +338,8 @@ public sealed class EventService(
             appOptions.Value.EventUrl(entity.ShortCode),
             appOptions.Value.FrontendBaseUrl,
             googleCalendarUrl,
-            hasCalendarAttachment));
+            hasCalendarAttachment,
+            schedule.MeetingUrl));
     }
 
 

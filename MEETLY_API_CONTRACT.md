@@ -260,10 +260,13 @@ Nếu Event đã Finalized:
     "specificDate": "2026-09-10",
     "dayOfWeek": null,
     "startTime": "08:00",
-    "endTime": "09:00"
+    "endTime": "09:00",
+    "meetingUrl": "https://meet.google.com/abc-defg-hij"
   }
 }
 ```
+
+`finalSchedule.meetingUrl` có mặt khi sự kiện có link Meet.
 
 ---
 
@@ -622,7 +625,8 @@ Event.Status == Open
   "specificDate": "2026-09-10",
   "dayOfWeek": null,
   "startTime": "08:00",
-  "endTime": "09:00"
+  "endTime": "09:00",
+  "meetingUrl": "https://meet.google.com/abc-defg-hij"
 }
 ```
 
@@ -647,6 +651,8 @@ StartTime < EndTime
 Khoảng thời gian nằm trong DailyStartTime → DailyEndTime
 ```
 
+`meetingUrl` là trường tùy chọn cho cả hai loại sự kiện. Chỉ chấp nhận URL dạng `https://meet.google.com/abc-defg-hij` với mã gồm chữ thường. Bỏ trường này hoặc gửi `null` để chốt lịch bình thường. URL sai định dạng trả `422`.
+
 ### BE xử lý
 
 ```text
@@ -657,6 +663,7 @@ Validate final slot
 Events.FinalDate / FinalDayOfWeek
        ↓
 Events.FinalStartTime / FinalEndTime
+Events.MeetingUrl
        ↓
 Status = Finalized
        ↓
@@ -664,7 +671,7 @@ Revision++
        ↓
 Commit Transaction
        ↓
-Gửi email (kèm nút "Thêm vào Google Calendar" và file invite.ics)
+Gửi email (kèm link Meet nếu có, nút "Thêm vào Google Calendar" và file invite.ics)
        ↓
 SignalR EventFinalized
 ```
@@ -682,7 +689,8 @@ SignalR EventFinalized
       "specificDate": "2026-09-10",
       "dayOfWeek": null,
       "startTime": "08:00",
-      "endTime": "09:00"
+      "endTime": "09:00",
+      "meetingUrl": "https://meet.google.com/abc-defg-hij"
     },
     "revision": 15
   }
@@ -706,6 +714,7 @@ Trả file iCalendar (RFC 5545) của lịch họp đã chốt, để thêm vào
 - `DTSTART`/`DTEND` theo giờ địa phương kèm `TZID` là múi giờ của event (VD `Asia/Ho_Chi_Minh`, có khối `VTIMEZONE`). Múi giờ có đổi giờ mùa hè quanh thời điểm họp thì ghi theo UTC (`...Z`).
 - Event lặp theo tuần: bắt đầu từ lần gặp gần nhất kể từ hôm nay, thêm `RRULE:FREQ=WEEKLY;BYDAY=..`.
 - `UID` cố định theo event (`{shortCode}@meetly`), tải lại không tạo bản trùng trong lịch.
+- Link Meet, nếu có, nằm trong `LOCATION` và phần mô tả của lời mời.
 
 ### Response - `200 OK`
 
@@ -836,7 +845,8 @@ POST /events/{shortCode}/finalize
     "specificDate": "2026-09-10",
     "dayOfWeek": null,
     "startTime": "08:00",
-    "endTime": "09:00"
+    "endTime": "09:00",
+    "meetingUrl": "https://meet.google.com/abc-defg-hij"
   },
   "revision": 15
 }

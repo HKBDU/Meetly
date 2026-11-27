@@ -12,14 +12,20 @@ export function calendarOccurrenceDate(schedule: FinalSchedule, timeZone: string
   return addIsoDays(today, (schedule.dayOfWeek - isoWeekday(today) + 7) % 7)
 }
 
+export function calendarRecurrence(schedule: FinalSchedule): string | undefined {
+  if (!schedule.specificDate && schedule.dayOfWeek !== null) {
+    return `RRULE:FREQ=WEEKLY;BYDAY=${BY_DAY[schedule.dayOfWeek]}`
+  }
+}
+
 export function buildGoogleCalendarUrl(
   event: CalendarEvent,
   finalSchedule: FinalSchedule,
-  meetingUrl?: string,
   now = Date.now(),
 ): string | null {
   const date = calendarOccurrenceDate(finalSchedule, event.timezone, now)
   if (!date) return null
+  const { meetingUrl } = finalSchedule
   const stamp = (time: string) => `${date.replaceAll('-', '')}T${(time.length === 5 ? `${time}:00` : time.slice(0, 8)).replaceAll(':', '')}`
   const url = new URL('https://calendar.google.com/calendar/render')
   url.search = new URLSearchParams({
@@ -29,9 +35,9 @@ export function buildGoogleCalendarUrl(
     details: [event.url, meetingUrl].filter(Boolean).join('\n'),
     ctz: event.timezone,
   }).toString()
-  if (!finalSchedule.specificDate && finalSchedule.dayOfWeek !== null) {
-    url.searchParams.set('recur', `RRULE:FREQ=WEEKLY;BYDAY=${BY_DAY[finalSchedule.dayOfWeek]}`)
-  }
+  const recurrence = calendarRecurrence(finalSchedule)
+  if (recurrence) url.searchParams.set('recur', recurrence)
+  if (meetingUrl) url.searchParams.set('location', meetingUrl)
   return url.href
 }
 

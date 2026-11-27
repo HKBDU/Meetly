@@ -5,6 +5,7 @@ import { EventStatus } from '@/shared/constants'
 import { t } from '@/shared/i18n'
 import type { EditableEvent } from '@/shared/types'
 import { EventHeader } from '../components/EventHeader'
+import { FinalizedScheduleSummary } from '../components/FinalizedScheduleSummary'
 import { GettingStartedBanner } from '../components/GettingStartedBanner'
 import { HeatmapWorkspace } from '../components/HeatmapWorkspace'
 import { DEFAULT_MEETING_DURATION } from '../constants'
@@ -63,7 +64,6 @@ export function HeatmapPage({
     event.availableWeekdays.join(','),
     event.dailyStartTime,
     event.dailyEndTime,
-    event.status,
   ].join(':')
 
   return (
@@ -87,6 +87,8 @@ export function HeatmapPage({
           onOpenMySchedule={onOpenMySchedule}
         />
       )}
+
+      <FinalizedScheduleSummary event={event} />
 
       <HeatmapWorkspace
         key={workspaceKey}

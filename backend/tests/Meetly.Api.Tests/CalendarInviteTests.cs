@@ -172,8 +172,10 @@ public class CalendarInviteTests
         Assert.Equal(404, error.StatusCode);
     }
 
-    [Fact]
-    public async Task Finalize_EmailsGoogleCalendarLink_AndAttachesIcs()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("https://meet.google.com/abc-defg-hij")]
+    public async Task Finalize_ExportsCalendarInvitesWithOptionalMeetingUrl(string? meetingUrl)
     {
         var repo = new FakeEventRepository();
         var entity = Finalized(status: EventStatus.Open);
@@ -184,18 +186,41 @@ public class CalendarInviteTests
         repo.Emails.Add("guest@example.com");
         var queue = new FakeEmailQueue();
 
-        await TestServices.EventService(repo, queue).FinalizeAsync(
+        var service = TestServices.EventService(repo, queue);
+        var response = await service.FinalizeAsync(
             "ABC234",
             TestServices.User(admin.Id, "ABC234"),
-            new FinalizeEventRequest { SpecificDate = new DateOnly(2026, 12, 2), StartTime = new TimeOnly(9, 45), EndTime = new TimeOnly(11, 15) },
+            new FinalizeEventRequest
+            {
+                SpecificDate = new DateOnly(2026, 12, 2),
+                StartTime = new TimeOnly(9, 45),
+                EndTime = new TimeOnly(11, 15),
+                MeetingUrl = meetingUrl
+            },
             CancellationToken.None);
+        Assert.Equal(meetingUrl, entity.MeetingUrl);
+        Assert.Equal(meetingUrl, response.FinalSchedule.MeetingUrl);
+        Assert.Equal(meetingUrl, (await service.GetAsync("ABC234", CancellationToken.None)).FinalSchedule!.MeetingUrl);
 
         var message = Assert.Single(queue.Messages);
         Assert.Contains("https://calendar.google.com/calendar/render?action=TEMPLATE", message.Html);
         Assert.Contains("invite.ics", message.Html);
         var attachment = Assert.Single(message.Attachments!);
         Assert.Equal("invite.ics", attachment.Name);
-        Assert.Contains("DTSTART;TZID=Asia/Ho_Chi_Minh:20261202T094500", Encoding.UTF8.GetString(attachment.Content));
+        var ics = Unfold(Encoding.UTF8.GetString(attachment.Content));
+        Assert.Contains("DTSTART;TZID=Asia/Ho_Chi_Minh:20261202T094500", ics);
+        if (meetingUrl is null)
+        {
+            Assert.DoesNotContain("Tham gia Google Meet", message.Html);
+            Assert.DoesNotContain("LOCATION:", ics);
+        }
+        else
+        {
+            Assert.Contains($"href=\"{meetingUrl}\"", message.Html);
+            Assert.Contains($"location={Uri.EscapeDataString(meetingUrl)}", message.Html);
+            Assert.Contains($"LOCATION:{meetingUrl}", ics);
+            Assert.Contains(meetingUrl, (await service.GetCalendarAsync("ABC234", CancellationToken.None)).Content);
+        }
     }
 
     [Fact]

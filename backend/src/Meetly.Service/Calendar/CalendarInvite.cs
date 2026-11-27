@@ -17,7 +17,8 @@ public sealed record CalendarInvite(
     DateTime Start,
     DateTime End,
     string TimeZone,
-    System.DayOfWeek? RepeatWeeklyOn);
+    System.DayOfWeek? RepeatWeeklyOn,
+    string? MeetingUrl = null);
 
 /// <summary>
 /// Dựng file iCalendar (RFC 5545) và link "Thêm vào Google Calendar" cho event đã chốt.
@@ -50,15 +51,20 @@ public static class CalendarInviteBuilder
         else
             return null;
 
+        var description = $"Lịch họp đã chốt trên Meetly.\nXem sự kiện: {eventUrl}";
+        if (entity.MeetingUrl is { } meetingUrl)
+            description += $"\nTham gia Google Meet: {meetingUrl}";
+
         return new CalendarInvite(
             $"{entity.ShortCode}@meetly",
             entity.Title,
-            $"Lịch họp đã chốt trên Meetly.\nXem sự kiện: {eventUrl}",
+            description,
             eventUrl,
             date.ToDateTime(start),
             date.ToDateTime(end),
             entity.TimeZone,
-            weekly);
+            weekly,
+            entity.MeetingUrl);
     }
 
     public static string GoogleCalendarUrl(CalendarInvite invite)
@@ -73,6 +79,8 @@ public static class CalendarInviteBuilder
         };
         if (invite.RepeatWeeklyOn is { } day)
             query.Add($"recur={Uri.EscapeDataString(WeeklyRule(day))}");
+        if (invite.MeetingUrl is { } meetingUrl)
+            query.Add($"location={Uri.EscapeDataString(meetingUrl)}");
         return $"{GoogleCalendarBaseUrl}?{string.Join('&', query)}";
     }
 
@@ -118,6 +126,8 @@ public static class CalendarInviteBuilder
             lines.Add(WeeklyRule(day));
         lines.Add($"SUMMARY:{EscapeText(invite.Title)}");
         lines.Add($"DESCRIPTION:{EscapeText(invite.Description)}");
+        if (invite.MeetingUrl is { } meetingUrl)
+            lines.Add($"LOCATION:{EscapeText(meetingUrl)}");
         lines.Add($"URL:{invite.Url.Replace("\r", "").Replace("\n", "")}");
         lines.Add("END:VEVENT");
         lines.Add("END:VCALENDAR");

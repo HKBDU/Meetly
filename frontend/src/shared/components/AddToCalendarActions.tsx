@@ -1,4 +1,4 @@
-import { ArrowUpRight, CalendarPlus, Download } from 'lucide-react'
+import { ArrowUpRight, CalendarPlus, Download, Video } from 'lucide-react'
 
 import { env } from '@/lib/env'
 import { trackEvent } from '@/lib/analytics'
@@ -11,22 +11,29 @@ import type { EventDetail } from '@/shared/types'
 
 export function AddToCalendarActions({
   event,
-  meetingUrl,
   source,
 }: {
   event: EventDetail
-  meetingUrl?: string
   source: 'overview' | 'heatmap'
 }) {
   const t = useT()
   if (event.status !== EventStatus.Finalized || !event.finalSchedule) return null
-  const googleUrl = buildGoogleCalendarUrl(event, event.finalSchedule, meetingUrl)
+  const { meetingUrl } = event.finalSchedule
+  const googleUrl = buildGoogleCalendarUrl(event, event.finalSchedule)
   const stacked = source === 'heatmap'
   const actionClass = 'group/calendar h-auto min-h-11 min-w-0 justify-start rounded-lg whitespace-normal px-4 py-2.5 text-left'
   const iconMotion = 'motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out'
 
   return (
     <div className={cn('grid w-full gap-2', !stacked && 'sm:w-auto sm:flex sm:flex-wrap')}>
+      {meetingUrl && (
+        <Button className={cn(actionClass, 'font-semibold')} asChild>
+          <a href={meetingUrl} target="_blank" rel="noopener noreferrer">
+            <Video aria-hidden="true" />
+            {t('calendar.joinMeet')}
+          </a>
+        </Button>
+      )}
       {googleUrl && (
         <Button className={cn(actionClass, 'font-semibold')} asChild>
           <a href={googleUrl} target="_blank" rel="noopener noreferrer"
