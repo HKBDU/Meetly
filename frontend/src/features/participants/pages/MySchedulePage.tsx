@@ -57,6 +57,7 @@ export function MySchedulePage() {
         <>
           <ScheduleActionsBar
             grid={grid}
+            meetingUrl={event.meetingUrl}
             triggerAutoSave={triggerAutoSave}
             isSaving={isSaving}
             googleImport={googleImport}

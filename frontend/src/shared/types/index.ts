@@ -44,6 +44,7 @@ export interface EventDetail {
   participants: Participant[]
   heatmapGrid: HeatmapCellData[]
   finalSchedule: FinalSchedule | null
+  meetingUrl: string | null
 }
 
 /** Phần event mà admin sửa được qua `PUT /events/{shortCode}` */

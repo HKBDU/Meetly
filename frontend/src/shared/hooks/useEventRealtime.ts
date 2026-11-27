@@ -39,6 +39,11 @@ export interface EventUpdatedPayload extends RealtimePayload {
 export interface EventFinalizedPayload extends RealtimePayload {
   status: 2
   finalSchedule: FinalSchedule
+  meetingUrl: string | null
+}
+
+export interface MeetingUrlUpdatedPayload extends RealtimePayload {
+  meetingUrl: string | null
 }
 
 /** Chỉ nhận payload của đúng event và mới hơn bản đang có (bỏ bản đến trễ/đến lặp) */
@@ -69,6 +74,10 @@ export function useEventRealtime(shortCode: string, accessToken: string | undefi
       const current = queryClient.getQueryData<EventDetail>(eventQueryKey(shortCode))
       if (!current || !shouldApplyRealtimePayload(current.revision, shortCode, payload)) return false
       patchEventCache(queryClient, shortCode, (event) => ({ ...update(event), revision: payload.revision }))
+      // Một payload khác có thể đến trước MeetingUrlUpdated; GET khôi phục các trường đã lỡ.
+      if (payload.revision > current.revision + 1) {
+        void queryClient.invalidateQueries({ queryKey: eventQueryKey(shortCode) })
+      }
       return true
     }
 
@@ -108,6 +117,7 @@ export function useEventRealtime(shortCode: string, accessToken: string | undefi
         ...event,
         status: payload.status,
         finalSchedule: payload.finalSchedule,
+        meetingUrl: payload.meetingUrl === undefined ? event.meetingUrl : payload.meetingUrl,
       }))
       if (applied) {
         toast.info(t('realtime.finalized'), {
@@ -117,13 +127,19 @@ export function useEventRealtime(shortCode: string, accessToken: string | undefi
       }
     }
 
+    const onMeetingUrlUpdated = (payload: MeetingUrlUpdatedPayload) => {
+      apply(payload, (event) => ({ ...event, meetingUrl: payload.meetingUrl }))
+    }
+
     connection.on('HeatmapUpdated', onHeatmapUpdated)
     connection.on('EventUpdated', onEventUpdated)
     connection.on('EventFinalized', onEventFinalized)
+    connection.on('MeetingUrlUpdated', onMeetingUrlUpdated)
     return () => {
       connection.off('HeatmapUpdated', onHeatmapUpdated)
       connection.off('EventUpdated', onEventUpdated)
       connection.off('EventFinalized', onEventFinalized)
+      connection.off('MeetingUrlUpdated', onMeetingUrlUpdated)
     }
   }, [connection, queryClient, shortCode])
 }

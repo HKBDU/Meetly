@@ -1,12 +1,15 @@
 import { Globe2, UserPlus, Users } from 'lucide-react';
 import { CopyButton } from '@/shared/components/CopyButton';
-import { eventShareUrl } from '@/shared/lib/share';
 import { Button } from '@/shared/components/ui';
+import { eventShareUrl } from '@/shared/lib/share';
 import { useTimeView } from '@/shared/grid/time-view';
 import { useT } from '@/shared/i18n';
 import type { EventHeaderProps } from '../types';
 import { EditEventDialog } from './EditEventDialog';
 import { LiveActivity } from './LiveActivity';
+import { MeetingLinkDialog } from './MeetingLinkDialog';
+import { MeetingRoomAction } from './MeetingRoomAction';
+import { normalizeMeetingLink } from '../meetingLink';
 
 export function EventHeader({
   event,
@@ -15,12 +18,14 @@ export function EventHeader({
   canUpdate,
   onOpenMySchedule,
   onInvite,
+  onUpdateMeetingUrl,
   onUpdateEvent,
   currentUsername,
 }: EventHeaderProps) {
   const t = useT();
   const timeView = useTimeView();
   const canOpenMySchedule = Boolean(onOpenMySchedule);
+  const meetingUrl = normalizeMeetingLink(event.meetingUrl ?? '').url;
   return (
     <header className="mb-8 flex flex-wrap items-start justify-between gap-6">
       <div className="min-w-0 flex-[1_1_32rem]">
@@ -57,7 +62,7 @@ export function EventHeader({
           )}
         </div>
       </div>
-      <div className="grid w-full min-w-0 shrink-0 gap-2 sm:w-72">
+      <div className="grid w-full min-w-0 shrink-0 gap-2 sm:w-80">
         <button
           type="button"
           disabled={!canOpenMySchedule}
@@ -67,16 +72,39 @@ export function EventHeader({
         >
           {t('overview.mySchedule')}
         </button>
-        <div className="grid grid-cols-2 gap-2">
+        <div className={onUpdateMeetingUrl ? 'grid grid-cols-[auto_minmax(0,1fr)] gap-2' : 'grid gap-2'}>
           <Button type="button" variant="outline" onClick={onInvite} disabled={!onInvite}>
             <UserPlus aria-hidden="true" />
             {t('overview.invite')}
           </Button>
-          <CopyButton value={eventShareUrl(event.shortCode)} successMessage={t('common.eventLinkCopied')} variant="outline" label={t('common.copyLink')} />
+          {onUpdateMeetingUrl && (
+            <MeetingLinkDialog
+              meetingUrl={event.meetingUrl}
+              onSave={onUpdateMeetingUrl}
+              disabled={disabled}
+            />
+          )}
         </div>
-        <p className="text-center text-xs text-muted-foreground">
-          {t('overview.eventCode')} <span className="font-semibold tracking-wide text-foreground">{event.shortCode}</span>
-        </p>
+        <div className="grid w-max max-w-full grid-cols-[max-content_max-content] items-center justify-self-center gap-x-2 gap-y-2 text-xs text-muted-foreground">
+          <span>{t('overview.eventCode')}:</span>
+          <CopyButton
+            value={eventShareUrl(event.shortCode)}
+            successMessage={t('common.eventLinkCopied')}
+            variant="outline"
+            size="sm"
+            iconPosition="end"
+            aria-label={`${t('common.copyLink')}: ${event.shortCode}`}
+            className="font-semibold tracking-wide text-foreground"
+          >
+            {event.shortCode}
+          </CopyButton>
+          {meetingUrl && (
+            <>
+              <span>Meeting room:</span>
+              <MeetingRoomAction meetingUrl={meetingUrl} mode="copy" className="w-0 min-w-full" />
+            </>
+          )}
+        </div>
       </div>
     </header>
   );

@@ -16,20 +16,18 @@ const iconMotion = 'motion-safe:transition-transform motion-safe:duration-200 mo
  */
 export function AddToCalendarActions({
   event,
-  meetingUrl,
   source,
   compact = false,
   className,
 }: {
   event: EventDetail
-  meetingUrl?: string
   source: 'overview' | 'heatmap'
   compact?: boolean
   className?: string
 }) {
   const t = useT()
   if (event.status !== EventStatus.Finalized || !event.finalSchedule) return null
-  const googleUrl = buildGoogleCalendarUrl(event, event.finalSchedule, meetingUrl)
+  const googleUrl = buildGoogleCalendarUrl(event, event.finalSchedule, event.meetingUrl ?? undefined)
 
   return (
     <div className={cn('flex flex-wrap items-center gap-2', className)}>
