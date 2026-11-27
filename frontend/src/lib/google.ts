@@ -56,6 +56,7 @@ interface GoogleOAuth2 {
   initTokenClient: (config: {
     client_id: string
     scope: string
+    include_granted_scopes: boolean
     callback: (response: TokenResponse) => void
     error_callback?: (error: TokenClientError) => void
   }) => TokenClient
@@ -140,6 +141,7 @@ export function requestGoogleAccessToken(scope: string): Promise<string> {
           const client = oauth2.initTokenClient({
             client_id: clientId,
             scope,
+            include_granted_scopes: false,
             callback: (response) => {
               if (response.error || !response.access_token) {
                 reject(new GoogleAuthError(response.error === 'access_denied' ? 'access_denied' : 'unknown'))

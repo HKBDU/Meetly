@@ -301,13 +301,14 @@ test('participant details size to content and cap long lists', async () => {
   }
 });
 
-test('finalized schedule keeps the blue range on the Heatmap', async () => {
+test('finalized overview shows Join Google Meet and keeps the blue range on the Heatmap', async () => {
   const server = await createTestServer();
   try {
-    const { Heatmap } = await server.ssrLoadModule(
-      '/src/features/heatmap/components/Heatmap.tsx',
+    const { HeatmapPage } = await server.ssrLoadModule(
+      '/src/features/heatmap/pages/HeatmapPage.tsx',
     );
     const { mockDatesEvent } = await server.ssrLoadModule('/tests/fixtures/heatmapEvent.ts');
+    const meetingUrl = 'https://meet.google.com/abc-defg-hij';
     const finalSchedule = {
       specificDate: mockDatesEvent.availableDates[0],
       dayOfWeek: null,
@@ -315,25 +316,16 @@ test('finalized schedule keeps the blue range on the Heatmap', async () => {
       endTime: '11:00',
     };
     const html = renderToStaticMarkup(
-      createElement(Heatmap, {
-        event: { ...mockDatesEvent, status: 2, finalSchedule },
-        bestTimes: [],
-        highlightedKey: null,
-        selected: finalSchedule,
-        selecting: false,
-        handlers: {
-          inspect: () => undefined,
-          inspectEnd: () => undefined,
-          start: () => undefined,
-          extend: () => undefined,
-          keyboardSelect: () => undefined,
-        },
+      createElement(HeatmapPage, {
+        // Link cuộc họp nằm ở cấp event, không lồng trong finalSchedule
+        event: { ...mockDatesEvent, status: 2, finalSchedule, meetingUrl },
       }),
     );
 
     // Một bảng duy nhất (không còn bảng mobile + desktop): 4 ô 15 phút từ 10:00 tới 11:00
     assert.equal((html.match(/border-finalized\/60/g) ?? []).length, 4);
     assert.equal((html.match(/border-suggestion/g) ?? []).length, 0);
+    assert.ok(html.includes('href="' + meetingUrl + '"'));
   } finally {
     await server.close();
   }

@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import { HeatmapPage } from '@/features/heatmap'
 import { trackEvent } from '@/lib/analytics'
-import { finalizeEvent, updateEvent } from '@/shared/api/events'
+import { finalizeEvent, updateEvent, updateMeetingUrl } from '@/shared/api/events'
 import { patchEventCache } from '@/shared/hooks'
 import { useEventOutlet } from './eventOutlet'
 
@@ -24,11 +24,21 @@ export function OverviewPage() {
         // Hiện ngay; lưới và revision mới sẽ tới qua realtime `EventUpdated`
         patchEventCache(queryClient, shortCode, (current) => ({ ...current, ...payload }))
       }}
+      onUpdateMeetingUrl={async (meetingUrl) => {
+        const result = await updateMeetingUrl(shortCode, meetingUrl)
+        patchEventCache(queryClient, shortCode, (current) =>
+          result.revision >= current.revision
+            ? { ...current, meetingUrl: result.meetingUrl, revision: result.revision }
+            : current,
+        )
+      }}
       onFinalize={async (slot) => {
         const result = await finalizeEvent(shortCode, slot)
         trackEvent('finalize_event', { participants: event.participants.length })
         patchEventCache(queryClient, shortCode, (current) =>
-          result.revision >= current.revision ? { ...current, ...result } : current,
+          result.revision >= current.revision
+            ? { ...current, ...result, meetingUrl: result.meetingUrl ?? current.meetingUrl }
+            : current,
         )
         return result
       }}

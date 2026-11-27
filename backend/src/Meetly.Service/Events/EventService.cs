@@ -149,6 +149,8 @@ public sealed class EventService(
         var entity = await GetEventAsync(shortCode, cancellationToken);
         RequireAdmin(entity, user);
         if (entity.Status != EventStatus.Open) throw new EventException(409, "Event is already finalized.");
+        // Kiểm tra link trước khi đụng vào entity: link sai thì trả 422 và event vẫn Open
+        var meetingUrl = NormalizeMeetingUrl(request.MeetingUrl);
         SetFinalTime(entity, request);
 
         await using (var transaction = await repository.BeginTransactionAsync(cancellationToken))
@@ -156,19 +158,14 @@ public sealed class EventService(
             // Chặn race với participant đang lưu lịch: sau dòng này mọi lần lưu mới đều thấy Status != Open
             await BumpRevisionAsync(entity, cancellationToken);
             entity.Status = EventStatus.Finalized;
+            // Không gửi link thì giữ link admin đã gắn trước khi chốt (PUT /meeting-url)
+            if (meetingUrl is not null) entity.MeetingUrl = meetingUrl;
             await repository.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         }
 
         shortCode = entity.ShortCode;
-        var response = new FinalizeEventResponse(
-            (int)entity.Status,
-            new FinalScheduleResponse(
-                entity.FinalDate?.ToString("yyyy-MM-dd"),
-                entity.FinalDayOfWeek is null ? null : (int)entity.FinalDayOfWeek.Value,
-                Format(entity.FinalStartTime!.Value),
-                Format(entity.FinalEndTime!.Value)),
-            entity.Revision);
+        var response = new FinalizeEventResponse((int)entity.Status, ToFinalSchedule(entity), entity.Revision, entity.MeetingUrl);
         await notifier.NotifyEventFinalizedAsync(shortCode, response, cancellationToken);
 
         // Gửi nền (có retry): lỗi email không được làm hỏng việc chốt lịch, cũng không bắt admin chờ
@@ -185,6 +182,29 @@ public sealed class EventService(
                 logger.LogError("Could not queue finalized event email for {ShortCode}", shortCode);
         }
 
+        return response;
+    }
+
+    public async Task<MeetingUrlResponse> UpdateMeetingUrlAsync(string shortCode, ClaimsPrincipal user, UpdateMeetingUrlRequest request, CancellationToken cancellationToken)
+    {
+        var entity = await GetEventAsync(shortCode, cancellationToken);
+        RequireAdmin(entity, user);
+        // Gắn được cả khi event còn Open (link họp chuẩn bị trước) lẫn sau khi chốt
+        var meetingUrl = NormalizeMeetingUrl(request.MeetingUrl);
+
+        await using (var transaction = await repository.BeginTransactionAsync(cancellationToken))
+        {
+            entity.Revision = await repository.TryBumpRevisionAsync(entity.Id, requireOpen: false, cancellationToken)
+                ?? throw new EventException(404, "Event not found.");
+            entity.UpdatedAt = DateTimeOffset.UtcNow;
+            entity.MeetingUrl = meetingUrl;
+            await repository.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+
+        // Không gửi lại email khi chỉ đổi link (tránh spam); cả nhóm thấy link mới qua realtime
+        var response = new MeetingUrlResponse(entity.MeetingUrl, entity.Revision);
+        await notifier.NotifyMeetingUrlUpdatedAsync(entity.ShortCode, response, cancellationToken);
         return response;
     }
 
@@ -318,11 +338,15 @@ public sealed class EventService(
         Revision = entity.Revision,
         Participants = entity.Participants.Select(x => new EventParticipantResponse(x.Username)).ToList(),
         HeatmapGrid = HeatmapBuilder.Build(entity),
-        FinalSchedule = entity.Status != EventStatus.Finalized ? null : new FinalScheduleResponse(
-            entity.EventType == EventType.Dates ? entity.FinalDate?.ToString("yyyy-MM-dd") : null,
-            entity.EventType == EventType.Weekdays ? (int?)entity.FinalDayOfWeek : null,
-            Format(entity.FinalStartTime!.Value), Format(entity.FinalEndTime!.Value))
+        FinalSchedule = entity.Status == EventStatus.Finalized ? ToFinalSchedule(entity) : null,
+        MeetingUrl = entity.MeetingUrl
     };
+
+    private static FinalScheduleResponse ToFinalSchedule(Events entity) => new(
+        entity.EventType == EventType.Dates ? entity.FinalDate?.ToString("yyyy-MM-dd") : null,
+        entity.EventType == EventType.Weekdays ? (int?)entity.FinalDayOfWeek : null,
+        Format(entity.FinalStartTime!.Value),
+        Format(entity.FinalEndTime!.Value));
 
     private string BuildFinalizedEmail(Events entity, FinalizeEventResponse response, string? googleCalendarUrl, bool hasCalendarAttachment)
     {
@@ -337,7 +361,8 @@ public sealed class EventService(
             appOptions.Value.EventUrl(entity.ShortCode),
             appOptions.Value.FrontendBaseUrl,
             googleCalendarUrl,
-            hasCalendarAttachment));
+            hasCalendarAttachment,
+            entity.MeetingUrl));
     }
 
 
@@ -382,6 +407,26 @@ public sealed class EventService(
         entity.FinalEndTime = request.EndTime;
     }
     private static string Format(TimeOnly time) => time.ToString("HH:mm");
+
+    /// <summary>
+    /// Link cuộc họp do admin dán (Meet, Zoom, Teams...). Bỏ trống thì null. Chỉ nhận URL https tuyệt đối
+    /// để FE gắn vào thẻ &lt;a&gt; an toàn (chặn javascript:, data:...); không giới hạn host.
+    /// </summary>
+    public static string? NormalizeMeetingUrl(string? value)
+    {
+        var url = value?.Trim();
+        if (string.IsNullOrEmpty(url)) return null;
+        if (url.Length > InputLimits.MeetingUrlMaxLength)
+            throw new EventException(422, $"meetingUrl must be at most {InputLimits.MeetingUrlMaxLength} characters.");
+        // Chặn cả link có "user@" trước host (https://evil.example@meet.google.com/...), kiểu link hay dùng để giả dạng
+        if (url.Any(char.IsWhiteSpace) ||
+            !Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+            uri.Scheme != Uri.UriSchemeHttps ||
+            string.IsNullOrEmpty(uri.Host) ||
+            !string.IsNullOrEmpty(uri.UserInfo))
+            throw new EventException(422, "meetingUrl must be a valid https URL.");
+        return url;
+    }
 
     /// <summary>
     /// Múi giờ của event theo tên IANA (dùng cho lịch .ics và Google Calendar). Client cũ không gửi,

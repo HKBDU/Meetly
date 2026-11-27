@@ -261,9 +261,12 @@ Nếu Event đã Finalized:
     "dayOfWeek": null,
     "startTime": "08:00",
     "endTime": "09:00"
-  }
+  },
+  "meetingUrl": "https://meet.google.com/abc-defg-hij"
 }
 ```
+
+`meetingUrl` nằm **ở cấp event** (cùng cấp `finalSchedule`), luôn có trong response: link cuộc họp admin đã gắn, `null` nếu chưa có. Có thể có cả khi event còn Open (xem mục 8.2).
 
 ---
 
@@ -622,7 +625,8 @@ Event.Status == Open
   "specificDate": "2026-09-10",
   "dayOfWeek": null,
   "startTime": "08:00",
-  "endTime": "09:00"
+  "endTime": "09:00",
+  "meetingUrl": "https://meet.google.com/abc-defg-hij"
 }
 ```
 
@@ -647,6 +651,8 @@ StartTime < EndTime
 Khoảng thời gian nằm trong DailyStartTime → DailyEndTime
 ```
 
+`meetingUrl` là trường tùy chọn cho cả hai loại sự kiện: link cuộc họp (Google Meet, Zoom, Teams...) admin tự dán vào. Meetly không gọi API Google để tạo phòng. Quy tắc xem mục 8.2. Bỏ trường này, gửi `null` hoặc chuỗi rỗng thì **giữ link đã gắn trước đó** qua `PUT /meeting-url` (FE hiện không gửi trường này khi chốt). Link sai → `422` và event **không** bị chốt.
+
 ### BE xử lý
 
 ```text
@@ -657,6 +663,7 @@ Validate final slot
 Events.FinalDate / FinalDayOfWeek
        ↓
 Events.FinalStartTime / FinalEndTime
+Events.MeetingUrl
        ↓
 Status = Finalized
        ↓
@@ -664,7 +671,7 @@ Revision++
        ↓
 Commit Transaction
        ↓
-Gửi email (kèm nút "Thêm vào Google Calendar" và file invite.ics)
+Gửi email (kèm link Meet nếu có, nút "Thêm vào Google Calendar" và file invite.ics)
        ↓
 SignalR EventFinalized
 ```
@@ -684,7 +691,8 @@ SignalR EventFinalized
       "startTime": "08:00",
       "endTime": "09:00"
     },
-    "revision": 15
+    "revision": 15,
+    "meetingUrl": "https://meet.google.com/abc-defg-hij"
   }
 }
 ```
@@ -706,6 +714,7 @@ Trả file iCalendar (RFC 5545) của lịch họp đã chốt, để thêm vào
 - `DTSTART`/`DTEND` theo giờ địa phương kèm `TZID` là múi giờ của event (VD `Asia/Ho_Chi_Minh`, có khối `VTIMEZONE`). Múi giờ có đổi giờ mùa hè quanh thời điểm họp thì ghi theo UTC (`...Z`).
 - Event lặp theo tuần: bắt đầu từ lần gặp gần nhất kể từ hôm nay, thêm `RRULE:FREQ=WEEKLY;BYDAY=..`.
 - `UID` cố định theo event (`{shortCode}@meetly`), tải lại không tạo bản trùng trong lịch.
+- Link Meet, nếu có, nằm trong `LOCATION` và phần mô tả của lời mời.
 
 ### Response - `200 OK`
 
@@ -746,6 +755,70 @@ END:VCALENDAR
 | `409` | Event chưa chốt |
 
 Lỗi trả về envelope `ApiResponse` như các API khác.
+
+---
+
+# 8.2. Link cuộc họp
+
+## PUT `/api/v1/events/{shortCode}/meeting-url`
+
+### Authentication
+
+Admin Required.
+
+### Mô tả
+
+Thêm, sửa hoặc xoá link cuộc họp (`meetingUrl` ở cấp event). Dùng được cả khi event còn **Open** (chuẩn bị link trước) lẫn đã chốt; chốt lịch không làm mất link. Ai mở được event đều thấy link này.
+
+### Request
+
+```json
+{ "meetingUrl": "https://zoom.us/j/123456789" }
+```
+
+Gửi `"meetingUrl": null` hoặc `""` để **xoá** link.
+
+### Quy tắc `meetingUrl` (dùng chung với `POST /finalize`)
+
+- Trim khoảng trắng hai đầu; rỗng → không có link.
+- URL tuyệt đối, scheme `https`, không chứa khoảng trắng, không có phần `user@` trước host (chặn `javascript:`, `data:`, link giả dạng kiểu `https://evil.example@meet.google.com/...`).
+- Tối đa 500 ký tự. Không giới hạn host.
+
+### BE xử lý
+
+```text
+Validate Admin
+       ↓
+Validate meetingUrl
+       ↓
+Revision++
+       ↓
+Events.MeetingUrl = meetingUrl
+       ↓
+Commit Transaction
+       ↓
+SignalR MeetingUrlUpdated
+```
+
+Không gửi lại email khi chỉ đổi link.
+
+### Response - `200 OK`
+
+```json
+{
+  "isSuccess": true,
+  "code": 200,
+  "message": "Meeting link updated successfully",
+  "value": { "meetingUrl": "https://zoom.us/j/123456789", "revision": 16 }
+}
+```
+
+| Code | Khi nào |
+|---|---|
+| `401` | Không có token |
+| `403` | Không phải admin của event |
+| `404` | Sai `shortCode` |
+| `422` | `meetingUrl` sai định dạng / quá dài |
 
 ---
 
@@ -838,9 +911,30 @@ POST /events/{shortCode}/finalize
     "startTime": "08:00",
     "endTime": "09:00"
   },
+  "meetingUrl": "https://meet.google.com/abc-defg-hij",
   "revision": 15
 }
 ```
+
+## MeetingUrlUpdated
+
+### Trigger
+
+```text
+PUT /events/{shortCode}/meeting-url
+```
+
+### Payload
+
+```json
+{
+  "shortCode": "A1B2C3",
+  "meetingUrl": "https://zoom.us/j/123456789",
+  "revision": 16
+}
+```
+
+`meetingUrl` là `null` khi admin xoá link. FE cập nhật `event.meetingUrl`.
 
 ---
 
@@ -856,6 +950,7 @@ POST /events/{shortCode}/finalize
 | GET | `/api/v1/events/{shortCode}/suggestions` | Admin | Gợi ý khung giờ |
 | PUT | `/api/v1/events/{shortCode}` | Admin | Chỉnh sửa Event |
 | POST | `/api/v1/events/{shortCode}/finalize` | Admin | Chốt lịch họp |
+| PUT | `/api/v1/events/{shortCode}/meeting-url` | Admin | Thêm / sửa / xoá link cuộc họp (Open hoặc đã chốt) |
 | GET | `/api/v1/events/{shortCode}/calendar.ics` | No | Tải file lịch họp đã chốt (.ics) |
 | GET | `/api/v1/stats` | No | Số liệu công khai cho trang chủ |
 

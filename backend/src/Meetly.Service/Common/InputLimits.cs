@@ -8,6 +8,8 @@ public static class InputLimits
     public const int PasswordMinLength = 4;
     public const int PasswordMaxLength = 100;
     public const int EmailMaxLength = 100;
+    /// <summary>Khớp HasMaxLength của cột Events.MeetingUrl (link Zoom/Teams dài hơn link Meet).</summary>
+    public const int MeetingUrlMaxLength = 500;
     public const int TimeZoneMaxLength = 50;
 
     /// <summary>Tối đa ~2 tháng ngày cụ thể cho 1 event.</summary>

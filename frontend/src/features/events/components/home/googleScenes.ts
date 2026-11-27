@@ -4,7 +4,7 @@ import type { MessageKey } from '@/shared/i18n'
 
 /**
  * Mỗi cảnh là một tính năng: con trỏ bay tới nút (phase 0), bấm (1), rồi hiện kết quả (2, 3...).
- * Cảnh Meet có thêm một nhịp "đang tạo link" trước khi ra link.
+ * Cảnh Meet có thêm một nhịp dán link trước khi cả nhóm tham gia.
  */
 export const GOOGLE_SCENES: { key: MessageKey; icon: LucideIcon; phases: number[] }[] = [
   { key: 'home.gPoint1', icon: CalendarPlus, phases: [650, 250, 2600] },

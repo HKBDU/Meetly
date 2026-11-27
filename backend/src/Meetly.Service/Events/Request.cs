@@ -35,6 +35,13 @@ public sealed record FinalizeEventRequest
     public int? DayOfWeek { get; init; }
     public TimeOnly StartTime { get; init; }
     public TimeOnly EndTime { get; init; }
+    public string? MeetingUrl { get; init; }
+}
+
+/// <summary>Link mới, hoặc null / chuỗi rỗng để xoá link.</summary>
+public sealed record UpdateMeetingUrlRequest
+{
+    public string? MeetingUrl { get; init; }
 }
 
 public sealed record ParticipantAccessRequest(string Username, string? Password);

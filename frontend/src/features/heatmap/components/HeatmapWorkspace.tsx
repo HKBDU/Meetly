@@ -177,6 +177,7 @@ export function HeatmapWorkspace({
     busy.current = true
     onPendingChange(HeatmapPendingAction.Finalize)
     try {
+      // Link cuộc họp gắn riêng qua nút Thêm/Sửa link (PUT /meeting-url), backend giữ nguyên khi chốt
       const result = await onFinalize(selected)
       if (!active.current) return
       if (result.status !== 2 || !isValidSchedule(event, result.finalSchedule)) {
@@ -223,7 +224,7 @@ export function HeatmapWorkspace({
             highlightedKey={highlighted ? rankedKey(highlighted) : null}
             reveal={reveal}
             inspected={point}
-            selected={selected}
+            selected={canEdit ? selected : null}
             selecting={interactive && selectingFinal}
             handlers={handlers}
           />

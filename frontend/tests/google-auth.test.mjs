@@ -4,6 +4,9 @@ import { fileURLToPath } from 'node:url';
 import { createServer } from 'vite';
 
 const SCOPE = 'https://www.googleapis.com/auth/calendar.freebusy';
+const MEET_LINK = 'https://meet.google.com/abc-defg-hij';
+const EVENT = { title: 'Weekly Check-in', url: 'https://meetly.test/e/ABC234', timezone: 'America/Los_Angeles' };
+const WEEKLY_SLOT = { specificDate: null, dayOfWeek: 1, startTime: '09:00', endTime: '09:30' };
 
 /** Mỗi test một server mới để module `lib/google.ts` có bộ nhớ token sạch */
 async function withGoogle({ clientId = 'client-123', respond }, run) {
@@ -32,10 +35,10 @@ async function withGoogle({ clientId = 'client-123', respond }, run) {
     hasGrantedAllScopes: (response, scope) => (response.scope ?? '').split(' ').includes(scope),
   };
   const previousWindow = globalThis.window;
-  globalThis.window = { google: { accounts: { oauth2 } } };
+  globalThis.window = { google: { accounts: { oauth2 } }, navigator: { language: 'en-US' } };
   try {
     const google = await server.ssrLoadModule('/src/lib/google.ts');
-    await run(google, popups);
+    await run(google, popups, server);
   } finally {
     globalThis.window = previousWindow;
     await server.close();
@@ -53,6 +56,21 @@ async function expectKind(promise, GoogleAuthError, kind) {
   });
 }
 
+test('the Google Calendar link carries the meeting link the host added to the event', async () => {
+  await withGoogle({ respond: grant('unused') }, async (_google, _popups, server) => {
+    const { buildGoogleCalendarUrl } = await server.ssrLoadModule('/src/shared/lib/calendar.ts');
+    const calendar = new URL(buildGoogleCalendarUrl({ ...EVENT, meetingUrl: MEET_LINK }, WEEKLY_SLOT));
+    assert.equal(calendar.searchParams.get('location'), MEET_LINK);
+    assert.equal(calendar.searchParams.get('details'), `${EVENT.url}
+${MEET_LINK}`);
+    assert.equal(calendar.searchParams.get('recur'), 'RRULE:FREQ=WEEKLY;BYDAY=MO');
+    assert.equal(calendar.searchParams.get('ctz'), EVENT.timezone);
+
+    const withoutLink = new URL(buildGoogleCalendarUrl({ ...EVENT, meetingUrl: null }, WEEKLY_SLOT));
+    assert.equal(withoutLink.searchParams.get('location'), null);
+  });
+});
+
 test('without a client ID Google features are off and token requests fail fast', async () => {
   await withGoogle({ clientId: '', respond: grant('never') }, async (google, popups) => {
     assert.equal(google.isGoogleConfigured, false);
@@ -69,6 +87,7 @@ test('a granted token is requested for exactly the asked scope and reused while 
     assert.equal(popups.length, 1);
     assert.equal(popups[0].client_id, 'client-123');
     assert.equal(popups[0].scope, SCOPE);
+    assert.equal(popups[0].include_granted_scopes, false);
   });
 });
 

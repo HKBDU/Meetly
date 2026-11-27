@@ -15,7 +15,8 @@ public sealed record FinalizedEmailModel(
     string EventUrl,
     string FrontendBaseUrl,
     string? GoogleCalendarUrl = null,
-    bool HasCalendarAttachment = false);
+    bool HasCalendarAttachment = false,
+    string? MeetingUrl = null);
 
 /// <summary>
 /// HTML email "Lịch họp đã được chốt". Dựng bằng bảng + style inline vì Gmail/Outlook bỏ
@@ -99,6 +100,7 @@ public static class FinalizedEmailTemplate
         <tr><td align="center" style="padding:28px 32px 8px;">
           <a href="{url}" style="display:inline-block;padding:14px 32px;border-radius:999px;background:{Brand};color:#ffffff;font-family:{Font};font-size:15px;font-weight:600;text-decoration:none;">Xem chi tiết sự kiện</a>
         </td></tr>
+{LinkRow(model.MeetingUrl, "&#127909;&nbsp; Tham gia cuộc họp")}
 {CalendarRow(model)}
         <tr><td style="padding:12px 32px 32px;font-family:{Font};font-size:12px;line-height:1.6;color:{Muted};text-align:center;">
           Nút không bấm được? Mở link này:<br>
@@ -121,18 +123,19 @@ public static class FinalizedEmailTemplate
     /// <summary>Nút "Thêm vào Google Calendar" và ghi chú file .ics; trống nếu không có link lịch.</summary>
     private static string CalendarRow(FinalizedEmailModel model)
     {
-        if (string.IsNullOrEmpty(model.GoogleCalendarUrl))
-            return "";
         var note = model.HasCalendarAttachment
             ? $"""<p style="margin:10px 0 0;font-family:{Font};font-size:12px;line-height:1.6;color:{Muted};">Dùng Apple Calendar hay Outlook? Mở file <strong>invite.ics</strong> đính kèm.</p>"""
             : "";
-        return $"""
+        return LinkRow(model.GoogleCalendarUrl, "&#128197;&nbsp; Thêm vào Google Calendar", note);
+    }
+
+    private static string LinkRow(string? url, string label, string note = "") =>
+        string.IsNullOrEmpty(url) ? "" : $"""
         <tr><td align="center" style="padding:10px 32px 0;">
-          <a href="{Encoder.Encode(model.GoogleCalendarUrl)}" style="display:inline-block;padding:12px 26px;border-radius:999px;border:1px solid {Line};background:#ffffff;color:{Ink};font-family:{Font};font-size:14px;font-weight:600;text-decoration:none;">&#128197;&nbsp; Thêm vào Google Calendar</a>
+          <a href="{Encoder.Encode(url)}" style="display:inline-block;padding:12px 26px;border-radius:999px;border:1px solid {Line};background:#ffffff;color:{Ink};font-family:{Font};font-size:14px;font-weight:600;text-decoration:none;">{label}</a>
           {note}
         </td></tr>
 """;
-    }
 
     private static string DetailRow(string label, string value) =>
         $"""<tr><td style="padding:12px 0;border-top:1px solid {Line};color:{Muted};">{label}</td><td align="right" style="padding:12px 0;border-top:1px solid {Line};color:{Ink};font-weight:600;">{Encoder.Encode(value)}</td></tr>""";

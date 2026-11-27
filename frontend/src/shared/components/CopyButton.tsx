@@ -9,12 +9,13 @@ interface CopyButtonProps extends Omit<ComponentProps<typeof Button>, 'onClick'>
   value: string
   successMessage: string
   label?: string
+  iconPosition?: 'start' | 'end'
   /** Gọi sau khi copy thành công */
   onCopied?: () => void
 }
 
 /** Nút copy đổi thành "Copied" vài giây để người dùng biết đã copy xong */
-export function CopyButton({ value, successMessage, label, onCopied, children, ...props }: CopyButtonProps) {
+export function CopyButton({ value, successMessage, label, iconPosition = 'start', onCopied, children, ...props }: CopyButtonProps) {
   const t = useT()
   const [copied, setCopied] = useState(false)
   const timer = useRef<number | null>(null)
@@ -22,6 +23,8 @@ export function CopyButton({ value, successMessage, label, onCopied, children, .
   useEffect(() => () => {
     if (timer.current !== null) window.clearTimeout(timer.current)
   }, [])
+
+  const icon = copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />
 
   return (
     <Button
@@ -35,8 +38,9 @@ export function CopyButton({ value, successMessage, label, onCopied, children, .
         timer.current = window.setTimeout(() => setCopied(false), 2000)
       }}
     >
-      {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+      {iconPosition === 'start' && icon}
       {children ?? (copied ? t('common.copied') : (label ?? t('common.copy')))}
+      {iconPosition === 'end' && icon}
     </Button>
   )
 }
