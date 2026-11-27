@@ -131,7 +131,7 @@ export function FinalizedSchedulePopover({ event, children }: FinalizedScheduleP
             <Check className="size-4 shrink-0" aria-hidden="true" />
             {t('final.done')}
           </p>
-          <AddToCalendarActions event={event} source="heatmap" />
+          <AddToCalendarActions event={event} source="heatmap" compact />
           <div className="flex justify-end border-t border-border pt-2">
             <Button type="button" variant="ghost" size="sm" onClick={() => void copyTime()}><Copy aria-hidden="true" />{t('final.copyTime')}</Button>
           </div>
