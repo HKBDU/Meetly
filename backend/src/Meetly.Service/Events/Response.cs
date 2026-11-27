@@ -37,7 +37,12 @@ public sealed record EventResponse
 
 public sealed record EventParticipantResponse(string Username);
 public sealed record HeatmapCellResponse(DateOnly? SpecificDate, DayOfWeek? DayOfWeek, string StartTime, List<string> Participants, int Count);
-public sealed record FinalScheduleResponse(string? SpecificDate, int? DayOfWeek, string StartTime, string EndTime);
+public sealed record FinalScheduleResponse(
+    string? SpecificDate,
+    int? DayOfWeek,
+    string StartTime,
+    string EndTime,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? MeetingUrl = null);
 public sealed record CalendarFileResponse(string FileName, string Content);
 
 public sealed record ParticipantAccessResponse

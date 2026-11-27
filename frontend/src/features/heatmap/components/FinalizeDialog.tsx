@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { isGoogleConfigured, preloadGoogleIdentity } from '@/lib/google';
 import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui';
 import type { FinalizeDialogProps } from '../types';
 import { describeRange, useTimeView } from '@/shared/grid/time-view';
@@ -17,6 +18,7 @@ export function FinalizeDialog({
   const display = selected ? describeRange(view, selected, timezone) : null;
   const cancelButton = useRef<HTMLButtonElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
+  const googleMeet = useRef<HTMLInputElement>(null);
 
   return (
     <Dialog
@@ -61,6 +63,27 @@ export function FinalizeDialog({
               <p className="mt-1 text-xs text-muted-foreground">{display.zone}</p>
             </div>
           )}
+          {isGoogleConfigured && (
+            <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-border p-3">
+              <span>
+                <span id="finalize-meet-label" className="block text-sm font-medium">{t('finalize.meet')}</span>
+                <span id="finalize-meet-help" className="block text-xs text-muted-foreground">{t('finalize.meetHelp')}</span>
+              </span>
+              <input
+                ref={googleMeet}
+                type="checkbox"
+                role="switch"
+                aria-labelledby="finalize-meet-label"
+                aria-describedby="finalize-meet-help"
+                disabled={pending}
+                className="peer sr-only"
+                onChange={(event) => {
+                  if (event.currentTarget.checked) preloadGoogleIdentity();
+                }}
+              />
+              <span aria-hidden="true" className="relative h-5 w-9 shrink-0 rounded-full bg-input after:absolute after:left-0.5 after:top-0.5 after:size-4 after:rounded-full after:bg-background after:shadow-sm after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-4 peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-disabled:opacity-50" />
+            </label>
+          )}
           <DialogFooter className="mt-1">
             <Button
               ref={cancelButton}
@@ -72,7 +95,7 @@ export function FinalizeDialog({
             </Button>
             <Button
               disabled={pending}
-              onClick={onConfirm}
+              onClick={() => onConfirm(googleMeet.current?.checked === true)}
             >
               {pending ? t('finalize.confirming') : t('finalize.confirm')}
             </Button>

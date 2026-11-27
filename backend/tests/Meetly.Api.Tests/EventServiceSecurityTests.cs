@@ -121,13 +121,69 @@ public class EventServiceSecurityTests
     {
         var (repo, entity, admin) = SeedEvent(adminPasswordHash: "hash");
         repo.BumpReturnsNull = true;
-        var request = new FinalizeEventRequest { DayOfWeek = 1, StartTime = new TimeOnly(9, 0), EndTime = new TimeOnly(10, 0) };
+        var request = new FinalizeEventRequest
+        {
+            DayOfWeek = 1,
+            StartTime = new TimeOnly(9, 0),
+            EndTime = new TimeOnly(10, 0),
+            MeetingUrl = "https://meet.google.com/abc-defg-hij"
+        };
 
         var error = await Assert.ThrowsAsync<EventException>(() =>
             TestServices.EventService(repo).FinalizeAsync("ABC234", TestServices.User(admin.Id, "ABC234"), request, CancellationToken.None));
 
         Assert.Equal(409, error.StatusCode);
         Assert.Equal(EventStatus.Open, entity.Status);
+        Assert.Null(entity.MeetingUrl);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("http://meet.google.com/abc-defg-hij")]
+    [InlineData("https://meet.google.com.evil.example/abc-defg-hij")]
+    [InlineData("https://evil.example@meet.google.com/abc-defg-hij")]
+    [InlineData("https://meet.google.com/lookup/daily")]
+    [InlineData("https://meet.google.com/abc-defg-hij?authuser=0")]
+    [InlineData("https://meet.google.com/abc-defg-hij\n")]
+    public async Task Finalize_RejectsInvalidMeetingUrl(string meetingUrl)
+    {
+        var (repo, entity, admin) = SeedEvent(adminPasswordHash: "hash");
+        var request = new FinalizeEventRequest
+        {
+            DayOfWeek = 1,
+            StartTime = new TimeOnly(9, 0),
+            EndTime = new TimeOnly(10, 0),
+            MeetingUrl = meetingUrl
+        };
+
+        var error = await Assert.ThrowsAsync<EventException>(() =>
+            TestServices.EventService(repo).FinalizeAsync("ABC234", TestServices.User(admin.Id, "ABC234"), request, CancellationToken.None));
+
+        Assert.Equal(422, error.StatusCode);
+        Assert.Equal(EventStatus.Open, entity.Status);
+        Assert.Null(entity.MeetingUrl);
+    }
+
+    [Fact]
+    public async Task Finalize_OnlyHostCanSetMeetingUrl()
+    {
+        var (repo, entity, _) = SeedEvent(adminPasswordHash: "hash");
+        var guest = new EventParticipants { Id = Guid.NewGuid(), EventId = entity.Id, Username = "Guest" };
+        entity.Participants.Add(guest);
+        var request = new FinalizeEventRequest
+        {
+            DayOfWeek = 1,
+            StartTime = new TimeOnly(9, 0),
+            EndTime = new TimeOnly(10, 0),
+            MeetingUrl = "https://meet.google.com/abc-defg-hij"
+        };
+
+        var error = await Assert.ThrowsAsync<EventException>(() =>
+            TestServices.EventService(repo).FinalizeAsync("ABC234", TestServices.User(guest.Id, "ABC234"), request, CancellationToken.None));
+
+        Assert.Equal(403, error.StatusCode);
+        Assert.Equal(EventStatus.Open, entity.Status);
+        Assert.Null(entity.MeetingUrl);
     }
 
     [Fact]
