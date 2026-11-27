@@ -61,6 +61,12 @@ export function EventHeader({
             </span>
           )}
         </div>
+        {meetingUrl && (
+          <div className="mt-3 flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+            <span className="shrink-0">Meeting room:</span>
+            <MeetingRoomAction meetingUrl={meetingUrl} mode="copy" className="w-56 max-w-full" />
+          </div>
+        )}
       </div>
       <div className="grid w-full min-w-0 shrink-0 gap-2 sm:w-80">
         <button
@@ -94,16 +100,10 @@ export function EventHeader({
             size="sm"
             iconPosition="end"
             aria-label={`${t('common.copyLink')}: ${event.shortCode}`}
-            className="font-semibold tracking-wide text-foreground"
+            className="w-28 font-semibold tracking-wide text-foreground"
           >
             {event.shortCode}
           </CopyButton>
-          {meetingUrl && (
-            <>
-              <span>Meeting room:</span>
-              <MeetingRoomAction meetingUrl={meetingUrl} mode="copy" className="w-0 min-w-full" />
-            </>
-          )}
         </div>
       </div>
     </header>

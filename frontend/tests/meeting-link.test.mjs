@@ -121,12 +121,12 @@ test('event overview offers add/edit only to the host in both event states', asy
     const openHost = render(mockDatesEvent, true)
     const header = openHost.match(/<header[\s\S]*?<\/header>/)?.[0]
     assert.ok(header)
-    assert.match(header, /Add meeting URL/)
+    assert.match(header, /Add Meeting Link/)
     assert.match(header, /Event code:/)
     assert.match(header, /aria-label="Copy link: DEMO26"/)
     assert.doesNotMatch(header, />Copy link</)
     assert.doesNotMatch(header, /Meeting room:/)
-    assert.doesNotMatch(render(mockDatesEvent, false), /Add meeting URL/)
+    assert.doesNotMatch(render(mockDatesEvent, false), /Add Meeting Link/)
 
     const finalized = {
       ...mockDatesEvent,
@@ -135,11 +135,11 @@ test('event overview offers add/edit only to the host in both event states', asy
       meetingUrl: 'https://meet.google.com/abc-defg-hij',
     }
     const finalizedHost = render(finalized, true)
-    assert.match(finalizedHost, /Edit meeting URL/)
+    assert.match(finalizedHost, /Edit Meeting Link/)
     assert.match(finalizedHost.match(/<header[\s\S]*?<\/header>/)?.[0] ?? '', /Meeting room:[\s\S]*Copy meeting link/)
     const participant = render(finalized, false)
     assert.match(participant, /Meeting room: /)
-    assert.doesNotMatch(participant, /Edit meeting URL/)
+    assert.doesNotMatch(participant, /Edit Meeting Link/)
   })
 })
 
