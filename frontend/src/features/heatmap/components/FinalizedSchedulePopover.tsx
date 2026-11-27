@@ -7,6 +7,7 @@ import { Button, Popover, PopoverContent, PopoverTrigger } from '@/shared/compon
 import { describeRange, useTimeView } from '@/shared/grid/time-view';
 import { useT } from '@/shared/i18n';
 import type { EventDetail } from '@/shared/types';
+import { MeetingRoomLine } from './MeetingRoomLine';
 
 interface FinalizedSchedulePopoverProps {
   event: EventDetail;
@@ -132,6 +133,7 @@ export function FinalizedSchedulePopover({ event, children }: FinalizedScheduleP
             {t('final.done')}
           </p>
           <AddToCalendarActions event={event} source="heatmap" compact />
+          <MeetingRoomLine meetingUrl={event.meetingUrl} />
           <div className="flex justify-end border-t border-border pt-2">
             <Button type="button" variant="ghost" size="sm" onClick={() => void copyTime()}><Copy aria-hidden="true" />{t('final.copyTime')}</Button>
           </div>

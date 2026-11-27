@@ -47,6 +47,12 @@ export interface CreatedEvent {
 export interface FinalizeResult {
   status: 2
   finalSchedule: FinalSchedule
+  meetingUrl: string | null
+  revision: number
+}
+
+export interface MeetingUrlResult {
+  meetingUrl: string | null
   revision: number
 }
 
@@ -117,6 +123,13 @@ export function finalizeEvent(shortCode: string, payload: FinalSchedule): Promis
   return unwrap(
     api.post<FinalizeResult>(eventEndpoint(shortCode, '/finalize'), payload),
     'api.finalize',
+  )
+}
+
+export function updateMeetingUrl(shortCode: string, meetingUrl: string | null): Promise<MeetingUrlResult> {
+  return unwrap(
+    api.put<MeetingUrlResult>(eventEndpoint(shortCode, '/meeting-url'), { meetingUrl }),
+    'api.updateMeetingUrl',
   )
 }
 

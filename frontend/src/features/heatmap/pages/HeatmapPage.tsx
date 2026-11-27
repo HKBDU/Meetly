@@ -8,6 +8,7 @@ import { EventHeader } from '../components/EventHeader'
 import { FinalizedScheduleSummary } from '../components/FinalizedScheduleSummary'
 import { GettingStartedBanner } from '../components/GettingStartedBanner'
 import { HeatmapWorkspace } from '../components/HeatmapWorkspace'
+import { MeetingRoomLine } from '../components/MeetingRoomLine'
 import { DEFAULT_MEETING_DURATION } from '../constants'
 import { rankBestTimes } from '../suggestions'
 import { HeatmapPendingAction, type HeatmapPageProps } from '../types'
@@ -21,6 +22,7 @@ export function HeatmapPage({
   isAdmin = false,
   onFinalize,
   onUpdateEvent,
+  onUpdateMeetingUrl,
   onOpenMySchedule,
   onInvite,
   currentUsername,
@@ -75,9 +77,16 @@ export function HeatmapPage({
         canUpdate={Boolean(onUpdateEvent)}
         onOpenMySchedule={onOpenMySchedule}
         onInvite={onInvite}
+        onUpdateMeetingUrl={isAdmin ? onUpdateMeetingUrl : undefined}
         onUpdateEvent={updateEventDetails}
         currentUsername={currentUsername}
       />
+
+      {!isAdmin && event.meetingUrl && (
+        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border bg-card px-4 py-3 shadow-soft">
+          <MeetingRoomLine meetingUrl={event.meetingUrl} />
+        </div>
+      )}
 
       {event.status === EventStatus.Open && (
         <GettingStartedBanner

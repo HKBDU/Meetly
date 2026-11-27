@@ -32,7 +32,7 @@ const privacyVi: LegalDocument = {
       body: [
         'Meetly không yêu cầu tạo tài khoản. Chúng tôi chỉ lưu những gì bạn nhập khi dùng dịch vụ:',
         [
-          'Thông tin sự kiện: tên sự kiện, các ngày hoặc thứ trong tuần, khung giờ và thời gian đã chốt.',
+          'Thông tin sự kiện: tên sự kiện, các ngày hoặc thứ trong tuần, khung giờ, thời gian đã chốt và link phòng họp nếu người tổ chức thêm.',
           'Tên hiển thị bạn nhập khi tham gia một sự kiện.',
           'Mật khẩu (nếu bạn đặt): được mã hoá một chiều trước khi lưu, không ai, kể cả chúng tôi, đọc được mật khẩu gốc.',
           'Lịch rảnh bạn đánh dấu trên lưới thời gian.',
@@ -57,7 +57,7 @@ const privacyVi: LegalDocument = {
     {
       heading: 'Ai có thể thấy thông tin của bạn',
       body: [
-        'Bất kỳ ai có link hoặc mã của một sự kiện đều có thể xem tên sự kiện, tên hiển thị và lịch rảnh của những người tham gia. Vì vậy, đừng nhập thông tin nhạy cảm vào tên sự kiện hay tên hiển thị.',
+        'Bất kỳ ai có link hoặc mã của một sự kiện đều có thể xem tên sự kiện, tên hiển thị, lịch rảnh của những người tham gia và link phòng họp nếu có. Vì vậy, đừng nhập thông tin nhạy cảm vào tên sự kiện hay tên hiển thị.',
         'Địa chỉ email không hiển thị cho người tham gia khác. Mỗi người nhận một email riêng.',
       ],
     },
@@ -157,7 +157,7 @@ const privacyEn: LegalDocument = {
       body: [
         'Meetly does not require an account. We only store what you enter while using the service:',
         [
-          'Event details: the event name, dates or days of the week, the time range and the finalized time.',
+          'Event details: the event name, dates or days of the week, the time range, the finalized time and an optional meeting link added by the host.',
           'The display name you enter when joining an event.',
           'A password, if you set one: it is hashed before storage, so nobody, including us, can read the original.',
           'The availability you mark on the time grid.',
@@ -182,7 +182,7 @@ const privacyEn: LegalDocument = {
     {
       heading: 'Who can see your information',
       body: [
-        "Anyone with an event's link or code can see the event name and the display names and availability of its participants. Please don't put sensitive information in event or display names.",
+        "Anyone with an event's link or code can see the event name, the display names and availability of its participants, and the meeting link if one was added. Please don't put sensitive information in event or display names.",
         'Email addresses are never shown to other participants. Each recipient gets their own email.',
       ],
     },

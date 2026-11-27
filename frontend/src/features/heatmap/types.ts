@@ -43,6 +43,7 @@ export interface HeatmapPageProps {
   isAdmin?: boolean
   onFinalize?: (slot: FinalSchedule) => Promise<FinalizeResult>
   onUpdateEvent?: (payload: EditableEvent) => Promise<void>
+  onUpdateMeetingUrl?: (meetingUrl: string | null) => Promise<void>
   onOpenMySchedule?: () => void
   /** Mở màn mời (link, tin nhắn mời) */
   onInvite?: () => void
@@ -90,6 +91,7 @@ export interface EventHeaderProps {
   canUpdate: boolean
   onOpenMySchedule?: () => void
   onInvite?: () => void
+  onUpdateMeetingUrl?: (meetingUrl: string | null) => Promise<void>
   onUpdateEvent: (payload: EditableEvent) => Promise<void>
   /** Để không báo "vừa cập nhật" cho chính mình */
   currentUsername?: string
