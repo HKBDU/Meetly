@@ -25,6 +25,7 @@ public class AppDbContext : DbContext
         events.Property(x => x.ShortCode).HasMaxLength(6);
         events.Property(x => x.EventType).HasConversion<short>();
         events.Property(x => x.TimeZone).HasMaxLength(50);
+        events.Property(x => x.MeetingUrl).HasMaxLength(100);
         events.Property(x => x.Status).HasConversion<short>();
         events.Property(x => x.Revision).HasDefaultValue(0L);
         events.Property(x => x.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");

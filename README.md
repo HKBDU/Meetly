@@ -212,6 +212,15 @@ Defined in `frontend/.env` (see `frontend/.env.example`):
 | `VITE_GA_MEASUREMENT_ID` | Optional Google Analytics 4 ID (`G-…`). Only loaded in production builds. |
 | `VITE_CF_ANALYTICS_TOKEN` | Optional Cloudflare Web Analytics site token (cookieless). Only loaded in production builds. |
 | `VITE_EXTENSION_STORE_URL` | Optional Chrome Web Store link of the extension. When set, the home page shows an "Add to Chrome" button instead of "Coming soon". |
+| `VITE_GOOGLE_CLIENT_ID` | Optional Web application OAuth client ID for busy-time import and Google Meet creation. |
+
+### Google Calendar and Meet
+
+Enable Google Calendar API in Google Cloud. Create a Web application OAuth client with the frontend's local and production origins, then set `VITE_GOOGLE_CLIENT_ID`. Configure the OAuth consent screen with `https://www.googleapis.com/auth/calendar.freebusy` for busy-time import and `https://www.googleapis.com/auth/calendar.events` for Meet creation. Add test users while the app is in testing and complete Google's OAuth verification for public use.
+
+If the deployment enforces a Content Security Policy, allow `https://accounts.google.com/gsi/client` in `script-src`, `https://accounts.google.com/gsi/` in `frame-src` and `connect-src`, `https://accounts.google.com/gsi/style` in `style-src`, and `https://www.googleapis.com` in `connect-src`. Keep `Cross-Origin-Opener-Policy: same-origin-allow-popups` for Google consent popups.
+
+Apply the `AddEventMeetingUrl` database migration before deploying the API.
 
 ## Scripts
 

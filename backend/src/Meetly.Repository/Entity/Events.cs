@@ -17,6 +17,7 @@ public class Events : BaseEntity, IAuditableEntity
     public Enum.DayOfWeek? FinalDayOfWeek { get; set; }
     public TimeOnly? FinalStartTime { get; set; }
     public TimeOnly? FinalEndTime { get; set; }
+    public string? MeetingUrl { get; set; }
     public long Revision { get; set; }
 
     public ICollection<EventAvailableDates> AvailableDates { get; set; } = [];

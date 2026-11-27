@@ -17,7 +17,7 @@ namespace Meetly.Repository.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.4")
+                .HasAnnotation("ProductVersion", "8.0.22")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -161,6 +161,10 @@ namespace Meetly.Repository.Migrations
 
                     b.Property<TimeOnly?>("FinalStartTime")
                         .HasColumnType("time without time zone");
+
+                    b.Property<string>("MeetingUrl")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<long>("Revision")
                         .ValueGeneratedOnAdd()

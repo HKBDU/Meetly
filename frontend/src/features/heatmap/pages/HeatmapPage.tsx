@@ -66,7 +66,6 @@ export function HeatmapPage({
     event.availableWeekdays.join(','),
     event.dailyStartTime,
     event.dailyEndTime,
-    event.status,
   ].join(':')
 
   return (
