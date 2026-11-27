@@ -140,6 +140,8 @@ export const vi: Record<RequiredKey, string> = {
   'home.gPoint2': 'Tạo link Google Meet ngay khi chốt lịch',
   'home.gPoint3': 'Tô lịch rảnh nhanh từ giờ bận trên Google Calendar',
   'home.gShort': 'Google Calendar & Meet',
+  'home.gCalendar': 'Google Calendar',
+  'home.gMeet': 'Google Meet',
   'home.gOptional': 'Tùy chọn · không dùng thì mọi thứ vẫn như cũ',
   'home.gDemoFinal': 'Đã chốt',
   'home.gDemoWhen': 'Thứ 3, 19:00 – 20:00',

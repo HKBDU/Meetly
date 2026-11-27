@@ -138,6 +138,8 @@ export const en = {
   'home.gPoint2': 'Create a Google Meet link when you finalize',
   'home.gPoint3': 'Fill your grid from your Google Calendar busy times',
   'home.gShort': 'Google Calendar & Meet',
+  'home.gCalendar': 'Google Calendar',
+  'home.gMeet': 'Google Meet',
   'home.gOptional': 'Optional · nothing changes if you skip it',
   'home.gDemoFinal': 'Finalized',
   'home.gDemoWhen': 'Tue, 19:00 – 20:00',
