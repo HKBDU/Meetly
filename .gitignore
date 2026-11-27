@@ -37,3 +37,5 @@ TestResults/
 *.log
 *.tmp
 *.temp
+# Ghi chú kế hoạch nội bộ
+docs/google-calendar.md

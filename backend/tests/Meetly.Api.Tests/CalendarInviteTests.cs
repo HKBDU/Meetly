@@ -211,7 +211,7 @@ public class CalendarInviteTests
         Assert.Contains("DTSTART;TZID=Asia/Ho_Chi_Minh:20261202T094500", ics);
         if (meetingUrl is null)
         {
-            Assert.DoesNotContain("Tham gia Google Meet", message.Html);
+            Assert.DoesNotContain("Tham gia cuộc họp", message.Html);
             Assert.DoesNotContain("LOCATION:", ics);
         }
         else

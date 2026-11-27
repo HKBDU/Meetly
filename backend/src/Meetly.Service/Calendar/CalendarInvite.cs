@@ -53,7 +53,7 @@ public static class CalendarInviteBuilder
 
         var description = $"Lịch họp đã chốt trên Meetly.\nXem sự kiện: {eventUrl}";
         if (entity.MeetingUrl is { } meetingUrl)
-            description += $"\nTham gia Google Meet: {meetingUrl}";
+            description += $"\nLink cuộc họp: {meetingUrl}";
 
         return new CalendarInvite(
             $"{entity.ShortCode}@meetly",

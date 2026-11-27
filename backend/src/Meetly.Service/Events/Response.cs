@@ -44,6 +44,7 @@ public sealed record FinalScheduleResponse(
     string EndTime,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? MeetingUrl = null);
 public sealed record CalendarFileResponse(string FileName, string Content);
+public sealed record MeetingUrlResponse(string? MeetingUrl, long Revision);
 
 public sealed record ParticipantAccessResponse
 {

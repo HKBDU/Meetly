@@ -137,14 +137,14 @@ public class EventServiceSecurityTests
         Assert.Null(entity.MeetingUrl);
     }
 
+    // Admin tự dán link (Meet, Zoom, Teams...) nên không khoá host; chỉ chặn link không an toàn để gắn vào thẻ <a>
     [Theory]
-    [InlineData("")]
     [InlineData("http://meet.google.com/abc-defg-hij")]
-    [InlineData("https://meet.google.com.evil.example/abc-defg-hij")]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("data:text/html,hi")]
     [InlineData("https://evil.example@meet.google.com/abc-defg-hij")]
-    [InlineData("https://meet.google.com/lookup/daily")]
-    [InlineData("https://meet.google.com/abc-defg-hij?authuser=0")]
-    [InlineData("https://meet.google.com/abc-defg-hij\n")]
+    [InlineData("meet.google.com/abc-defg-hij")]
+    [InlineData("https://meet.google.com/abc defg")]
     public async Task Finalize_RejectsInvalidMeetingUrl(string meetingUrl)
     {
         var (repo, entity, admin) = SeedEvent(adminPasswordHash: "hash");
