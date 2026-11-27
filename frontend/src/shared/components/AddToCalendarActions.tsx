@@ -9,9 +9,7 @@ import { useT } from '@/shared/i18n'
 import { buildCalendarDownloadUrl, buildGoogleCalendarUrl } from '@/shared/lib/calendar'
 import type { EventDetail } from '@/shared/types'
 
-const iconMotion = 'motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out'
-
-/**
+const iconMotion = 'motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out'/**
  * "Thêm vào Google Calendar" (mở trang tạo sự kiện của Google, điền sẵn) và "Tải .ics"
  * (Apple Calendar, Outlook...). Hai nút gọn theo nội dung, cùng hàng, hết chỗ thì xuống dòng.
  * `compact`: chỗ hẹp như popover, nút tải chỉ ghi ".ics" (tên đầy đủ vẫn ở aria-label/tooltip) để vừa một hàng.
