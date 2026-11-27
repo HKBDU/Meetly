@@ -100,7 +100,7 @@ public static class FinalizedEmailTemplate
         <tr><td align="center" style="padding:28px 32px 8px;">
           <a href="{url}" style="display:inline-block;padding:14px 32px;border-radius:999px;background:{Brand};color:#ffffff;font-family:{Font};font-size:15px;font-weight:600;text-decoration:none;">Xem chi tiết sự kiện</a>
         </td></tr>
-{LinkRow(model.MeetingUrl, "Tham gia Google Meet")}
+{LinkRow(model.MeetingUrl, "&#127909;&nbsp; Tham gia cuộc họp")}
 {CalendarRow(model)}
         <tr><td style="padding:12px 32px 32px;font-family:{Font};font-size:12px;line-height:1.6;color:{Muted};text-align:center;">
           Nút không bấm được? Mở link này:<br>

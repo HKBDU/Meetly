@@ -199,8 +199,8 @@ public class CalendarInviteTests
             },
             CancellationToken.None);
         Assert.Equal(meetingUrl, entity.MeetingUrl);
-        Assert.Equal(meetingUrl, response.FinalSchedule.MeetingUrl);
-        Assert.Equal(meetingUrl, (await service.GetAsync("ABC234", CancellationToken.None)).FinalSchedule!.MeetingUrl);
+        Assert.Equal(meetingUrl, response.MeetingUrl);
+        Assert.Equal(meetingUrl, (await service.GetAsync("ABC234", CancellationToken.None)).MeetingUrl);
 
         var message = Assert.Single(queue.Messages);
         Assert.Contains("https://calendar.google.com/calendar/render?action=TEMPLATE", message.Html);
@@ -211,7 +211,7 @@ public class CalendarInviteTests
         Assert.Contains("DTSTART;TZID=Asia/Ho_Chi_Minh:20261202T094500", ics);
         if (meetingUrl is null)
         {
-            Assert.DoesNotContain("Tham gia Google Meet", message.Html);
+            Assert.DoesNotContain("Tham gia cuộc họp", message.Html);
             Assert.DoesNotContain("LOCATION:", ics);
         }
         else

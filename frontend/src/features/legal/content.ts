@@ -98,18 +98,17 @@ const privacyVi: LegalDocument = {
     {
       heading: 'Google Calendar và dữ liệu người dùng Google',
       body: [
-        'Kết nối tài khoản Google là tùy chọn. Meetly chỉ xin quyền khi bạn bấm "Nhập từ Google Calendar" hoặc bật "Tạo link Google Meet" và xác nhận chốt lịch.',
+        'Kết nối tài khoản Google là tùy chọn. Meetly chỉ xin quyền khi bạn bấm "Nhập từ Google Calendar".',
         'Nút "Thêm vào Google Calendar" không cần kết nối tài khoản: nút này chỉ mở trang tạo sự kiện của Google với thông tin cuộc hẹn điền sẵn, và bạn tự bấm Lưu trên Google.',
         'Chúng tôi truy cập gì và để làm gì:',
         [
-          'Giờ rảnh/bận (quyền calendar.freebusy). Khi bạn nhập từ Google Calendar, Meetly chỉ đọc các khoảng bận trong khung giờ của cuộc hẹn để điền sẵn lịch rảnh.',
-          'Google Meet (quyền calendar.events). Khi người tổ chức chốt lịch và chọn tạo link, trình duyệt gửi tiêu đề, thời gian, múi giờ và link Meetly tới Google để tạo sự kiện có phòng Meet trên lịch chính của người tổ chức và lấy link phòng.',
+          'Giờ rảnh/bận (quyền calendar.freebusy). Khi bạn nhập từ Google Calendar, Meetly chỉ đọc các khoảng bận trong khung giờ của cuộc hẹn để điền sẵn lịch rảnh. Đây là quyền duy nhất Meetly xin: Meetly không đọc tên hay nội dung sự kiện, cũng không tạo hay sửa sự kiện trong lịch của bạn.',
         ],
         'Cách chúng tôi xử lý dữ liệu Google:',
         [
           'Mã truy cập Google chỉ nằm trong tab trình duyệt của bạn và hết hạn sau khoảng một giờ. Mã này không bao giờ được gửi tới hay lưu trên máy chủ của chúng tôi.',
           'Giờ rảnh/bận được chuyển thành lưới lịch rảnh ngay trên trình duyệt. Meetly chỉ nhận lịch rảnh bạn đã xem lại và lưu, giống hệt khi bạn tự tô bằng tay. Dữ liệu rảnh/bận gốc không được lưu.',
-          'Meetly lưu link phòng Google Meet cùng sự kiện. Ai có link sự kiện đều xem được link phòng. Link phòng cũng có trong file lịch và email gửi qua Brevo cho người đã đăng ký nhận thông báo.',
+          'Link cuộc họp (Google Meet, Zoom...) do người tổ chức tự dán vào, không lấy từ tài khoản Google. Meetly lưu link này cùng sự kiện; ai có link sự kiện đều xem được, và link cũng có trong file lịch và email gửi qua Brevo cho người đã đăng ký nhận thông báo.',
           'Dữ liệu người dùng Google chỉ được dùng để cung cấp tính năng bạn chọn. Dữ liệu này không được bán, dùng cho quảng cáo hay huấn luyện AI và mô hình học máy.',
         ],
         'Việc Meetly sử dụng và chuyển giao thông tin nhận từ Google API tuân thủ Chính sách dữ liệu người dùng của Google API Services (Google API Services User Data Policy), bao gồm các yêu cầu về Sử dụng giới hạn (Limited Use).',
@@ -223,18 +222,17 @@ const privacyEn: LegalDocument = {
     {
       heading: 'Google Calendar and Google user data',
       body: [
-        'Connecting your Google account is optional. Meetly asks for access only when you click "Import from Google Calendar" or turn on "Create a Google Meet link" and confirm the final time.',
+        'Connecting your Google account is optional. Meetly asks for access only when you click "Import from Google Calendar".',
         'The "Add to Google Calendar" button needs no account connection: it only opens Google\'s event page with the meeting details filled in, and you click Save on Google yourself.',
         'What we access and why:',
         [
-          'Free/busy times (scope calendar.freebusy). When you import from Google Calendar, Meetly reads only the busy time ranges within the poll window to pre-fill your availability.',
-          'Google Meet (scope calendar.events). When a host opts in and finalizes, their browser sends the title, time, time zone and Meetly link to Google to create an event on the host’s primary calendar and retrieve its Meet link.',
+          'Free/busy times (scope calendar.freebusy). When you import from Google Calendar, Meetly reads only the busy time ranges within the poll window to pre-fill your availability. This is the only scope Meetly requests: it never reads event titles or details, and never creates or changes events in your calendar.',
         ],
         'How we handle Google data:',
         [
           'The Google access token stays in your browser tab and expires after about one hour. It is never sent to or stored on our servers.',
           'Free/busy times are turned into the availability grid in your browser. Only the availability you review and save is sent to Meetly, exactly as if you had marked it by hand. The raw free/busy data is not stored.',
-          'Meetly stores the Google Meet link with the event. Anyone with the event link can see it. It also appears in calendar files and in emails sent through Brevo to notification subscribers.',
+          'Meeting links (Google Meet, Zoom...) are pasted by the host, not taken from a Google account. Meetly stores the link with the event; anyone with the event link can see it, and it also appears in calendar files and in emails sent through Brevo to notification subscribers.',
           'Google user data is used to provide the feature you select. It is never sold or used for advertising or to train AI or machine learning models.',
         ],
         "Meetly's use and transfer of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements.",
@@ -288,7 +286,7 @@ const termsVi: LegalDocument = {
           'Ai có link hoặc mã sự kiện đều có thể xem và tham gia sự kiện đó. Bạn tự quyết định chia sẻ link cho ai.',
           'Người tạo sự kiện dùng mật khẩu để sửa hoặc chốt lịch. Mật khẩu này không thể khôi phục, hãy giữ cẩn thận.',
           'Sau khi chốt, lịch của sự kiện bị khoá và không thể chỉnh sửa.',
-          'Nếu bạn chọn tạo Google Meet khi chốt lịch, Meetly sẽ chia sẻ link phòng trên trang sự kiện, trong file lịch và email thông báo theo Chính sách quyền riêng tư.',
+          'Nếu bạn thêm link cuộc họp cho sự kiện, Meetly sẽ chia sẻ link đó trên trang sự kiện, trong file lịch và email thông báo theo Chính sách quyền riêng tư.',
         ],
       ],
     },
@@ -351,7 +349,7 @@ const termsEn: LegalDocument = {
           "Anyone with an event's link or code can view and join that event. You decide who you share it with.",
           'The event creator uses a password to edit or finalize the event. It cannot be recovered, so keep it safe.',
           'Once finalized, an event is locked and schedules can no longer be edited.',
-          'If you create a Google Meet link when finalizing, Meetly shares it on the event page, in calendar files and in notification emails as described in the Privacy Policy.',
+          'If you add a meeting link to an event, Meetly shares it on the event page, in calendar files and in notification emails as described in the Privacy Policy.',
         ],
       ],
     },

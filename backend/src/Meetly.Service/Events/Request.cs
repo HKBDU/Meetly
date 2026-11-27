@@ -38,4 +38,10 @@ public sealed record FinalizeEventRequest
     public string? MeetingUrl { get; init; }
 }
 
+/// <summary>Link mới, hoặc null / chuỗi rỗng để xoá link.</summary>
+public sealed record UpdateMeetingUrlRequest
+{
+    public string? MeetingUrl { get; init; }
+}
+
 public sealed record ParticipantAccessRequest(string Username, string? Password);

@@ -7,4 +7,5 @@ public interface IEventRealtimeNotifier
     Task NotifyHeatmapUpdatedAsync(string shortCode, long revision, CancellationToken cancellationToken);
     Task NotifyEventUpdatedAsync(string shortCode, long revision, CancellationToken cancellationToken);
     Task NotifyEventFinalizedAsync(string shortCode, FinalizeEventResponse response, CancellationToken cancellationToken);
+    Task NotifyMeetingUrlUpdatedAsync(string shortCode, MeetingUrlResponse response, CancellationToken cancellationToken);
 }

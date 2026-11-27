@@ -40,9 +40,12 @@ public class EventContractTests
         Assert.Equal(link, request!.MeetingUrl);
         Assert.Null(JsonSerializer.Deserialize<FinalizeEventRequest>("{}", Json)!.MeetingUrl);
 
-        var schedule = new FinalScheduleResponse("2026-12-02", null, "09:45", "11:15", link);
-        using var response = JsonSerializer.SerializeToDocument(new FinalizeEventResponse(2, schedule, 15), Json);
-        Assert.Equal(link, response.RootElement.GetProperty("finalSchedule").GetProperty("meetingUrl").GetString());
-        Assert.DoesNotContain("meetingUrl", JsonSerializer.Serialize(schedule with { MeetingUrl = null }, Json));
+        // meetingUrl nằm cùng cấp với finalSchedule (FE đọc event.meetingUrl), không lồng trong finalSchedule
+        var schedule = new FinalScheduleResponse("2026-12-02", null, "09:45", "11:15");
+        using var response = JsonSerializer.SerializeToDocument(new FinalizeEventResponse(2, schedule, 15, link), Json);
+        Assert.Equal(link, response.RootElement.GetProperty("meetingUrl").GetString());
+        Assert.False(response.RootElement.GetProperty("finalSchedule").TryGetProperty("meetingUrl", out _));
+        using var withoutLink = JsonSerializer.SerializeToDocument(new FinalizeEventResponse(2, schedule, 15), Json);
+        Assert.Equal(JsonValueKind.Null, withoutLink.RootElement.GetProperty("meetingUrl").ValueKind);
     }
 }

@@ -163,8 +163,8 @@ namespace Meetly.Repository.Migrations
                         .HasColumnType("time without time zone");
 
                     b.Property<string>("MeetingUrl")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<long>("Revision")
                         .ValueGeneratedOnAdd()

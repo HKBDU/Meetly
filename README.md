@@ -212,11 +212,13 @@ Defined in `frontend/.env` (see `frontend/.env.example`):
 | `VITE_GA_MEASUREMENT_ID` | Optional Google Analytics 4 ID (`G-…`). Only loaded in production builds. |
 | `VITE_CF_ANALYTICS_TOKEN` | Optional Cloudflare Web Analytics site token (cookieless). Only loaded in production builds. |
 | `VITE_EXTENSION_STORE_URL` | Optional Chrome Web Store link of the extension. When set, the home page shows an "Add to Chrome" button instead of "Coming soon". |
-| `VITE_GOOGLE_CLIENT_ID` | Optional Web application OAuth client ID for busy-time import and Google Meet creation. |
+| `VITE_GOOGLE_CLIENT_ID` | Optional Web application OAuth client ID for busy-time import. |
 
 ### Google Calendar and Meet
 
-Enable Google Calendar API in Google Cloud. Create a Web application OAuth client with the frontend's local and production origins, then set `VITE_GOOGLE_CLIENT_ID`. Configure the OAuth consent screen with `https://www.googleapis.com/auth/calendar.freebusy` for busy-time import and `https://www.googleapis.com/auth/calendar.events` for Meet creation. Add test users while the app is in testing and complete Google's OAuth verification for public use.
+Enable Google Calendar API in Google Cloud. Create a Web application OAuth client with the frontend's local and production origins, then set `VITE_GOOGLE_CLIENT_ID`. Configure the OAuth consent screen with only `https://www.googleapis.com/auth/calendar.freebusy` (busy-time import). It is a non-sensitive scope, so the app can be published without Google's sensitive-scope verification.
+
+Meeting links are not created through Google APIs: the host pastes a Google Meet, Zoom or Teams link from the event page (Add / Edit meeting link), before or after finalizing. Sensitive scopes such as `calendar.events` are intentionally not requested.
 
 If the deployment enforces a Content Security Policy, allow `https://accounts.google.com/gsi/client` in `script-src`, `https://accounts.google.com/gsi/` in `frame-src` and `connect-src`, `https://accounts.google.com/gsi/style` in `style-src`, and `https://www.googleapis.com` in `connect-src`. Keep `Cross-Origin-Opener-Policy: same-origin-allow-popups` for Google consent popups.
 

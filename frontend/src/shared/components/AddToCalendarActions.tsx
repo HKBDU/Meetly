@@ -29,7 +29,7 @@ export function AddToCalendarActions({
 }) {
   const t = useT()
   if (event.status !== EventStatus.Finalized || !event.finalSchedule) return null
-  const { meetingUrl } = event.finalSchedule
+  const { meetingUrl } = event
   const googleUrl = buildGoogleCalendarUrl(event, event.finalSchedule)
 
   return (
