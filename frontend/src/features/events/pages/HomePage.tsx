@@ -1,6 +1,6 @@
 import { useRef, useState, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, ArrowUpRight, CalendarCheck, Check, Puzzle, Sparkles, Video, type LucideIcon } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, CalendarCheck, Check, Puzzle, Sparkles, type LucideIcon } from 'lucide-react'
 
 import { env } from '@/lib/env'
 import { isGoogleConfigured } from '@/lib/google'
@@ -62,31 +62,33 @@ function ExtensionTeaser() {
 }
 
 /**
- * Ý nào trong khối Google đã dùng được: "Thêm vào lịch" không cần OAuth nên luôn mới;
- * nhập giờ bận chỉ mới khi có OAuth client ID (không có thì nút nhập bị ẩn); Google Meet chưa làm.
+ * Ý nào trong khối Google đã dùng được: "Thêm vào lịch" và link phòng họp (dán link hoặc tạo phòng
+ * Jitsi) không cần OAuth nên luôn mới; nhập giờ bận chỉ mới khi có OAuth client ID (không có thì nút nhập bị ẩn).
  */
 const GOOGLE_POINT_LIVE: Record<string, boolean> = {
   'home.gPoint1': true,
-  'home.gPoint2': false,
+  'home.gPoint2': true,
   'home.gPoint3': isGoogleConfigured,
 }
 
 /**
  * Thanh "Sắp ra mắt" chỉ giữ thứ chưa ra mắt: extension bị bỏ khi đã lên Chrome Web Store;
- * khi có OAuth client ID thì Google Calendar đã dùng được, mục Google chỉ còn Google Meet.
+ * link phòng họp đã chạy, nên mục Google chỉ còn khi chưa có OAuth client ID (nhập giờ bận từ Google Calendar).
+ * Không còn mục nào thì thanh tự ẩn.
  */
 const ANNOUNCEMENTS = (
   [
     { target: 'extension', icon: Puzzle, label: 'home.extTitle' },
-    isGoogleConfigured
-      ? { target: 'google', icon: Video, label: 'home.gMeet' }
-      : { target: 'google', icon: CalendarCheck, label: 'home.gShort' },
+    { target: 'google', icon: CalendarCheck, label: 'home.gCalendar' },
   ] satisfies { target: string; icon: LucideIcon; label: MessageKey }[]
-).filter(({ target }) => !(target === 'extension' && env.extensionStoreUrl))
+).filter(({ target }) =>
+  target === 'extension' ? !env.extensionStoreUrl : !isGoogleConfigured,
+)
 
 /** Thanh "Sắp ra mắt" đầu trang: một nhãn chung, mỗi sản phẩm là một link cuộn mượt tới khối giới thiệu */
 function AnnounceBar() {
   const t = useT()
+  if (ANNOUNCEMENTS.length === 0) return null
   return (
     <nav
       aria-label={t('home.extBadge')}

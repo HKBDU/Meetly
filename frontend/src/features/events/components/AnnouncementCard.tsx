@@ -20,14 +20,23 @@ const GLOW = [
   'radial-gradient(90% 45% at 50% 0%, var(--primary), transparent 100%)',
 ].join(', ')
 
-const SOON_ITEMS: { icon: typeof Puzzle; title: MessageKey; text: MessageKey }[] = [
-  { icon: Puzzle, title: 'home.extTitle', text: 'home.annSoonExt' },
-  { icon: CalendarCheck, title: 'home.gShort', text: 'home.annSoonGoogle' },
+type AnnouncementItem = { icon: typeof Puzzle; title: MessageKey; text: MessageKey; target: string }
+
+const SOON_ITEMS: AnnouncementItem[] = [
+  { icon: Puzzle, title: 'home.extTitle', text: 'home.annSoonExt', target: 'extension' },
+  { icon: CalendarCheck, title: 'home.gShort', text: 'home.annSoonGoogle', target: 'google' },
+]
+
+/** Đợt ra mắt: extension, Google Calendar, phòng họp online (Meet/Zoom dán link hoặc Jitsi tạo một chạm) */
+const LAUNCH_ITEMS: AnnouncementItem[] = [
+  { icon: Puzzle, title: 'home.extTitle', text: 'home.annLaunchExt', target: 'extension' },
+  { icon: CalendarCheck, title: 'home.gCalendar', text: 'home.annLaunchCalendar', target: 'google' },
+  { icon: Video, title: 'home.annLaunchMeetTitle', text: 'home.annLaunchMeet', target: 'google' },
 ]
 
 const STORAGE_KEY = 'meetly-announcement-dismissed'
-/** Đổi id khi có thông báo mới để mọi người thấy lại thẻ */
-const ANNOUNCEMENT_ID = env.extensionStoreUrl ? 'extension-live-v1' : 'coming-soon-v1'
+/** Đổi id khi có thông báo mới để mọi người thấy lại thẻ (kể cả người đã tắt thẻ "extension đã có") */
+const ANNOUNCEMENT_ID = env.extensionStoreUrl ? 'launch-3-features-v1' : 'coming-soon-v1'
 const SHOW_DELAY_MS = 1800
 
 function wasDismissed() {
@@ -48,7 +57,7 @@ function rememberDismissed() {
 
 /**
  * Thẻ thông báo góc dưới trang chủ: hiện một lần cho mỗi thông báo, không chặn thao tác.
- * Ẩn trên màn hình nhỏ vì extension chỉ dùng được trên trình duyệt máy tính.
+ * Ẩn trên màn hình nhỏ để không che nội dung trên điện thoại.
  */
 export function AnnouncementCard() {
   const t = useT()
@@ -77,6 +86,14 @@ export function AnnouncementCard() {
     setOpen(false)
   }
 
+  /** Bấm một tính năng: đóng thẻ và cuộn tới khối giới thiệu của nó */
+  function showFeature(target: string) {
+    dismiss()
+    document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const items = live ? LAUNCH_ITEMS : SOON_ITEMS
+
   if (!open) return null
 
   return (
@@ -96,8 +113,7 @@ export function AnnouncementCard() {
         {/* Phần đầu trang trí: icon các tính năng */}
         <div aria-hidden="true" className="relative h-[4.75rem]">
           <div className="absolute inset-0 flex items-center justify-center gap-2">
-            {/* Đã lên store thì chỉ khoe extension, Calendar/Meet vẫn đang "sắp ra mắt" */}
-            {FEATURE_ICONS.filter(({ big }) => !live || big).map(({ icon: Icon, tilt, delay, big }) => (
+            {FEATURE_ICONS.map(({ icon: Icon, tilt, delay, big }) => (
               <span
                 key={tilt}
                 style={{ '--tilt': tilt, animationDelay: delay } as CSSProperties}
@@ -127,28 +143,31 @@ export function AnnouncementCard() {
             {t(live ? 'home.extNew' : 'home.extBadge')}
           </span>
           <p id="announcement-title" className="mt-2.5 text-base leading-snug font-semibold tracking-tight text-balance">
-            {t(live ? 'home.annLiveTitle' : 'home.annSoonTitle')}
+            {t(live ? 'home.annLaunchTitle' : 'home.annSoonTitle')}
           </p>
 
-          {live ? (
-            <p className="mt-1.5 text-sm leading-relaxed text-pretty text-muted-foreground">{t('home.annLiveText')}</p>
-          ) : (
-            <ul className="mt-3 grid gap-3">
-              {SOON_ITEMS.map(({ icon: Icon, title, text }) => (
-                <li key={title} className="flex items-center gap-3">
+          {/* Mỗi tính năng là một dòng bấm được, đưa tới khối giới thiệu trên trang chủ */}
+          <ul className="mt-3 -mx-2 grid gap-0.5">
+            {items.map(({ icon: Icon, title, text, target }) => (
+              <li key={title}>
+                <button
+                  type="button"
+                  onClick={() => showFeature(target)}
+                  className="group flex w-full items-center rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-brand-soft/60 focus-visible:outline-2 focus-visible:outline-ring"
+                >
                   <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand">
                     <Icon className="size-4" aria-hidden="true" />
                   </span>
-                  <span className="min-w-0">
+                  <span className="min-w-0 flex-1 pl-3">
                     <span className="block text-sm leading-5 font-medium">{t(title)}</span>
                     <span className="block text-xs leading-4 text-muted-foreground">{t(text)}</span>
                   </span>
-                </li>
-              ))}
-            </ul>
-          )}
+                </button>
+              </li>
+            ))}
+          </ul>
 
-          <div className="mt-5 flex items-center gap-2">
+          <div className="mt-4 flex items-center gap-2">
         {live ? (
           <Button asChild size="sm" className="h-8">
             <a href={env.extensionStoreUrl} target="_blank" rel="noreferrer" onClick={dismiss}>
