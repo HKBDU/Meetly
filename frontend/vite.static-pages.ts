@@ -103,9 +103,11 @@ export function staticPages(): Plugin {
       const server = await createServer({
         configFile: false,
         root,
+        cacheDir: path.join(root, 'node_modules/.vite-static-pages'),
         logLevel: 'silent',
         appType: 'custom',
-        server: { middlewareMode: true, hmr: false },
+        optimizeDeps: { noDiscovery: true },
+        server: { middlewareMode: true, hmr: false, watch: null, ws: false },
         resolve: { alias },
       })
       let legal: LegalModule
