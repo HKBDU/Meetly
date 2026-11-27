@@ -124,15 +124,18 @@ export const HeatmapCell = memo(function HeatmapCell({
       {isFinalizedStart && schedule && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-1 top-0 z-30 flex items-start gap-2 overflow-hidden rounded-md bg-gradient-to-b from-finalized/90 to-finalized px-2 py-1 text-left text-[10px] leading-tight font-semibold text-finalized-foreground shadow-sm sm:text-xs"
+          className="pointer-events-none absolute inset-x-1 top-0 z-30 flex items-start gap-1 overflow-hidden rounded-md bg-gradient-to-b from-finalized/90 to-finalized px-1.5 py-1 text-left text-[10px] leading-tight font-semibold text-finalized-foreground shadow-sm sm:gap-2 sm:px-2 sm:text-xs"
           style={{ height: `calc(${finalizedCellCount} * 1.25rem)` }}
         >
-          <CalendarCheck2 className="mt-0.5 size-4 shrink-0" />
-          <span>
+          <CalendarCheck2 className="mt-px size-3.5 shrink-0 sm:mt-0.5 sm:size-4" />
+          <span className="min-w-0">
             <span className="block whitespace-nowrap">
               {finalizedTime ?? `${schedule.startTime} – ${schedule.endTime}`}
             </span>
-            {!viewerCell && <span className="block text-finalized-foreground/80">{t('info.finalized')}</span>}
+            {/* Cột hẹp (mobile) hoặc khung quá ngắn thì không đủ chỗ: chỉ hiện giờ, không để chữ bị cắt nửa */}
+            {!viewerCell && finalizedCellCount >= 3 && (
+              <span className="hidden text-finalized-foreground/80 sm:block">{t('info.finalized')}</span>
+            )}
           </span>
         </span>
       )}
