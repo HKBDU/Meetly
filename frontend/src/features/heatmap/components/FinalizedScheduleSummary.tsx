@@ -21,7 +21,8 @@ export function FinalizedScheduleSummary({ event }: { event: EventDetail }) {
           <p className="text-sm tabular-nums text-muted-foreground">{display.day} · {display.time}</p>
         </div>
       </div>
-      <AddToCalendarActions event={event} source="overview" />
+      {/* Link họp đã có ở dòng "Meeting room" trên header, không lặp nút tham gia ở đây */}
+      <AddToCalendarActions event={event} source="overview" showJoin={false} />
     </section>
   )
 }

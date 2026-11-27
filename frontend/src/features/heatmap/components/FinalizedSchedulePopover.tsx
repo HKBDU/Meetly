@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { CalendarCheck2, Check, Clock3, Copy, Globe2, Users, X } from 'lucide-react';
+import { CalendarCheck2, Clock3, Copy, Globe2, Users, X, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { timeToMinutes } from '@/lib/date-time';
 import { AddToCalendarActions } from '@/shared/components/AddToCalendarActions';
@@ -7,11 +7,24 @@ import { Button, Popover, PopoverContent, PopoverTrigger } from '@/shared/compon
 import { describeRange, useTimeView } from '@/shared/grid/time-view';
 import { useT } from '@/shared/i18n';
 import type { EventDetail } from '@/shared/types';
-import { MeetingRoomLine } from './MeetingRoomLine';
+import { cn } from '@/lib/utils';
 
 interface FinalizedSchedulePopoverProps {
   event: EventDetail;
   children: ReactNode;
+}
+
+/** Một ô thông tin trong lưới 2 cột: icon, nhãn nhỏ, giá trị */
+function DetailItem({ icon: Icon, label, className, children }: { icon: LucideIcon; label: string; className?: string; children: ReactNode }) {
+  return (
+    <div className="flex min-w-0 gap-2">
+      <Icon className="mt-0.5 size-4 shrink-0 text-finalized" aria-hidden="true" />
+      <div className="min-w-0">
+        <dt className="text-xs text-muted-foreground">{label}</dt>
+        <dd className={cn('font-medium', className)}>{children}</dd>
+      </div>
+    </div>
+  );
 }
 
 const MOBILE_MEDIA_QUERY = '(max-width: 639px)';
@@ -118,25 +131,34 @@ export function FinalizedSchedulePopover({ event, children }: FinalizedScheduleP
           </Button>
         </div>
         <div className="min-h-0 space-y-4 overflow-y-auto overscroll-contain p-4">
-          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-3 text-sm">
-            <CalendarCheck2 className="mt-0.5 size-4 text-finalized" aria-hidden="true" />
-            <div><dt className="text-xs text-muted-foreground">{t('final.date')}</dt><dd className="font-medium">{display.day}</dd></div>
-            <Clock3 className="mt-0.5 size-4 text-finalized" aria-hidden="true" />
-            <div><dt className="text-xs text-muted-foreground">{t('final.time')}</dt><dd className="font-medium tabular-nums">{display.time}</dd></div>
-            <Globe2 className="mt-0.5 size-4 text-finalized" aria-hidden="true" />
-            <div><dt className="text-xs text-muted-foreground">{t('final.timezone')}</dt><dd className="font-medium">{display.zone}</dd></div>
-            <Users className="mt-0.5 size-4 text-finalized" aria-hidden="true" />
-            <div><dt className="text-xs text-muted-foreground">{t('final.meeting')}</dt><dd className="font-medium">{t('duration.minutes', { count: duration })} · {t('common.participants', { count: event.participants.length })}</dd></div>
+          <dl className="grid grid-cols-2 gap-x-3 gap-y-3 text-sm">
+            <DetailItem icon={CalendarCheck2} label={t('final.date')}>{display.day}</DetailItem>
+            <DetailItem icon={Clock3} label={t('final.time')} className="tabular-nums">{display.time}</DetailItem>
+            <DetailItem icon={Globe2} label={t('final.timezone')} className="break-all">{display.zone}</DetailItem>
+            <DetailItem icon={Users} label={t('final.meeting')}>
+              {t('duration.minutes', { count: duration })} · {t('common.participants', { count: event.participants.length })}
+            </DetailItem>
           </dl>
-          <p className="flex items-center gap-2 rounded-lg bg-finalized-muted px-3 py-2 text-xs font-medium text-finalized">
-            <Check className="size-4 shrink-0" aria-hidden="true" />
-            {t('final.done')}
-          </p>
-          <AddToCalendarActions event={event} source="heatmap" compact />
-          <MeetingRoomLine meetingUrl={event.meetingUrl} />
-          <div className="flex justify-end border-t border-border pt-2">
-            <Button type="button" variant="ghost" size="sm" onClick={() => void copyTime()}><Copy aria-hidden="true" />{t('final.copyTime')}</Button>
-          </div>
+          {/* Tiêu đề đã ghi "Lịch đã chốt" nên không cần thêm dòng xác nhận; link họp nằm trong nút Tham gia */}
+          <AddToCalendarActions
+            event={event}
+            source="heatmap"
+            compact
+            className="border-t border-border pt-3"
+            extra={
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="shrink-0 rounded-full"
+                aria-label={t('final.copyTime')}
+                title={t('final.copyTime')}
+                onClick={() => void copyTime()}
+              >
+                <Copy aria-hidden="true" />
+              </Button>
+            }
+          />
         </div>
       </PopoverContent>
     </Popover>

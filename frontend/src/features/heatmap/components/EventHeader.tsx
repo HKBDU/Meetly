@@ -64,7 +64,8 @@ export function EventHeader({
         {meetingUrl && (
           <div className="mt-3 flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
             <span className="shrink-0">Meeting room:</span>
-            <MeetingRoomAction meetingUrl={meetingUrl} mode="copy" className="w-56 max-w-full" />
+            {/* Admin bấm để chép link gửi đi; người tham gia bấm để mở phòng họp */}
+            <MeetingRoomAction meetingUrl={meetingUrl} mode={onUpdateMeetingUrl ? 'copy' : 'open'} className="w-56 max-w-full" />
           </div>
         )}
       </div>
