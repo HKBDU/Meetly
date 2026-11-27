@@ -108,7 +108,7 @@ const privacyVi: LegalDocument = {
         [
           'Mã truy cập Google chỉ nằm trong tab trình duyệt của bạn và hết hạn sau khoảng một giờ. Mã này không bao giờ được gửi tới hay lưu trên máy chủ của chúng tôi.',
           'Giờ rảnh/bận được chuyển thành lưới lịch rảnh ngay trên trình duyệt. Meetly chỉ nhận lịch rảnh bạn đã xem lại và lưu, giống hệt khi bạn tự tô bằng tay. Dữ liệu rảnh/bận gốc không được lưu.',
-          'Link cuộc họp (Google Meet, Zoom...) do người tổ chức tự dán vào, không lấy từ tài khoản Google. Meetly lưu link này cùng sự kiện; ai có link sự kiện đều xem được, và link cũng có trong file lịch và email gửi qua Brevo cho người đã đăng ký nhận thông báo.',
+          'Link cuộc họp (Google Meet, Zoom...) do người tổ chức tự dán vào, không lấy từ tài khoản Google. Nếu người tổ chức chọn tạo phòng Jitsi Meet, Meetly chỉ sinh một tên phòng ngẫu nhiên trên meet.jit.si (dịch vụ của 8x8) và không gửi dữ liệu nào của bạn cho Jitsi; khi vào phòng, bạn dùng dịch vụ của Jitsi theo điều khoản của họ. Meetly lưu link này cùng sự kiện; ai có link sự kiện đều xem được, và link cũng có trong file lịch và email gửi qua Brevo cho người đã đăng ký nhận thông báo.',
           'Dữ liệu người dùng Google chỉ được dùng để cung cấp tính năng bạn chọn. Dữ liệu này không được bán, dùng cho quảng cáo hay huấn luyện AI và mô hình học máy.',
         ],
         'Việc Meetly sử dụng và chuyển giao thông tin nhận từ Google API tuân thủ Chính sách dữ liệu người dùng của Google API Services (Google API Services User Data Policy), bao gồm các yêu cầu về Sử dụng giới hạn (Limited Use).',
@@ -232,7 +232,7 @@ const privacyEn: LegalDocument = {
         [
           'The Google access token stays in your browser tab and expires after about one hour. It is never sent to or stored on our servers.',
           'Free/busy times are turned into the availability grid in your browser. Only the availability you review and save is sent to Meetly, exactly as if you had marked it by hand. The raw free/busy data is not stored.',
-          'Meeting links (Google Meet, Zoom...) are pasted by the host, not taken from a Google account. Meetly stores the link with the event; anyone with the event link can see it, and it also appears in calendar files and in emails sent through Brevo to notification subscribers.',
+          'Meeting links (Google Meet, Zoom...) are pasted by the host, not taken from a Google account. If the host chooses to create a Jitsi Meet room, Meetly only generates a random room name on meet.jit.si (run by 8x8) and sends none of your data to Jitsi; when you join, you use the Jitsi service under its own terms. Meetly stores the link with the event; anyone with the event link can see it, and it also appears in calendar files and in emails sent through Brevo to notification subscribers.',
           'Google user data is used to provide the feature you select. It is never sold or used for advertising or to train AI or machine learning models.',
         ],
         "Meetly's use and transfer of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements.",
