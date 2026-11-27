@@ -350,7 +350,7 @@ export const vi: Record<RequiredKey, string> = {
   'import.error.network': 'Không kết nối được Google. Kiểm tra mạng rồi thử lại.',
   'import.error.unknown': 'Chưa nhập được từ Google Calendar.',
   'import.draftTitle': 'Đã nhập từ Google Calendar',
-  'import.draftSummary': '{free} ô rảnh · {busy} ô bận. Xem lại, chỉnh trên lưới rồi bấm Áp dụng.',
+  'import.draftHint': 'Xem lại, chỉnh trên lưới rồi bấm Áp dụng.',
   'import.apply': 'Áp dụng',
   'import.discard': 'Huỷ',
 

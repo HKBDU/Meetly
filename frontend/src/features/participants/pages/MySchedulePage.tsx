@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import { getMyParticipant } from '@/shared/api/events'
-import { BusyImportDraftBar } from '@/features/participants/components/BusyImportDraftBar'
+import { BusyImportDraftActions, BusyImportDraftNotice } from '@/features/participants/components/BusyImportDraftBar'
 import { EventInfoBar } from '@/features/participants/components/EventInfoBar'
 import { PersonalScheduleGrid } from '@/features/participants/components/PersonalScheduleGrid'
 import { ScheduleActionsBar } from '@/features/participants/components/ScheduleActionsBar'
@@ -64,8 +64,9 @@ export function MySchedulePage() {
               setManualSelection((current) => ({ columnKey, startTime, requestId: (current?.requestId ?? 0) + 1 }))
             }
           />
-          <BusyImportDraftBar grid={grid} triggerAutoSave={triggerAutoSave} />
+          <BusyImportDraftNotice grid={grid} />
           <PersonalScheduleGrid grid={grid} triggerAutoSave={triggerAutoSave} manualSelection={manualSelection} />
+          <BusyImportDraftActions grid={grid} triggerAutoSave={triggerAutoSave} />
         </>
       )}
     </div>

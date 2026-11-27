@@ -350,7 +350,7 @@ export const en = {
   'import.error.network': "Couldn't reach Google. Check your connection and try again.",
   'import.error.unknown': "Couldn't import from Google Calendar.",
   'import.draftTitle': 'Imported from Google Calendar',
-  'import.draftSummary': '{free} free · {busy} busy slots. Review and adjust on the grid, then apply.',
+  'import.draftHint': 'Review and adjust on the grid, then apply.',
   'import.apply': 'Apply',
   'import.discard': 'Discard',
 

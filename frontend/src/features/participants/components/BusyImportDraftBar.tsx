@@ -6,21 +6,45 @@ import type { ScheduleGrid } from '@/features/participants/hooks/useScheduleGrid
 import { useParticipantStore } from '@/features/participants/store'
 import { useT } from '@/shared/i18n'
 
-interface BusyImportDraftBarProps {
+/**
+ * Bản nháp nhập từ Google Calendar gồm 2 phần: dòng thông báo nhỏ phía trên lưới và cụm nút
+ * Huỷ / Áp dụng dính ở giữa đáy màn hình. Người dùng xem, sửa trên lưới rồi bấm Áp dụng mới lưu.
+ * Không có bản nháp (hoặc lịch đã khoá) thì cả hai không hiện gì.
+ */
+
+const useActiveDraft = (grid: ScheduleGrid) =>
+  useParticipantStore((s) => s.draftFreeSlotIds !== null) && !grid.isLocked
+
+/** Dòng thông báo phía trên lưới */
+export function BusyImportDraftNotice({ grid }: { grid: ScheduleGrid }) {
+  const t = useT()
+  if (!useActiveDraft(grid)) return null
+
+  return (
+    <p role="status" className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 px-3 pb-1 text-xs sm:px-4">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-2.5 py-1 font-medium text-brand">
+        <CalendarCheck className="size-3.5" aria-hidden="true" />
+        {t('import.draftTitle')}
+      </span>
+      <span className="text-muted-foreground">{t('import.draftHint')}</span>
+    </p>
+  )
+}
+
+interface BusyImportDraftActionsProps {
   grid: ScheduleGrid
   triggerAutoSave: () => void
 }
 
 /**
- * Thanh xác nhận bản nháp nhập từ Google Calendar: người dùng xem và sửa trên lưới,
- * bấm Áp dụng mới lưu. Không có bản nháp thì không hiện gì.
+ * Cụm nút dính đáy màn hình. Đặt ngay sau lưới: khi cuộn qua lưới thì dính ở đáy,
+ * hết lưới thì nằm yên dưới lưới (sticky, không che footer).
  */
-export function BusyImportDraftBar({ grid, triggerAutoSave }: BusyImportDraftBarProps) {
+export function BusyImportDraftActions({ grid, triggerAutoSave }: BusyImportDraftActionsProps) {
   const t = useT()
-  const draftFreeCount = useParticipantStore((s) => s.draftFreeSlotIds?.size ?? null)
+  const hasDraft = useParticipantStore((s) => s.draftFreeSlotIds !== null)
   const applyDraft = useParticipantStore((s) => s.applyDraft)
   const discardDraft = useParticipantStore((s) => s.discardDraft)
-  const hasDraft = draftFreeCount !== null
 
   // Event bị chốt trong lúc đang xem bản nháp thì lịch đã khoá, bản nháp không còn ý nghĩa
   useEffect(() => {
@@ -30,26 +54,18 @@ export function BusyImportDraftBar({ grid, triggerAutoSave }: BusyImportDraftBar
   if (!hasDraft || grid.isLocked) return null
 
   return (
-    <div
-      role="region"
-      aria-label={t('import.draftTitle')}
-      className="mx-3 mb-1 flex flex-col gap-2 rounded-xl border border-brand/30 bg-brand-soft px-3 py-2.5 sm:mx-4 sm:flex-row sm:items-center sm:justify-between"
-    >
-      <div className="flex min-w-0 items-start gap-2">
-        <CalendarCheck className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden="true" />
-        <div className="min-w-0">
-          <p className="text-sm font-medium">{t('import.draftTitle')}</p>
-          <p className="text-xs text-muted-foreground">
-            {t('import.draftSummary', { free: draftFreeCount, busy: grid.allSlotIds.length - draftFreeCount })}
-          </p>
-        </div>
-      </div>
-      <div className="flex shrink-0 gap-2 self-end sm:self-auto">
-        <Button variant="ghost" size="sm" onClick={discardDraft}>
+    <div className="pointer-events-none sticky bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex justify-center px-3 pb-4">
+      <div
+        role="toolbar"
+        aria-label={t('import.draftTitle')}
+        className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-border bg-card/95 p-1.5 shadow-lg backdrop-blur"
+      >
+        <Button variant="ghost" size="sm" className="rounded-full px-4" onClick={discardDraft}>
           {t('import.discard')}
         </Button>
         <Button
           size="sm"
+          className="rounded-full px-5"
           onClick={() => {
             applyDraft()
             triggerAutoSave()
