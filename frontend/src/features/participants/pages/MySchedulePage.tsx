@@ -21,7 +21,7 @@ export function MySchedulePage() {
   const loadedSlotsFor = useParticipantStore((s) => s.loadedSlotsFor)
   const loadSlots = useParticipantStore((s) => s.loadSlots)
   const { triggerAutoSave, isSaving } = useAutoSaveSchedule(shortCode, grid)
-  const [manualSelection, setManualSelection] = useState<{ columnKey: string; requestId: number } | null>(null)
+  const [manualSelection, setManualSelection] = useState<{ columnKey: string; requestId: number; startTime?: string } | null>(null)
 
   // Lịch đã lưu luôn lấy từ server (không tin bản trong máy), mỗi phiên chỉ nạp 1 lần
   const needsSlots = loadedSlotsFor !== shortCode
@@ -55,8 +55,8 @@ export function MySchedulePage() {
             grid={grid}
             triggerAutoSave={triggerAutoSave}
             isSaving={isSaving}
-            onManualRangeApplied={(columnKey) =>
-              setManualSelection((current) => ({ columnKey, requestId: (current?.requestId ?? 0) + 1 }))
+            onManualRangeApplied={(columnKey, startTime) =>
+              setManualSelection((current) => ({ columnKey, startTime, requestId: (current?.requestId ?? 0) + 1 }))
             }
           />
           <PersonalScheduleGrid grid={grid} triggerAutoSave={triggerAutoSave} manualSelection={manualSelection} />

@@ -7,6 +7,7 @@ import { ParticipantAuthForm } from '@/features/participants/components/Particip
 import { useParticipantStore } from '@/features/participants/store'
 import type { ParticipantAuthInfo } from '@/features/participants/types'
 import { PageLoader } from '@/shared/components/MeetlyLoader'
+import { EventTimeView } from '@/shared/grid/EventTimeView'
 import { useT } from '@/shared/i18n'
 import type { EventOutletContext } from './eventOutlet'
 
@@ -46,7 +47,9 @@ function SignedInEvent({ shortCode, auth }: { shortCode: string; auth: Participa
 
   return (
     <>
-      <Outlet context={{ shortCode, auth, event } satisfies EventOutletContext} />
+      <EventTimeView key={shortCode} event={event}>
+        <Outlet context={{ shortCode, auth, event } satisfies EventOutletContext} />
+      </EventTimeView>
       <EmailPromptDialog shortCode={shortCode} />
     </>
   )

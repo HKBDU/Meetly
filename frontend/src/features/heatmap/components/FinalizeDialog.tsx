@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui';
 import type { FinalizeDialogProps } from '../types';
-import { formatDay } from '@/shared/grid/model';
+import { describeRange, useTimeView } from '@/shared/grid/time-view';
 import { useT } from '@/shared/i18n';
 
 export function FinalizeDialog({
@@ -13,6 +13,8 @@ export function FinalizeDialog({
   onConfirm,
 }: FinalizeDialogProps) {
   const t = useT();
+  const view = useTimeView();
+  const display = selected ? describeRange(view, selected, timezone) : null;
   const cancelButton = useRef<HTMLButtonElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
 
@@ -50,13 +52,13 @@ export function FinalizeDialog({
               {t('finalize.description')}
             </DialogDescription>
           </DialogHeader>
-          {selected && (
+          {display && (
             <div className="rounded-lg bg-secondary px-3 py-2.5">
-              <p className="text-sm font-medium">{formatDay(selected)}</p>
+              <p className="text-sm font-medium">{display.day}</p>
               <p className="mt-0.5 text-lg font-semibold">
-                {selected.startTime} – {selected.endTime}
+                {display.time}
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">{timezone}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{display.zone}</p>
             </div>
           )}
           <DialogFooter className="mt-1">

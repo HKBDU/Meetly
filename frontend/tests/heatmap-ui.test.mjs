@@ -269,7 +269,7 @@ test('participant details render nothing without an active cell', async () => {
   }
 });
 
-test('participant details use a bounded scroll area for long lists', async () => {
+test('participant details size to content and cap long lists', async () => {
   const server = await createTestServer();
   try {
     const { AvailabilityDetails } = await server.ssrLoadModule(
@@ -293,7 +293,8 @@ test('participant details use a bounded scroll area for long lists', async () =>
     );
 
     assert.match(html, /data-slot="scroll-area"/);
-    assert.match(html, /h-72/);
+    assert.match(html, /max-h-\[min\(24rem,55vh\)\]/);
+    assert.doesNotMatch(html, /(?:^|\s)h-72(?:\s|$)/);
     assert.match(html, /Participant 40/);
   } finally {
     await server.close();

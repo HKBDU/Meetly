@@ -1,9 +1,14 @@
 import { memo, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 
 import { cn } from '@/lib/utils'
-import { formatHourLabel } from '@/lib/date-time'
+import { formatHourLabel, timeToMinutes } from '@/lib/date-time'
+import { SLOT_MINUTES } from '@/shared/constants'
 import { ColumnPager } from '@/shared/components/ColumnPager'
 import { useT } from '@/shared/i18n'
+import { TimeViewLabel } from './EventTimeView'
+import { useTimeView } from './time-view'
+import { formatUtcOffset, type ViewerCell } from './viewer-grid'
+import { rowBoundaryClass } from './rowBoundary'
 import {
   DESKTOP_COLUMNS_PER_PAGE,
   MOBILE_COLUMNS_PER_PAGE,
@@ -53,11 +58,12 @@ interface TimeGridProps {
   columns: readonly TimeColumn[]
   rows: readonly TimeRow[]
   /** Phải trả về một `<td>` cho ô (cột, hàng) */
-  renderCell: (column: TimeColumn, row: TimeRow, rowIndex: number) => ReactNode
+  renderCell: (column: TimeColumn, row: TimeRow, rowIndex: number, viewerCell?: ViewerCell) => ReactNode
   caption: string
   pagerLabel: string
   /** Đổi `requestId` để nhảy tới trang chứa cột `key` (VD sau khi chọn khoảng thủ công) */
-  revealColumn?: { key: string; requestId: number } | null
+  revealColumn?: { key: string; requestId: number; startTime?: string } | null
+  hideStaticZone?: boolean
   className?: string
 }
 
@@ -65,28 +71,38 @@ interface TimeGridProps {
  * Bảng thời gian dùng chung cho heatmap nhóm và lưới cá nhân: cột giờ cố định bên trái,
  * cột ngày phân trang theo bề rộng, mỗi hàng là 1 ô 15 phút.
  */
-export function TimeGrid({ columns, rows, renderCell, caption, pagerLabel, revealColumn, className }: TimeGridProps) {
+export function TimeGrid({ columns, rows, renderCell, caption, pagerLabel, revealColumn, hideStaticZone, className }: TimeGridProps) {
   const t = useT()
-  const { containerRef, pageSize, isMobile } = usePageSize(columns.length)
+  const view = useTimeView()
+  const projected = view?.projected
+  const displayColumns = projected?.columns ?? columns
+  const displayRows = projected?.rows ?? rows.map(({ startTime }) => ({ key: startTime, startTime, offsetMinutes: undefined }))
+  const { containerRef, pageSize, isMobile } = usePageSize(displayColumns.length)
   const [page, setPage] = useState(0)
   const [revealedKey, setRevealedKey] = useState<string | null>(null)
 
-  const pageCount = getPageCount(columns.length, pageSize)
+  const pageCount = getPageCount(displayColumns.length, pageSize)
 
   // Chỉnh state ngay trong render để lần vẽ kế tiếp đã ở đúng trang (không nháy trang cũ)
-  const revealKey = revealColumn ? `${revealColumn.requestId}:${revealColumn.key}:${pageSize}` : null
+  const targetKey = revealColumn && projected
+    ? projected.firstBySource.get(`${revealColumn.key}|${revealColumn.startTime}`)?.columnKey
+      ?? projected.firstBySource.get(revealColumn.key)?.columnKey
+      ?? revealColumn.key
+    : revealColumn?.key
+  const revealKey = revealColumn ? `${revealColumn.requestId}:${targetKey}:${pageSize}` : null
   if (revealColumn && revealKey !== revealedKey) {
     setRevealedKey(revealKey)
-    const index = columns.findIndex((column) => column.key === revealColumn.key)
+    const index = displayColumns.findIndex((column) => column.key === targetKey)
     if (index >= 0) setPage(Math.floor(index / pageSize))
   }
 
   const currentPage = Math.min(page, pageCount - 1)
-  const visibleColumns = getColumnPage(columns, currentPage, pageSize)
-  const compact = !isMobile && columns.length <= COMPACT_MAX_COLUMNS
+  const visibleColumns = getColumnPage(displayColumns, currentPage, pageSize)
+  const compact = !isMobile && displayColumns.length <= COMPACT_MAX_COLUMNS
 
   return (
     <div ref={containerRef} className={cn('min-w-0', className)}>
+      <TimeViewLabel hideStaticZone={hideStaticZone} />
       <ColumnPager page={currentPage} pageCount={pageCount} onPageChange={setPage} label={pagerLabel} />
       <div
         className="mx-auto w-full overflow-hidden border border-grid-line bg-card"
@@ -120,10 +136,21 @@ export function TimeGrid({ columns, rows, renderCell, caption, pagerLabel, revea
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, rowIndex) => (
-              <tr key={row.startTime}>
-                <TimeLabel startTime={row.startTime} />
-                {visibleColumns.map((column) => renderCell(column, row, rowIndex))}
+            {displayRows.map((row, rowIndex) => (
+              <tr key={row.key}>
+                <TimeLabel
+                  startTime={row.startTime}
+                  offsetMinutes={row.offsetMinutes}
+                  show={Boolean(projected && (rowIndex === 0 || row.offsetMinutes !== undefined ||
+                    timeToMinutes(row.startTime) - timeToMinutes(displayRows[rowIndex - 1].startTime) !== SLOT_MINUTES))}
+                />
+                {visibleColumns.map((column) => {
+                  if (!projected) return renderCell(column, rows[rowIndex], rowIndex)
+                  const cell = projected.cells.get(`${column.key}|${row.key}`)
+                  return cell
+                    ? renderCell(cell.source.column, cell.source.row, cell.source.rowIndex, cell)
+                    : <td key={column.key} className={cn('h-5 border-r border-grid-line/60 bg-muted/50', rowBoundaryClass(row.startTime))} />
+                })}
               </tr>
             ))}
           </tbody>
@@ -133,19 +160,20 @@ export function TimeGrid({ columns, rows, renderCell, caption, pagerLabel, revea
   )
 }
 
-const TimeLabel = memo(function TimeLabel({ startTime }: { startTime: string }) {
+const TimeLabel = memo(function TimeLabel({ startTime, offsetMinutes, show }: { startTime: string; offsetMinutes?: number; show: boolean }) {
   useT() // vẽ lại nhãn giờ khi đổi ngôn ngữ (memo chặn render từ cha)
   const isHour = startTime.endsWith(':00')
   return (
     <th
       scope="row"
-      aria-label={startTime}
+      aria-label={offsetMinutes === undefined ? startTime : `${startTime} ${formatUtcOffset(offsetMinutes)}`}
       className={cn(
         'border-r border-border bg-card px-1 text-left text-xs font-medium text-muted-foreground sm:px-2',
         isHour ? 'border-t border-t-grid-line pt-1 align-top' : 'border-t border-t-transparent',
       )}
     >
-      {isHour ? formatHourLabel(startTime) : null}
+      {isHour || show ? (isHour ? formatHourLabel(startTime) : startTime) : null}
+      {offsetMinutes !== undefined && <span className="block text-[9px]">{formatUtcOffset(offsetMinutes)}</span>}
     </th>
   )
 })
