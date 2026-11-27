@@ -7,7 +7,7 @@ import { useTimeView } from '@/shared/grid/time-view'
 import { getSlotId } from '@/features/participants/gridUtils'
 import { useOptimizedDrag } from '@/features/participants/hooks/useOptimizedDrag'
 import type { ScheduleGrid } from '@/features/participants/hooks/useScheduleGrid'
-import { useParticipantStore } from '@/features/participants/store'
+import { selectPaintedSlotIds, useParticipantStore } from '@/features/participants/store'
 import { useT } from '@/shared/i18n'
 
 interface ScheduleCellProps {
@@ -33,8 +33,9 @@ const ScheduleCell = memo(function ScheduleCell({
   onPointerDown,
   onPointerEnter,
 }: ScheduleCellProps) {
-  // "Được tô" là rảnh hay bận tuỳ paintMode, xem `resolveFreeSlotIds`
-  const isPainted = useParticipantStore((s) => s.selectedSlotIds.has(slotId))
+  // "Được tô" là rảnh hay bận tuỳ paintMode, xem `resolveFreeSlotIds`; đang có bản nháp thì là ô rảnh của bản nháp
+  const isPainted = useParticipantStore((s) => selectPaintedSlotIds(s).has(slotId))
+  const isDraft = useParticipantStore((s) => s.draftFreeSlotIds !== null)
 
   return (
     <td
@@ -51,6 +52,8 @@ const ScheduleCell = memo(function ScheduleCell({
         locked
           ? cn('cursor-not-allowed', isPainted ? 'bg-heat-5 opacity-50' : 'bg-muted')
           : cn('cursor-pointer', isPainted ? 'bg-heat-5 hover:brightness-95' : 'bg-heat-0 hover:bg-accent'),
+        // Ô nháp nhạt màu và có sọc để phân biệt với lịch đã lưu
+        isDraft && !locked && isPainted && 'bg-heat-3 bg-[repeating-linear-gradient(135deg,transparent_0_4px,rgb(255_255_255/0.35)_4px_8px)]',
       )}
     />
   )

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 
 import { getSlotId } from '@/features/participants/gridUtils'
-import { useParticipantStore } from '@/features/participants/store'
+import { selectPaintedSlotIds, useParticipantStore } from '@/features/participants/store'
 
 interface UseOptimizedDragOptions {
   /** Giờ của từng hàng, để lấp đầy các ô bị bỏ sót khi con trỏ di chuyển nhanh */
@@ -55,8 +55,10 @@ export function useOptimizedDrag({ times, getSlotIdsBetween, locked, onDragEnd }
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
 
-    const { selectedSlotIds, setSlotPainted } = useParticipantStore.getState()
-    paintValueRef.current = !selectedSlotIds.has(slotId)
+    const state = useParticipantStore.getState()
+    // Đang có bản nháp thì kéo là sửa bản nháp
+    paintValueRef.current = !selectPaintedSlotIds(state).has(slotId)
+    const { setSlotPainted } = state
     isDraggingRef.current = true
     lastCellRef.current = { slotId, column, row: Number(row) }
     setSlotPainted(slotId, paintValueRef.current)

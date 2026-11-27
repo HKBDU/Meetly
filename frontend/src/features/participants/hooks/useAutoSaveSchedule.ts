@@ -48,19 +48,41 @@ export function useAutoSaveSchedule(shortCode: string, grid: ScheduleGrid | null
     },
   })
 
+  /** Có lượt lưu bị bỏ qua vì đang mở bản nháp, cần lưu bù khi bản nháp đóng */
+  const skippedForDraftRef = useRef(false)
+
   const saveNow = useCallback(() => {
     setIsSavePending(false)
     const current = gridRef.current
     if (!current || current.isLocked) return
+    // Bản nháp nhập từ Google Calendar chưa được người dùng xác nhận thì không gửi BE
+    if (useParticipantStore.getState().draftFreeSlotIds) {
+      skippedForDraftRef.current = true
+      return
+    }
     mutate(currentTimeSlots(current))
   }, [mutate])
 
   const debouncedSaveNow = useDebouncedCallback(saveNow, AUTO_SAVE_DEBOUNCE_MS)
 
   const triggerAutoSave = useCallback(() => {
+    // Sửa trên bản nháp không cần lưu: bản nháp chỉ được lưu khi bấm Áp dụng
+    if (useParticipantStore.getState().draftFreeSlotIds) return
     setIsSavePending(true)
     debouncedSaveNow()
   }, [debouncedSaveNow])
+
+  // Bản nháp đóng (áp dụng hoặc huỷ) mà trước đó có lượt lưu bị bỏ qua thì lưu bù
+  useEffect(
+    () =>
+      useParticipantStore.subscribe((state, previous) => {
+        if (previous.draftFreeSlotIds && !state.draftFreeSlotIds && skippedForDraftRef.current) {
+          skippedForDraftRef.current = false
+          triggerAutoSave()
+        }
+      }),
+    [triggerAutoSave],
+  )
 
   return { triggerAutoSave, isSaving: isSavePending || isPending }
 }
