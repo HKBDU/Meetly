@@ -56,8 +56,8 @@ function rememberDismissed() {
 }
 
 /**
- * Thẻ thông báo góc dưới trang chủ: hiện một lần cho mỗi thông báo, không chặn thao tác.
- * Ẩn trên màn hình nhỏ để không che nội dung trên điện thoại.
+ * Thẻ thông báo góc dưới trang chủ: mỗi thông báo chỉ hiện một lần (hiện ra là coi như đã xem,
+ * không đợi người dùng bấm đóng), không chặn thao tác. Ẩn trên màn hình nhỏ để không che nội dung.
  */
 export function AnnouncementCard() {
   const t = useT()
@@ -66,7 +66,11 @@ export function AnnouncementCard() {
 
   useEffect(() => {
     if (wasDismissed()) return
-    const timer = window.setTimeout(() => setOpen(true), SHOW_DELAY_MS)
+    const timer = window.setTimeout(() => {
+      // Ghi nhớ ngay khi hiện: lần sau vào web không bật lại dù người dùng không bấm gì
+      rememberDismissed()
+      setOpen(true)
+    }, SHOW_DELAY_MS)
     return () => window.clearTimeout(timer)
   }, [])
 
@@ -111,7 +115,7 @@ export function AnnouncementCard() {
         />
 
         {/* Phần đầu trang trí: icon các tính năng */}
-        <div aria-hidden="true" className="relative h-[4.75rem]">
+        <div aria-hidden="true" className="relative h-14">
           <div className="absolute inset-0 flex items-center justify-center gap-2">
             {FEATURE_ICONS.map(({ icon: Icon, tilt, delay, big }) => (
               <span
@@ -119,10 +123,10 @@ export function AnnouncementCard() {
                 style={{ '--tilt': tilt, animationDelay: delay } as CSSProperties}
                 className={cn(
                   'announce-float grid place-items-center rounded-xl bg-white/95 text-primary shadow-lg ring-1 ring-black/5',
-                  big ? 'size-11' : 'size-8',
+                  big ? 'size-9' : 'size-7',
                 )}
               >
-                <Icon className={big ? 'size-5' : 'size-4'} strokeWidth={2} />
+                <Icon className={big ? 'size-[18px]' : 'size-3.5'} strokeWidth={2} />
               </span>
             ))}
           </div>
@@ -137,37 +141,41 @@ export function AnnouncementCard() {
           <X className="size-3.5" aria-hidden="true" />
         </button>
 
-        <div className="relative px-5 pt-3 pb-5">
-          <span className="announce-shine inline-flex items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand">
-            <Sparkles className="size-3" aria-hidden="true" />
-            {t(live ? 'home.extNew' : 'home.extBadge')}
-          </span>
-          <p id="announcement-title" className="mt-2.5 text-base leading-snug font-semibold tracking-tight text-balance">
-            {t(live ? 'home.annLaunchTitle' : 'home.annSoonTitle')}
-          </p>
+        <div className="relative px-5 pt-2 pb-4">
+          {/* Nhãn "Mới" cùng dòng với tiêu đề cho đỡ một hàng */}
+          <div className="flex items-center gap-2">
+            <span className="announce-shine inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand">
+              <Sparkles className="size-3" aria-hidden="true" />
+              {t(live ? 'home.extNew' : 'home.extBadge')}
+            </span>
+            <p id="announcement-title" className="min-w-0 text-[15px] leading-snug font-semibold tracking-tight">
+              {t(live ? 'home.annLaunchTitle' : 'home.annSoonTitle')}
+            </p>
+          </div>
 
           {/* Mỗi tính năng là một dòng bấm được, đưa tới khối giới thiệu trên trang chủ */}
-          <ul className="mt-3 -mx-2 grid gap-0.5">
+          <ul className="-mx-2 mt-2.5 grid">
             {items.map(({ icon: Icon, title, text, target }) => (
               <li key={title}>
                 <button
                   type="button"
                   onClick={() => showFeature(target)}
-                  className="group flex w-full items-center rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-brand-soft/60 focus-visible:outline-2 focus-visible:outline-ring"
+                  className="group flex w-full items-center rounded-lg px-2 py-1 text-left transition-colors hover:bg-brand-soft/60 focus-visible:outline-2 focus-visible:outline-ring"
                 >
-                  <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand">
-                    <Icon className="size-4" aria-hidden="true" />
+                  <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand">
+                    <Icon className="size-3.5" aria-hidden="true" />
                   </span>
-                  <span className="min-w-0 flex-1 pl-3">
+                  {/* Mô tả luôn một dòng để thẻ không cao lên */}
+                  <span className="min-w-0 flex-1 pl-2.5">
                     <span className="block text-sm leading-5 font-medium">{t(title)}</span>
-                    <span className="block text-xs leading-4 text-muted-foreground">{t(text)}</span>
+                    <span className="block truncate text-xs leading-4 text-muted-foreground">{t(text)}</span>
                   </span>
                 </button>
               </li>
             ))}
           </ul>
 
-          <div className="mt-4 flex items-center gap-2">
+          <div className="mt-3 flex items-center gap-2">
         {live ? (
           <Button asChild size="sm" className="h-8">
             <a href={env.extensionStoreUrl} target="_blank" rel="noreferrer" onClick={dismiss}>
