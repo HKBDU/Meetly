@@ -3,6 +3,7 @@ import { memo } from 'react'
 import { cn } from '@/lib/utils'
 import { rowBoundaryClass } from '@/shared/grid/rowBoundary'
 import { TimeGrid } from '@/shared/grid/TimeGrid'
+import { useTimeView } from '@/shared/grid/time-view'
 import { getSlotId } from '@/features/participants/gridUtils'
 import { useOptimizedDrag } from '@/features/participants/hooks/useOptimizedDrag'
 import type { ScheduleGrid } from '@/features/participants/hooks/useScheduleGrid'
@@ -62,13 +63,19 @@ interface PersonalScheduleGridProps {
   grid: ScheduleGrid
   /** Từ cha để kéo chuột, "Chọn thủ công" và "Xoá hết" dùng chung 1 debounce lưu */
   triggerAutoSave: () => void
-  manualSelection: { columnKey: string; requestId: number } | null
+  manualSelection: { columnKey: string; requestId: number; startTime?: string } | null
 }
 
 export function PersonalScheduleGrid({ grid, triggerAutoSave, manualSelection }: PersonalScheduleGridProps) {
   const t = useT()
+  const projected = useTimeView()?.projected
   const { handleCellPointerDown, handleCellPointerEnter } = useOptimizedDrag({
     times: grid.times,
+    getSlotIdsBetween: projected ? (column, from, to) =>
+      projected.rows.slice(from, to + 1).flatMap(({ key }) => {
+        const cell = projected.cells.get(`${column}|${key}`)
+        return cell ? [getSlotId(cell.source.column, cell.source.row.startTime)] : []
+      }) : undefined,
     locked: grid.isLocked,
     onDragEnd: triggerAutoSave,
   })
@@ -80,16 +87,16 @@ export function PersonalScheduleGrid({ grid, triggerAutoSave, manualSelection }:
         rows={grid.rows}
         caption={t('schedule.caption')}
         pagerLabel={t('schedule.pager')}
-        revealColumn={manualSelection ? { key: manualSelection.columnKey, requestId: manualSelection.requestId } : null}
-        renderCell={(column, row, rowIndex) => {
+        revealColumn={manualSelection ? { key: manualSelection.columnKey, requestId: manualSelection.requestId, startTime: manualSelection.startTime } : null}
+        renderCell={(column, row, rowIndex, viewerCell) => {
           const slotId = getSlotId(column, row.startTime)
           return (
             <ScheduleCell
               key={slotId}
               slotId={slotId}
-              column={column.key}
-              row={rowIndex}
-              startTime={row.startTime}
+              column={viewerCell?.columnKey ?? column.key}
+              row={viewerCell && projected ? projected.rowIndexByKey.get(viewerCell.rowKey)! : rowIndex}
+              startTime={viewerCell?.startTime ?? row.startTime}
               locked={grid.isLocked}
               onPointerDown={handleCellPointerDown}
               onPointerEnter={handleCellPointerEnter}

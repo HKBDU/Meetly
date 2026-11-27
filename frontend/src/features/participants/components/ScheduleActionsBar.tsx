@@ -14,7 +14,7 @@ interface ScheduleActionsBarProps {
   grid: ScheduleGrid
   triggerAutoSave: () => void
   isSaving: boolean
-  onManualRangeApplied: (columnKey: string) => void
+  onManualRangeApplied: (columnKey: string, startTime?: string) => void
   /** Nhập giờ bận từ Google Calendar; `canImport = false` thì ẩn nút */
   googleImport: { canImport: boolean; isImporting: boolean; importFromGoogle: () => void }
 }

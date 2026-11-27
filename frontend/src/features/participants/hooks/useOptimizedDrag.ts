@@ -6,6 +6,7 @@ import { selectPaintedSlotIds, useParticipantStore } from '@/features/participan
 interface UseOptimizedDragOptions {
   /** Giờ của từng hàng, để lấp đầy các ô bị bỏ sót khi con trỏ di chuyển nhanh */
   times: readonly string[]
+  getSlotIdsBetween?: (column: string, from: number, to: number) => string[]
   locked: boolean
   /** Gọi khi nhả chuột để trigger auto-save */
   onDragEnd: () => void
@@ -26,15 +27,15 @@ interface LastCell {
  * - Dùng Pointer Events để chạy được cả cảm ứng; phải `releasePointerCapture`
  *   ngay pointerdown, nếu không `pointerenter` không bắn sang ô khác.
  */
-export function useOptimizedDrag({ times, locked, onDragEnd }: UseOptimizedDragOptions) {
+export function useOptimizedDrag({ times, getSlotIdsBetween, locked, onDragEnd }: UseOptimizedDragOptions) {
   const isDraggingRef = useRef(false)
   const lastCellRef = useRef<LastCell | null>(null)
   /** true = lượt kéo đang tô, false = đang xoá */
   const paintValueRef = useRef(true)
-  const optionsRef = useRef({ times, locked, onDragEnd })
+  const optionsRef = useRef({ times, getSlotIdsBetween, locked, onDragEnd })
 
   useEffect(() => {
-    optionsRef.current = { times, locked, onDragEnd }
+    optionsRef.current = { times, getSlotIdsBetween, locked, onDragEnd }
   })
 
   const endDrag = useCallback(() => {
@@ -81,7 +82,7 @@ export function useOptimizedDrag({ times, locked, onDragEnd }: UseOptimizedDragO
       const { setSlotPainted, setSlotsPainted } = useParticipantStore.getState()
       if (last && last.column === column) {
         const [from, to] = last.row <= rowIndex ? [last.row, rowIndex] : [rowIndex, last.row]
-        const ids = optionsRef.current.times
+        const ids = optionsRef.current.getSlotIdsBetween?.(column, from, to) ?? optionsRef.current.times
           .slice(from, to + 1)
           .map((time) => getSlotId({ key: column }, time))
         setSlotsPainted(ids, paintValueRef.current)

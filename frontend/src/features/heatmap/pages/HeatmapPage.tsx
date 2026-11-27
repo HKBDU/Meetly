@@ -30,10 +30,17 @@ export function HeatmapPage({
   const busy = useRef(false)
 
   const canEdit = isAdmin && event.status === EventStatus.Open
-  // Tính ngay trên lưới đang có: lưới đổi (realtime) là gợi ý đổi theo, không cần gọi BE
+  // Tính ngay trên lưới đang có: lưới đổi (realtime) là gợi ý đổi theo, không cần gọi BE.
+  // Admin thấy cả bảng xếp hạng; người tham gia chỉ thấy khung tốt nhất được khoanh trên lưới.
+  const isOpen = event.status === EventStatus.Open
   const bestTimes = useMemo(
-    () => (canEdit ? rankBestTimes(event, { duration, mustInclude }) : []),
-    [canEdit, event, duration, mustInclude],
+    () =>
+      canEdit
+        ? rankBestTimes(event, { duration, mustInclude })
+        : isOpen
+          ? rankBestTimes(event, { duration: DEFAULT_MEETING_DURATION, limit: 1 })
+          : [],
+    [canEdit, isOpen, event, duration, mustInclude],
   )
 
   async function updateEventDetails(payload: EditableEvent) {
@@ -69,6 +76,7 @@ export function HeatmapPage({
         onOpenMySchedule={onOpenMySchedule}
         onInvite={onInvite}
         onUpdateEvent={updateEventDetails}
+        currentUsername={currentUsername}
       />
 
       {event.status === EventStatus.Open && (

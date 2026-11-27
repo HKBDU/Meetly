@@ -2,8 +2,9 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { CalendarCheck2, Check, Clock3, Copy, Globe2, Users, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { timeToMinutes } from '@/lib/date-time';
+import { AddToCalendarActions } from '@/shared/components/AddToCalendarActions';
 import { Button, Popover, PopoverContent, PopoverTrigger } from '@/shared/components/ui';
-import { formatDay } from '@/shared/grid/model';
+import { describeRange, useTimeView } from '@/shared/grid/time-view';
 import { useT } from '@/shared/i18n';
 import type { EventDetail } from '@/shared/types';
 
@@ -33,6 +34,7 @@ function useMediaQuery(query: string) {
 
 export function FinalizedSchedulePopover({ event, children }: FinalizedSchedulePopoverProps) {
   const t = useT();
+  const view = useTimeView();
   const [open, setOpen] = useState(false);
   const closeTimer = useRef<number | null>(null);
   const isMobile = useMediaQuery(MOBILE_MEDIA_QUERY);
@@ -68,12 +70,12 @@ export function FinalizedSchedulePopover({ event, children }: FinalizedScheduleP
   const finalizedSchedule = schedule;
 
   const duration = timeToMinutes(finalizedSchedule.endTime) - timeToMinutes(finalizedSchedule.startTime);
-  const timeText = `${finalizedSchedule.startTime} – ${finalizedSchedule.endTime}`;
+  const display = describeRange(view, finalizedSchedule, event.timezone, true);
 
   async function copyTime() {
     try {
       await navigator.clipboard.writeText(
-        `${event.title}: ${formatDay(finalizedSchedule)}, ${timeText} (${event.timezone})`,
+        `${event.title}: ${display.day}, ${display.time} (${display.zone})`,
       );
       toast.success(t('final.copied'));
     } catch {
@@ -117,11 +119,11 @@ export function FinalizedSchedulePopover({ event, children }: FinalizedScheduleP
         <div className="min-h-0 space-y-4 overflow-y-auto overscroll-contain p-4">
           <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-3 text-sm">
             <CalendarCheck2 className="mt-0.5 size-4 text-finalized" aria-hidden="true" />
-            <div><dt className="text-xs text-muted-foreground">{t('final.date')}</dt><dd className="font-medium">{formatDay(finalizedSchedule)}</dd></div>
+            <div><dt className="text-xs text-muted-foreground">{t('final.date')}</dt><dd className="font-medium">{display.day}</dd></div>
             <Clock3 className="mt-0.5 size-4 text-finalized" aria-hidden="true" />
-            <div><dt className="text-xs text-muted-foreground">{t('final.time')}</dt><dd className="font-medium tabular-nums">{timeText}</dd></div>
+            <div><dt className="text-xs text-muted-foreground">{t('final.time')}</dt><dd className="font-medium tabular-nums">{display.time}</dd></div>
             <Globe2 className="mt-0.5 size-4 text-finalized" aria-hidden="true" />
-            <div><dt className="text-xs text-muted-foreground">{t('final.timezone')}</dt><dd className="font-medium">{event.timezone}</dd></div>
+            <div><dt className="text-xs text-muted-foreground">{t('final.timezone')}</dt><dd className="font-medium">{display.zone}</dd></div>
             <Users className="mt-0.5 size-4 text-finalized" aria-hidden="true" />
             <div><dt className="text-xs text-muted-foreground">{t('final.meeting')}</dt><dd className="font-medium">{t('duration.minutes', { count: duration })} · {t('common.participants', { count: event.participants.length })}</dd></div>
           </dl>
@@ -129,9 +131,9 @@ export function FinalizedSchedulePopover({ event, children }: FinalizedScheduleP
             <Check className="size-4 shrink-0" aria-hidden="true" />
             {t('final.done')}
           </p>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => void copyTime()}><Copy aria-hidden="true" />{t('final.copyTime')}</Button>
-            <Button type="button" size="sm" onClick={() => setOpen(false)}>{t('common.close')}</Button>
+          <AddToCalendarActions event={event} source="heatmap" />
+          <div className="flex justify-end border-t border-border pt-2">
+            <Button type="button" variant="ghost" size="sm" onClick={() => void copyTime()}><Copy aria-hidden="true" />{t('final.copyTime')}</Button>
           </div>
         </div>
       </PopoverContent>
