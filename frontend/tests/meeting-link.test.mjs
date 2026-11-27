@@ -138,7 +138,10 @@ test('event overview offers add/edit only to the host in both event states', asy
     assert.match(finalizedHost, /Edit Meeting Link/)
     assert.match(finalizedHost.match(/<header[\s\S]*?<\/header>/)?.[0] ?? '', /Meeting room:[\s\S]*Copy meeting link/)
     const participant = render(finalized, false)
-    assert.match(participant, /Meeting room: /)
+    // Người tham gia: cùng dòng "Meeting room" trên header nhưng bấm để mở phòng; link không lặp ở chỗ khác
+    assert.match(participant.match(/<header[\s\S]*?<\/header>/)?.[0] ?? '', /Meeting room:[\s\S]*Open meeting link/)
+    assert.equal((participant.match(/Meeting room:/g) ?? []).length, 1)
+    assert.doesNotMatch(participant, /Join Google Meet/)
     assert.doesNotMatch(participant, /Edit Meeting Link/)
   })
 })

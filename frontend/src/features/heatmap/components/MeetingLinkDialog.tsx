@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from 'react'
-import { Pencil, Plus } from 'lucide-react'
+import { Pencil, Plus, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle, DialogTrigger } from '@/shared/components/ui'
 import { useT } from '@/shared/i18n'
-import { normalizeMeetingLink } from '../meetingLink'
+import { createJitsiRoomUrl, meetingProvider, normalizeMeetingLink } from '../meetingLink'
 import { MeetingLinkField } from './MeetingLinkField'
 
 interface MeetingLinkDialogProps {
@@ -79,6 +79,30 @@ export function MeetingLinkDialog({ meetingUrl, onSave, disabled = false }: Meet
             invalid={Boolean(error)}
           />
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+          {/* Chưa có phòng sẵn: Meetly tạo link Jitsi Meet, không cần tài khoản hay quyền Google.
+              Vạch "hoặc" + nút viền rộng bằng ô nhập để nhìn ra đây là một lựa chọn bấm được, không phải câu gợi ý */}
+          <div className="flex items-center gap-3 text-xs text-muted-foreground" aria-hidden="true">
+            <span className="h-px flex-1 bg-border" />
+            {t('meet.or')}
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            // Button mặc định không xuống dòng: cho wrap để không tràn ngang trên màn hình hẹp
+            className="h-auto min-h-10 w-full whitespace-normal py-2 text-brand"
+            disabled={saving}
+            onClick={() => {
+              setValue(createJitsiRoomUrl())
+              setError(null)
+            }}
+          >
+            <Sparkles aria-hidden="true" />
+            {t('meet.autoCreate')}
+          </Button>
+          {meetingProvider(value.trim()) === 'jitsi' && (
+            <p className="-mt-2 rounded-lg bg-muted px-3 py-2 text-xs leading-5 text-muted-foreground">{t('meet.jitsiNote')}</p>
+          )}
           <DialogFooter>
             <Button type="button" variant="outline" disabled={saving} onClick={() => changeOpen(false)}>
               {t('common.cancel')}
