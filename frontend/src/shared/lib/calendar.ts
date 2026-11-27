@@ -2,7 +2,7 @@ import { addIsoDays, dateTimeInZone, isoWeekday } from '@/lib/date-time'
 import type { EventDetail, FinalSchedule } from '@/shared/types'
 
 const BY_DAY = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const
-type CalendarEvent = Pick<EventDetail, 'title' | 'url' | 'timezone'>
+type CalendarEvent = Pick<EventDetail, 'title' | 'url' | 'timezone'> & { meetingUrl?: string | null }
 
 export function calendarOccurrenceDate(schedule: FinalSchedule, timeZone: string, now = Date.now()): string | null {
   if (schedule.specificDate) return schedule.specificDate
@@ -25,7 +25,7 @@ export function buildGoogleCalendarUrl(
 ): string | null {
   const date = calendarOccurrenceDate(finalSchedule, event.timezone, now)
   if (!date) return null
-  const { meetingUrl } = finalSchedule
+  const { meetingUrl } = event
   const stamp = (time: string) => `${date.replaceAll('-', '')}T${(time.length === 5 ? `${time}:00` : time.slice(0, 8)).replaceAll(':', '')}`
   const url = new URL('https://calendar.google.com/calendar/render')
   url.search = new URLSearchParams({

@@ -75,7 +75,7 @@ export interface FinalizeDialogProps {
   timezone: string
   pending: boolean
   onClose: () => void
-  onConfirm: (withGoogleMeet: boolean) => void
+  onConfirm: () => void
 }
 
 export interface EditEventDialogProps {

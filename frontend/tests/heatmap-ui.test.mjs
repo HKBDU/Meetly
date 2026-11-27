@@ -314,11 +314,11 @@ test('finalized overview shows Join Google Meet and keeps the blue range on the 
       dayOfWeek: null,
       startTime: '10:00',
       endTime: '11:00',
-      meetingUrl,
     };
     const html = renderToStaticMarkup(
       createElement(HeatmapPage, {
-        event: { ...mockDatesEvent, status: 2, finalSchedule },
+        // Link cuộc họp nằm ở cấp event, không lồng trong finalSchedule
+        event: { ...mockDatesEvent, status: 2, finalSchedule, meetingUrl },
       }),
     );
 

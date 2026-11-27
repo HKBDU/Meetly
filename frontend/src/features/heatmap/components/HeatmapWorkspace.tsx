@@ -7,7 +7,6 @@ import { useTimeView } from '@/shared/grid/time-view'
 import { formatUtcOffset } from '@/shared/grid/viewer-grid'
 import { t } from '@/shared/i18n'
 import type { FinalSchedule } from '@/shared/types'
-import { createGoogleMeet } from '../googleMeet'
 import { isValidSchedule, normalizeSelection } from '../selection'
 import {
   HeatmapPendingAction,
@@ -169,7 +168,7 @@ export function HeatmapWorkspace({
     setMode(HeatmapSelectionMode.View)
   }
 
-  async function confirmSchedule(withGoogleMeet: boolean) {
+  async function confirmSchedule() {
     if (!canEdit || !selected || !dialogOpen || busy.current || !onFinalize) return
     if (!isValidSchedule(event, selected)) {
       toast.error(t('finalize.invalid'))
@@ -178,17 +177,15 @@ export function HeatmapWorkspace({
     busy.current = true
     onPendingChange(HeatmapPendingAction.Finalize)
     try {
-      const meetingUrl = withGoogleMeet ? await createGoogleMeet(event, selected).catch(() => undefined) : undefined
-      if (!active.current) return
-      const result = await onFinalize({ ...selected, meetingUrl })
+      // Link cuộc họp gắn riêng qua nút Thêm/Sửa link (PUT /meeting-url), backend giữ nguyên khi chốt
+      const result = await onFinalize(selected)
       if (!active.current) return
       if (result.status !== 2 || !isValidSchedule(event, result.finalSchedule)) {
         throw new Error(t('finalize.badResponse'))
       }
       setDialogOpen(false)
       cancelSelection()
-      if (withGoogleMeet && !result.finalSchedule.meetingUrl) toast.warning(t('finalize.meetUnavailable'))
-      else toast.success(t('finalize.success'))
+      toast.success(t('finalize.success'))
     } catch (failure) {
       if (active.current) {
         toast.error(failure instanceof Error ? failure.message : t('api.finalize'))
@@ -261,7 +258,7 @@ export function HeatmapWorkspace({
           setDialogOpen(false)
           if (!selectingFinal) setSelected(null)
         }}
-        onConfirm={(withGoogleMeet) => void confirmSchedule(withGoogleMeet)}
+        onConfirm={() => void confirmSchedule()}
       />
     </>
   )

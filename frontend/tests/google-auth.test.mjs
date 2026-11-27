@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url';
 import { createServer } from 'vite';
 
 const SCOPE = 'https://www.googleapis.com/auth/calendar.freebusy';
-const MEET_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
 const MEET_LINK = 'https://meet.google.com/abc-defg-hij';
 const EVENT = { title: 'Weekly Check-in', url: 'https://meetly.test/e/ABC234', timezone: 'America/Los_Angeles' };
 const WEEKLY_SLOT = { specificDate: null, dayOfWeek: 1, startTime: '09:00', endTime: '09:30' };
@@ -57,68 +56,18 @@ async function expectKind(promise, GoogleAuthError, kind) {
   });
 }
 
-test('Google Meet uses the meeting time zone and weekly recurrence and reuses a previously inserted event', async (t) => {
-  t.mock.method(Date, 'now', () => Date.parse('2026-11-29T23:30:00Z'));
-  await withGoogle({ respond: grant('meet-token') }, async (_google, popups, server) => {
-    const { createGoogleMeet } = await server.ssrLoadModule('/src/features/heatmap/googleMeet.ts');
+test('the Google Calendar link carries the meeting link the host added to the event', async () => {
+  await withGoogle({ respond: grant('unused') }, async (_google, _popups, server) => {
     const { buildGoogleCalendarUrl } = await server.ssrLoadModule('/src/shared/lib/calendar.ts');
-    const pending = { conferenceData: { createRequest: { status: { statusCode: 'pending' } } } };
-    const ready = { conferenceData: { entryPoints: [{ entryPointType: 'video', uri: MEET_LINK }] } };
-    const replies = [Response.json(pending), Response.json(ready), new Response(null, { status: 409 }), Response.json({ hangoutLink: MEET_LINK })];
-    const calls = [];
-    t.mock.method(globalThis, 'fetch', async (input, options) => {
-      assert.equal(options.headers.Authorization, 'Bearer meet-token');
-      calls.push({
-        url: new URL(input),
-        method: options.method ?? 'GET',
-        body: options.body ? JSON.parse(options.body) : null,
-      });
-      return replies.shift();
-    });
-
-    assert.equal(await createGoogleMeet(EVENT, WEEKLY_SLOT), MEET_LINK);
-    assert.equal(await createGoogleMeet(EVENT, WEEKLY_SLOT), MEET_LINK);
-    assert.deepEqual(calls.map((call) => call.method), ['POST', 'GET', 'POST', 'GET']);
-    const { body, url } = calls[0];
-    assert.equal(url.origin, 'https://www.googleapis.com');
-    assert.match(url.pathname, /\/calendars\/primary\/events$/);
-    assert.equal(url.searchParams.get('conferenceDataVersion'), '1');
-    assert.deepEqual(body.start, { dateTime: '2026-11-30T09:00:00', timeZone: EVENT.timezone });
-    assert.deepEqual(body.end, { dateTime: '2026-11-30T09:30:00', timeZone: EVENT.timezone });
-    assert.deepEqual(body.recurrence, ['RRULE:FREQ=WEEKLY;BYDAY=MO']);
-    assert.equal(body.conferenceData.createRequest.conferenceSolutionKey.type, 'hangoutsMeet');
-    assert.match(body.id, /^[a-v0-9]{5,1024}$/);
-    assert.equal(calls[2].body.id, body.id);
-    assert.equal(calls[1].url.pathname, `${url.pathname}/${body.id}`);
-    assert.equal(calls[3].url.href, calls[1].url.href);
-    assert.deepEqual(popups.map((popup) => popup.scope), [MEET_SCOPE, MEET_SCOPE]);
-
-    const calendar = new URL(buildGoogleCalendarUrl(EVENT, { ...WEEKLY_SLOT, meetingUrl: MEET_LINK }));
+    const calendar = new URL(buildGoogleCalendarUrl({ ...EVENT, meetingUrl: MEET_LINK }, WEEKLY_SLOT));
     assert.equal(calendar.searchParams.get('location'), MEET_LINK);
-    assert.equal(calendar.searchParams.get('details'), `${EVENT.url}\n${MEET_LINK}`);
-    assert.equal(calendar.searchParams.get('recur'), body.recurrence[0]);
+    assert.equal(calendar.searchParams.get('details'), `${EVENT.url}
+${MEET_LINK}`);
+    assert.equal(calendar.searchParams.get('recur'), 'RRULE:FREQ=WEEKLY;BYDAY=MO');
     assert.equal(calendar.searchParams.get('ctz'), EVENT.timezone);
-  });
-});
 
-test('Google Meet rejects a failed conference or an unexpected meeting URL', async (t) => {
-  await withGoogle({ respond: grant('meet-token') }, async (_google, _popups, server) => {
-    const { createGoogleMeet } = await server.ssrLoadModule('/src/features/heatmap/googleMeet.ts');
-    const dateSlot = { ...WEEKLY_SLOT, specificDate: '2026-12-02', dayOfWeek: null };
-    const replies = [
-      Response.json({ conferenceData: { createRequest: { status: { statusCode: 'failure' } } } }),
-      Response.json({ hangoutLink: 'https://meet.google.com.evil.example/abc-defg-hij' }),
-    ];
-    const fetch = t.mock.method(globalThis, 'fetch', async (_input, options) => {
-      const body = JSON.parse(options.body);
-      assert.equal(body.start.dateTime, '2026-12-02T09:00:00');
-      assert.equal(body.recurrence, undefined);
-      return replies.shift();
-    });
-
-    await assert.rejects(createGoogleMeet(EVENT, dateSlot), /did not return a Google Meet link/);
-    await assert.rejects(createGoogleMeet(EVENT, dateSlot), /did not return a Google Meet link/);
-    assert.equal(fetch.mock.callCount(), 2);
+    const withoutLink = new URL(buildGoogleCalendarUrl({ ...EVENT, meetingUrl: null }, WEEKLY_SLOT));
+    assert.equal(withoutLink.searchParams.get('location'), null);
   });
 });
 

@@ -218,7 +218,7 @@ Defined in `frontend/.env` (see `frontend/.env.example`):
 
 Enable Google Calendar API in Google Cloud. Create a Web application OAuth client with the frontend's local and production origins, then set `VITE_GOOGLE_CLIENT_ID`. Configure the OAuth consent screen with only `https://www.googleapis.com/auth/calendar.freebusy` (busy-time import). It is a non-sensitive scope, so the app can be published without Google's sensitive-scope verification.
 
-Meeting links are not created through Google APIs: when finalizing (or later from the overview), the host pastes a Google Meet, Zoom or Teams link, with a shortcut that opens `https://meet.new`. Sensitive scopes such as `calendar.events` are intentionally not requested.
+Meeting links are not created through Google APIs: the host pastes a Google Meet, Zoom or Teams link from the event page (Add / Edit meeting link), before or after finalizing. Sensitive scopes such as `calendar.events` are intentionally not requested.
 
 If the deployment enforces a Content Security Policy, allow `https://accounts.google.com/gsi/client` in `script-src`, `https://accounts.google.com/gsi/` in `frame-src` and `connect-src`, `https://accounts.google.com/gsi/style` in `style-src`, and `https://www.googleapis.com` in `connect-src`. Keep `Cross-Origin-Opener-Policy: same-origin-allow-popups` for Google consent popups.
 

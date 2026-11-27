@@ -26,7 +26,6 @@ export interface FinalSchedule {
   dayOfWeek: DayOfWeek | null
   startTime: string
   endTime: string
-  meetingUrl?: string
 }
 
 export interface EventDetail {
