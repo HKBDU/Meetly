@@ -82,7 +82,7 @@ export function AppFooter() {
                 </Link>
               )}
             </li>
-            {/* Google Calendar ra mắt khi có OAuth client ID; Google Meet chưa làm nên tách riêng để nhãn không lẫn */}
+            {/* Link phòng họp (Meet, Jitsi...) đã chạy nên luôn "Mới"; nhập giờ bận từ Google Calendar cần OAuth client ID */}
             {isGoogleConfigured ? (
               <>
                 <li>
@@ -93,25 +93,25 @@ export function AppFooter() {
                     </span>
                   </Link>
                 </li>
-                <li>
-                  <Link to="/#google" className={`${linkClass} inline-flex flex-wrap items-center gap-2`}>
-                    {t("home.gMeet")}
-                    <span className="rounded-full bg-brand-soft px-1.5 py-0.5 text-[10px] font-medium text-brand">
-                      {t("home.extBadge")}
-                    </span>
-                  </Link>
-                </li>
               </>
             ) : (
               <li>
                 <Link to="/#google" className={`${linkClass} inline-flex flex-wrap items-center gap-2`}>
-                  {t("home.gTitle")}
+                  {t("home.gCalendar")}
                   <span className="rounded-full bg-brand-soft px-1.5 py-0.5 text-[10px] font-medium text-brand">
                     {t("home.extBadge")}
                   </span>
                 </Link>
               </li>
             )}
+            <li>
+              <Link to="/#google" className={`${linkClass} inline-flex flex-wrap items-center gap-2`}>
+                {t("home.gMeet")}
+                <span className="rounded-full bg-brand-soft px-1.5 py-0.5 text-[10px] font-medium text-brand">
+                  {t("home.extNew")}
+                </span>
+              </Link>
+            </li>
           </Column>
 
           <Column title={t("footer.legal")}>
